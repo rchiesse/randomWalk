@@ -1,0 +1,650 @@
+
+#include "defs.h"
+using namespace std;
+
+/* GLOBALS */
+//Graph related:
+unordered_map<uint, uint> idMap;
+vector<vector<uint>> g;										// ----> The graph, as an edge list.
+uint ntwkSize, largestDegree, smallestDegree, selfLoops;
+uint numEdges;
+uint largestDgNode;
+uint lccSize = 0;											// ---> The size of the Largest Connected Component (LCC).
+vector<uint>lcc;											// ---> List of nodes that belong to the LCC.
+float averageDegree;
+
+struct job {
+	int ag;													// ----> Agent ID. When negative, means that the current job is to RECOVER; when positive, means that the event (job) is to WALK. This approach avoids the use of a 3rd control variable. This way, less data is handled at each job removal/insertion from/into the priority queue, thus making these operations faster.
+	real time;
+
+	job() : ag(INT32_MAX), time(INT32_MAX) {}
+	job(const int& _ag, const real& _time) : ag(_ag), time(_time) {}
+	job(const job& other) { *this = other; }
+};
+
+struct earliest {
+	bool operator()(const job& j1, const job& j2) {
+		return j1.time > j2.time;
+	}
+};
+
+//Simulation parameters
+static const uint T = 100;									// ----> Simulation time.
+static const uint NUM_AGENTS = 40;							// ----> Total number of agents in a simulation.
+static const real LAMBDA = 1.0;								// ----> Infection rate. Parameter of an exponentially-distributed random-numbers generator.
+static const real GAMMA  = 1.0;								// ----> Recovery rate.  Parameter of an exponentially-distributed random-numbers generator.
+static const real TAU    = 1.0;								// ----> Walking speed.  Parameter of an exponentially-distributed random-numbers generator.
+static const real NEG_RECIPR_LAMBDA = -(1.0 / LAMBDA);		// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
+static const real NEG_RECIPR_GAMMA = -(1.0 / GAMMA);		// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
+static const real NEG_RECIPR_TAU = -(1.0 / TAU);			// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static const real FRAC_AG_INFECTED = 0.5;					// ----> Fraction of agents initially infected when running a simulation.
+priority_queue<job, vector<job>, earliest> schedule;
+uint stotal = (uint)(ceil((1.0 - FRAC_AG_INFECTED) * NUM_AGENTS));	// ----> Total number of SUSCEPTIBLE agents when simulation starts.
+uint itotal = (uint)(floor(FRAC_AG_INFECTED * NUM_AGENTS));			// ----> Total number of INFECTED agents when simulation starts.
+double _now = 0;
+
+//Agent control variables
+vector<real> exposure(NUM_AGENTS, 0);
+vector<real> iniExposureTime(NUM_AGENTS, 0);
+vector<uint> currentNode(NUM_AGENTS);						// ----> Keeps track of the node at which each agent is currently located.
+vector<uint> indexWithinNode(NUM_AGENTS);
+vector<bool> isInfected(NUM_AGENTS, false);					// ----> Keeps track of each agent's current state.
+
+//Node control variables
+const uint LIST_TOP = NUM_AGENTS;
+vector<uint> sInNode;										// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
+vector<uint> iInNode;										// ----> Keeps track, for each node v, of how many infected agents are in v at time t.
+vector<vector<uint>> sAgents;								// ----> Up-to-date list of susceptible agents within each node v.
+vector<vector<uint>> iAgents;								// ----> Up-to-date list of infected agents within each node v.
+vector<uint> maxOccupancy;									// ----> A "max-occupancy" counter for every node, to measure up to how many agents happen to be at the same node the same time.
+
+real timeElapsed;
+auto dateTime = std::chrono::system_clock::now();
+std::time_t timestamp;
+clock_t _t;
+struct largerDegree {
+	bool operator()(const uint& v1, const uint& v2) {
+		return g[v1].size() > g[v2].size();
+	}
+};
+//struct walkTime {
+//	uint ag;
+//	double time;
+//
+//	walkTime() {}
+//	walkTime(const walkTime& other) {*this = other;}
+//};
+//struct moreRecent {
+//	bool operator()(const walkTime& wt1, const walkTime& wt2) {
+//		return wt1.time < wt2.time;
+//	}
+//};
+
+//Creating a uniform(0,1) random-numbers generator (U()):
+random_device rd;
+mt19937 generator(rd());									// ----> "mt" = "Mersenne Twister".
+uniform_real_distribution<double> distribution(0, 1);
+auto U = bind(distribution, generator); 
+
+/* PROTOTYPES */
+void Graph(const string& fileName, const uint& totalNodes);
+void runSimulation();
+void logTimestamp(const string& message);
+static const uint randomInt(const uint& openRange);					// ----> Returns a random value uniformly drawn from the interval [0, openRange), i.e. a number between 0 and 'openRange - 1'. Useful for randomly retrieving a node v neighbor's index each time an agent walks.
+static const real EXP(const real& param);
+static const real EXPLambda();										// ----> Random number generator to help determining whether or not an agent will become infected.
+static const real EXPGamma();										// ----> Random number generator to help determining the moment an infected agent will recover.
+static const real EXPTau();											// ----> Random number generator to help determining the next moment an agent walks.
+constexpr bool isRecovery(const job& j);
+constexpr bool isWalk(const job& j);
+void checkin	   (const uint& ag, const uint& node);				// ----> To be used within the function "enterNode(.)"
+void checkout	   (const uint& ag, const uint& node);				// ----> To be used within the function "leaveNode(.)"
+void checkinAsSus  (const uint& ag, const uint& node);				// ----> Differs from the 'checkin()' function in the sense that herein we know in advance the agent's current state (susceptible). We thus skip the (unecessary) test of such a condition.
+void checkinAsInf  (const uint& ag, const uint& node);				// ----> Differs from the 'checkin()' function in the sense that herein we know in advance the agent's current state (infected). We thus skip the (unecessary) test of such a condition.
+void checkoutAsInf (const uint& ag, const uint& node);				// ----> Differs from the 'checkout()' function in the sense that herein we know in advance the agent's current state (infected). We thus skip the (unecessary) test of such a condition.
+void checkoutAsSus (const uint& ag, const uint& node);				// ----> Differs from the 'checkout()' function in the sense that herein we know in advance the agent's current state (susceptible). We thus skip the (unecessary) test of such a condition.
+void enterNode	   (const uint& ag, const uint& node, const real& now);
+void enterNodeAsSus(const uint& ag, const uint& node, const real& now);
+void enterNodeAsInf(const uint& ag, const uint& node, const real& now);
+void leaveNode	   (const uint& ag, const uint& node, const real& now);
+void leaveNodeAsSus(const uint& ag, const uint& node, const real& now);
+void leaveNodeAsInf(const uint& ag, const uint& node, const real& now);
+void walk		   (const uint& ag, const real& now);
+void recover	   (const uint& ag, const real& now);
+const uint& nextNode(const uint& _currNode);						// ----> Defines the next node an agent's random walk is going to visit.
+void fate		    (const uint& ag);								// ----> Determines whether or not an exposed, susceptible agent will become infected.
+void fateAndNextNode(const int& ag, const real& now);
+
+#ifdef CLIQUE
+uint _neighbor;
+#endif
+
+/* MAIN */
+int main()
+{
+
+#ifdef GENERATE_NETWORK
+
+	logTimestamp("Simulation requested.");
+	runSimulation();
+
+#else
+	Graph(SOURCE_FILE);
+#endif
+
+	logTimestamp("End of simulation.");
+	return 0;
+}
+
+static const uint randomInt(const uint& openRange) { return (uint)(floor(openRange * U())); }
+static const real EXP(const real& param) { return -(1.0 / param) * log(U()); }
+static const real EXPLambda()	{ return NEG_RECIPR_LAMBDA * log(U()); }
+static const real EXPGamma()	{ return NEG_RECIPR_GAMMA  * log(U()); }
+static const real EXPTau()		{ return NEG_RECIPR_TAU    * log(U()); }
+constexpr bool isRecovery(const job& j) { return j.ag < 0; }
+constexpr bool isWalk(const job& j)		{ return j.ag >= 0; }
+
+void checkin(const uint& ag, const uint& node) {
+	currentNode[ag] = node;
+	vector<uint>& list = (isInfected[ag]) ? iAgents[node] : sAgents[node];
+	uint& top = list[LIST_TOP];
+	indexWithinNode[ag] = top;
+	list[top] = ag;
+	top++;
+}
+
+void checkinAsInf(const uint& ag, const uint& node) {
+	currentNode[ag] = node;
+	vector<uint>& list = iAgents[node];
+	uint& top = list[LIST_TOP];
+	indexWithinNode[ag] = top;
+	list[top] = ag;
+	top++;
+}
+
+void checkinAsSus(const uint& ag, const uint& node) {
+	currentNode[ag] = node;
+	vector<uint>& list = sAgents[node];
+	uint& top = list[LIST_TOP];
+	indexWithinNode[ag] = top;
+	list[top] = ag;
+	top++;
+}
+
+void checkout(const uint& ag, const uint& v) {
+	vector<uint>& list = (isInfected[ag]) ? iAgents[v] : sAgents[v];
+	uint& top = list[LIST_TOP];
+	if (--top) {	// ----> This test corresponds to "if list is not empty". If true (i.e. if the list still contains other agents after 'ag' has been removed), then the agent 'AL' at the last index is copied to the position of 'ag'. Note that the "top" of the list is decremented by one before the test (thus pointing to AL's original position). There's no problem if the outcoming agent is the one at the 'top' position. In this case, both inner instructions are redundant, not wrong.
+		list[indexWithinNode[ag]] = list[top];
+		indexWithinNode[list[top]] = indexWithinNode[ag];
+	}
+}
+
+void checkoutAsSus(const uint& ag, const uint& v) {
+	vector<uint>& list = sAgents[v];
+	uint& top = list[LIST_TOP];
+	if (--top) {	// ----> This test corresponds to "if list is not empty". If true (i.e. if the list still contains other agents after 'ag' has been removed), then the agent 'AL' at the last index is copied to the position of 'ag'. Note that the "top" of the list is decremented by one before the test (thus pointing to AL's original position). There's no problem if the outcoming agent is the one at the 'top' position. In this case, both inner instructions are redundant, not wrong.
+		list[indexWithinNode[ag]] = list[top];
+		indexWithinNode[list[top]] = indexWithinNode[ag];
+	}
+}
+
+void checkoutAsInf(const uint& ag, const uint& v) {
+	vector<uint>& list = iAgents[v];
+	uint& top = list[LIST_TOP];
+	if (--top) {	// ----> This test corresponds to "if list is not empty". If true (i.e. if the list still contains other agents after 'ag' has been removed), then the agent 'AL' at the last index is copied to the position of 'ag'. Note that the "top" of the list is decremented by one before the test (thus pointing to AL's original position). There's no problem if the outcoming agent is the one at the 'top' position. In this case, both inner instructions are redundant, not wrong.
+		list[indexWithinNode[ag]] = list[top];
+		indexWithinNode[list[top]] = indexWithinNode[ag];
+	}
+}
+
+void enterNodeAsSus(const uint& ag, const uint& v, const real& now) {
+	sInNode[v]++;
+	exposure[ag] = 0;
+	if (iInNode[v] > 0) {
+		iniExposureTime[ag] = now;
+	}
+	checkinAsSus(ag, v);
+}
+
+void enterNodeAsInf(const uint& ag, const uint& v, const real& now) {
+	iInNode[v]++;
+	if (iInNode[v] == 1) {
+		const vector<uint>& list = sAgents[v];
+		for (uint i = 0; i < sInNode[v]; ++i) {
+			iniExposureTime[list[i]] = now;
+		}
+	}
+	checkinAsInf(ag, v);
+}
+
+void enterNode(const uint& ag, const uint& v, const real& now) {
+	if (isInfected[ag]) {
+		iInNode[v]++;
+		if (iInNode[v] == 1) {
+			const vector<uint>& list = sAgents[v];
+			for (uint i = 0; i < sInNode[v]; ++i) {
+				iniExposureTime[list[i]] = now;
+			}
+		}
+	}
+	else {
+		sInNode[v]++;
+		exposure[ag] = 0;
+		if (iInNode[v] > 0) {
+			iniExposureTime[ag] = now;
+		}
+	}
+	checkin(ag, v);
+}
+
+void leaveNodeAsInf(const uint& ag, const uint& v, const real& now) {
+	iInNode[v]--;
+	if (iInNode[v] == 0) {
+		const vector<uint>& list = sAgents[v];
+		for (uint i = 0; i < sInNode[v]; ++i) {
+			exposure[list[i]] += now - iniExposureTime[list[i]];
+		}
+	}
+	checkoutAsInf(ag, v);
+}
+
+void leaveNodeAsSus(const uint& ag, const uint& v, const real& now) {
+	sInNode[v]--;
+	if (iInNode[v] > 0) {
+		exposure[ag] += now - iniExposureTime[ag];
+	}
+	checkoutAsSus(ag, v);
+}
+
+void leaveNode(const uint& ag, const uint& v, const real& now) {
+	if (isInfected[ag]) {
+		iInNode[v]--;
+		if (iInNode[v] == 0) {
+			const vector<uint>& list = sAgents[v];
+			for (uint i = 0; i < sInNode[v]; ++i) {
+				exposure[list[i]] += now - iniExposureTime[list[i]];
+			}
+		}
+	}
+	else {
+		sInNode[v]--;
+		if (iInNode[v] > 0) {
+			exposure[ag] += now - iniExposureTime[ag];
+		}
+	}
+	checkout(ag, v);
+}
+
+void walk(const uint& ag, const real& now) {
+	if (isInfected[ag]) {
+		leaveNodeAsInf(ag, currentNode[ag], now);
+		enterNodeAsInf(ag, nextNode(currentNode[ag]), now);
+	}
+	else {
+		leaveNodeAsSus(ag, currentNode[ag], now);
+		fateAndNextNode(ag, now);
+	}
+	
+	// ORIGINAL LOGIC (less efficient):
+	//
+	//leaveNode(ag, now);
+	//fate(ag);
+	//enterNode(ag, nextNode(currentNode[ag]), now);
+}
+
+void recover(const uint& ag, const real& now) {
+	const uint& v = currentNode[ag];
+	isInfected[ag] = false;
+	stotal++;
+	itotal--;
+
+	//"leaveNodeAsInf", inlined to avoid repeating "isInfected" tests:
+	iInNode[v]--;
+	if (iInNode[v] == 0) {
+		const vector<uint>& list = sAgents[v];
+		for (uint i = 0; i < sInNode[v]; ++i) {
+			exposure[list[i]] += now - iniExposureTime[list[i]];
+		}
+	}
+	else { iniExposureTime[ag] = now; }
+	checkoutAsInf(ag, v);
+	
+	//"enterNodeAsSus", inlined and simplifyied:
+	sInNode[v]++;
+	exposure[ag] = 0;
+	checkinAsSus(ag, v);
+}
+
+void fateAndNextNode(const int& ag, const real& now) {
+	if (exposure[ag] > 0 && EXPLambda() < exposure[ag]) {
+		isInfected[ag] = true;
+		stotal--;
+		itotal++;
+		enterNodeAsInf(ag, nextNode(currentNode[ag]), now);
+		schedule.emplace(-ag, now + EXPGamma()); // ----> 'Recover' event is scheduled (note the agent ID being forwarded as a NEGATIVE value!).
+	}
+	else { enterNodeAsSus(ag, nextNode(currentNode[ag]), now); }
+}
+
+void fate(const uint& ag) {
+	if (!isInfected[ag]) {
+		if (exposure[ag] > 0 && EXPLambda() < exposure[ag]) {
+			isInfected[ag] = true;
+			stotal--;
+			itotal++;
+		}
+	}
+}
+
+const uint& nextNode(const uint& _currNode) {
+#ifdef CLIQUE
+	do { _neighbor = randomInt(ntwkSize); } while (_neighbor == _currNode);
+	return _neighbor;
+#else
+	return g[_currNode][randomInt(g[_currNode].size())];
+#endif
+}
+
+void runSimulation() {
+
+		
+	//Generates the walking sequence of each agent until the simulation time limit T:
+	//const uint TOTAL_STEPS_PER_AGENT = (uint)(T * LAMBDA + NUM_AGENTS * pow(LAMBDA,2)); // TODO: Optimize this size spec. 
+	//vector<walkTime>wSequence((uint64_t)NUM_AGENTS * TOTAL_STEPS_PER_AGENT);
+	//uint totalWalkTimes = 0;
+	//for (uint ag = 0; ag < NUM_AGENTS; ag++) {
+	//	wSequence[totalWalkTimes].ag = ag;
+	//	wSequence[totalWalkTimes].time = EXPLambda();
+	//	while (wSequence[totalWalkTimes].time < T) {
+	//		totalWalkTimes++;
+	//		wSequence[totalWalkTimes].ag = ag;
+	//		wSequence[totalWalkTimes].time = wSequence[totalWalkTimes - 1].time + EXPLambda();
+	//	}
+	//}
+	//
+	//The walking times are established for all agents. We now sort them ascending to achieve the proper ordering for processing these events:
+	//wSequence.resize(totalWalkTimes);
+	//sort(wSequence.begin(), wSequence.end(), moreRecent());
+
+	cout << endl << "Setting up environment...";
+	_t = clock();
+
+#ifdef CLIQUE
+//Generates a clique of size N:
+	const uint N = 25;
+	ntwkSize = N;
+	vector<uint> graph(N);
+	for (uint i = 0; i < N; ++i)
+		graph[i] = i;
+#endif
+
+	sInNode.resize(ntwkSize, 0);							// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
+	iInNode.resize(ntwkSize, 0);							// ----> Keeps track, for each node v, of how many infected agents are in v at time t.
+	sAgents.resize(ntwkSize);								// ----> Up-to-date list of susceptible agents within each node v.
+	iAgents.resize(ntwkSize);								// ----> Up-to-date list of infected agents within each node v.
+	maxOccupancy.resize(ntwkSize, 0);						// ----> A "max-occupancy" counter for every node, to measure up to how many agents happen to be at the same node the same time.
+
+	for (uint i = 0; i < ntwkSize; ++i){
+		sAgents[i].resize(LIST_TOP + 1);				// ----> The extra spot will store the actual size of the list represented by this fixed-size container.
+		iAgents[i].resize(LIST_TOP + 1);				// ----> The extra spot will store the actual size of the list represented by this fixed-size container.
+	}
+	for (uint i = 0; i < ntwkSize; ++i) {
+		sAgents[i][LIST_TOP] = 0;
+		iAgents[i][LIST_TOP] = 0;
+	}
+
+	//Inittially, we schedule a single 'walk' event for each agent. A new 'walk' job will then be created and scheduled for an agent the moment its current 'walk' job is processed.
+	for (uint i = 0; i < NUM_AGENTS; ++i)
+		schedule.emplace(i, EXPTau());
+
+	//Now we must define which agents are infected from the start, and also schedule their 'recover' event.
+	//It is not a problem to always infect the first 'itotal' agents, since the starting node of each agent will be randomly set.
+	for (int i = 0; i < (int)itotal; ++i) {
+		isInfected[i] = true;
+		schedule.emplace(-i, EXPGamma());
+	}
+
+	// * DISTRIBUTING THE AGENTS ACROSS THE NETWORK *
+	//uint v;														// ----> Stores the randomly selected node.
+	//Random distribution of the INFECTED agents:
+	for (uint i = 0; i < itotal; ++i){
+		//v = randomInt(ntwkSize);
+		enterNodeAsInf(i, randomInt(ntwkSize), _now);
+	}
+	//Random distribution of the SUSCEPTIBLE agents:
+	for (uint i = itotal; i < NUM_AGENTS; ++i) {
+		//v = randomInt(ntwkSize);
+		enterNodeAsSus(i, randomInt(ntwkSize), _now);
+	}
+
+	timeElapsed = clock() - _t;
+	cout << " done. (" << timeElapsed / CLOCKS_PER_SEC << " secs). ";
+
+	cout << endl << "Running simulation..." << endl;
+	_t = clock();
+	
+	//MAIN LOOP:
+	while (itotal > 0 && _now < T) {
+		const job j = schedule.top();
+		schedule.pop();
+		_now = j.time;
+		if (isRecovery(j)) {
+			//const uint ag = abs(j.ag);	// ----> Gets the positive value of the agent ID.
+			recover(abs(j.ag), _now);
+		}
+		else {	// ----> The event (i.e. the job) is 'Walk'.
+			//const uint ag = j.ag;
+			walk(j.ag, _now);
+			schedule.emplace(j.ag, _now + EXPTau());
+		}
+	}
+	timeElapsed = clock() - _t;
+	cout << "Simulation completed (" << timeElapsed / CLOCKS_PER_SEC << " secs)." << endl;
+}
+
+void logTimestamp(const string& message) {
+	const char TIMESTAMP_COLUMNS = 26;
+	char timestamp_string[TIMESTAMP_COLUMNS];
+	timestamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	ctime_s(timestamp_string, sizeof timestamp_string, &timestamp);
+	std::cout << endl << timestamp_string << message << endl;
+}
+
+void Graph(const string& fileName, const uint& totalNodes) {
+	clock_t _t;
+	string serialFileName = string(EXE_DIR) + string("\\serializadas\\") + string(NWTK_LABEL) + string(".txt");
+
+	bool buildNetwork = false; // ----> TRUE if the network still needs to be built; FALSE otherwise (serialized file).
+	cout << endl << endl << endl << "**************************************************************";
+	string msg = "Simulation started for the network " + string(NWTK_LABEL) + "...";
+	logTimestamp(msg);
+
+#ifdef DE_SERIALIZE
+	ifstream serializedFile(serialFileName);
+	if (serializedFile.is_open()) {
+		std::cout << endl << "De-serializing the network... ";
+		_t = clock();
+
+		uint numViz;
+		serializedFile >> ntwkSize;
+		g.resize(ntwkSize);
+		for (uint i = 0; i < ntwkSize; i++) {
+			serializedFile >> numViz;
+			g[i].resize(numViz);
+			for (uint j = 0; j < numViz; j++)
+				serializedFile >> g[i][j];
+		}
+		serializedFile >> numEdges;
+		serializedFile >> averageDegree;
+
+		timeElapsed = clock() - _t;
+		std::cout << "Done (" << timeElapsed / CLOCKS_PER_SEC << " seconds)";
+	}
+	else {
+#endif
+#ifdef READ_NTWK_FROM_FILE
+		buildNetwork = true;
+		ntwkSize = 0;
+		numEdges = 0;
+		selfLoops = 0;
+		g.resize(totalNodes);
+		ifstream arq__G(fileName);
+		string line;
+		if (!arq__G.is_open()) {
+			std::cout << endl << "Error while trying to open the file " << fileName << endl;
+			return;
+		}
+
+		std::cout << endl << "File " << fileName << " opened with success." << endl;
+
+		do {
+			getline(arq__G, line);
+		} while (line.at(0) == COMMENTARY && arq__G.good());
+
+		std::cout << endl << "Reading the network..." << endl;
+		_t = clock();
+
+		stringstream ss(line);
+
+		//The method below guarantees the network will be internally dealt with through sequential id's (0, 1, 2, ...)
+		uint sequentialIDs = 0;
+		uint idV1, idV2;
+		ss >> idV1;
+		ss >> idV2;
+
+		if (idMap.count(idV1) == 0) {
+			ntwkSize++;
+			idMap[idV1] = sequentialIDs++;
+		}
+		if (idMap.count(idV2) == 0) {
+			ntwkSize++;
+			idMap[idV2] = sequentialIDs++;
+		}
+		idV1 = idMap[idV1];
+		idV2 = idMap[idV2];
+
+		// Creates an edge connecting idV1 and idV2, if such an edge is not a self-loop:
+		if (idV1 != idV2) {
+			g[idV1].emplace_back(idV2);
+			g[idV2].emplace_back(idV1);
+			numEdges++;
+		}
+
+		while (arq__G.good()) {
+			arq__G >> idV1;
+			arq__G >> idV2;
+
+			//IDs' translation:
+			if (idMap.count(idV1) == 0) {
+				ntwkSize++;
+				idMap[idV1] = sequentialIDs++;
+			}
+			if (idMap.count(idV2) == 0) {
+				ntwkSize++;
+				idMap[idV2] = sequentialIDs++;
+			}
+			idV1 = idMap[idV1];
+			idV2 = idMap[idV2];
+
+			// Identifying (and ignoring) self-loops (edges connecting a node to itself):
+			if (idV1 == idV2) {
+				selfLoops++;
+				continue;
+			}
+
+			// Creates an edge between idV1 and idV2 if it does not exist still.
+			if (find(g[idV1].begin(), g[idV1].end(), idV2) == g[idV1].end()) {
+				g[idV1].emplace_back(idV2);
+				g[idV2].emplace_back(idV1);
+				numEdges++;
+			}
+		}
+
+		timeElapsed = (double)clock() - _t;
+		std::cout << "Done (" << timeElapsed / CLOCKS_PER_SEC << " seconds)";
+		_t = clock();
+
+		averageDegree = 2 * (float)numEdges / ntwkSize;
+#endif
+#ifdef SERIALIZE
+		//Serializa a rede:
+		std::cout << endl << "Serializing the network (for future use)... ";
+		_t = clock();
+		ofstream arq(serialFileName);
+		arq << g.size();
+		for (size_t i = 0; i < g.size(); i++) {
+			arq << " " << g[i].size();
+			for (size_t j = 0; j < g[i].size(); j++)
+				arq << " " << g[i][j];
+		}
+		arq << " " << numEdges << " " << averageDegree;
+		arq.close();
+		timeElapsed = clock() - _t;
+		std::cout << "done (" << timeElapsed / CLOCKS_PER_SEC << " seconds)" << endl;
+#endif
+#ifdef DE_SERIALIZE
+	}
+#endif
+
+	largestDegree = (uint)g[0].size();
+	largestDgNode = 0;
+	smallestDegree = (uint)g[0].size();
+	for (uint i = 0; i < ntwkSize; i++) {
+		if (g[i].size() > largestDegree) {
+			largestDegree = (uint)g[i].size();
+			largestDgNode = i;
+		}
+		else {
+			if (g[i].size() < smallestDegree) {
+				smallestDegree = (uint)g[i].size();
+			}
+		}
+	}
+
+	//Determining the LCC:
+	uint neighbor;
+	vector<uint> Q(ntwkSize);
+	vector<bool> notVisited(ntwkSize, true);
+	lcc.resize(ntwkSize);
+	for (uint v = 0; v < ntwkSize; v++) {
+		if (notVisited[v]) {
+			uint next;
+			uint front = 0;
+			uint end = 0;
+			uint ccSize = 0;
+			Q[end++] = v;
+			while (front != end) {
+				next = Q[front];
+				notVisited[next] = false;
+				ccSize++;
+				for (size_t j = 0; j < g[next].size(); j++) {
+					neighbor = g[next][j];
+					if (notVisited[neighbor]) {
+						Q[end++] = neighbor;
+						notVisited[neighbor] = false;
+					}
+				}
+				front++; // ---> "pop".
+			}
+			if (ccSize > lccSize) {
+				lccSize = ccSize;
+				for (size_t i = 0; i < end; i++) {
+					lcc[i] = Q[i];
+				}
+			}
+		}
+	}
+	lcc.resize(lccSize);
+
+	std::cout << endl
+		<< "\t ---> " << ntwkSize << " nodes." << endl
+		<< "\t ---> " << numEdges << " edges." << endl
+		<< "\t ---> Average degree: " << averageDegree << endl
+		<< "\t ---> Largest degree: " << largestDegree << endl
+		<< "\t ---> Smallest degree: " << smallestDegree << endl
+		<< "\t ---> LCC size: " << lccSize << " (" << ((double)lccSize / ntwkSize) * 100 << "%)" << endl;
+	if (buildNetwork && selfLoops > 0) {
+		cout << "\t ---> Removed self-loops: " << selfLoops << endl << endl;
+	}
+}

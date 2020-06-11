@@ -118,6 +118,7 @@ static constexpr long real C6  = C5 - C4;
 //static constexpr long real C11 = GAMMA * C8;
 //static constexpr long real C12 = GAMMA * C7;
 
+
 //IMPROVED
 static constexpr long real C10 = (GAMMA * K) * (a - a * b + b - 1);
 static constexpr long real C11 = (GAMMA * K) * (a * b - a - b + 1) - (GAMMA * N) * (b * K + K + a - 1);

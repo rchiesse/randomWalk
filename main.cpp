@@ -54,8 +54,9 @@ uint _neighbor;
 // * GLOBAL UNIFORM(0,1) RANDOM-NUMBER GENERATOR * 
 std::random_device rd;
 std::mt19937_64 generator(rd());										// ----> "mt" = "Mersenne Twister".
-std::uniform_real_distribution<double> distribution(0, 1);
-auto U = bind(distribution, generator);
+std::uniform_real_distribution<real> distribution(0, 1);
+inline static real U() { return distribution(generator); }
+//auto U = bind(distribution, generator);
 
 
 /* PROTOTYPES */
@@ -89,6 +90,7 @@ void fateAndNextNode(const agent& ag, const real& now);
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
+const node& randomLCCNode();
 } // Namespace sim
 
 
@@ -123,6 +125,7 @@ real sim::i_t_pfx(const real& t) {
 }
 #endif
 
+#ifdef SOLVE_NUMERICALLY
 //real sim::didt(const real& i) { return  _g * (i * (C_1 * i + C_2)) / (i + _h); }
 real sim::didt(const real& i) {
 	const real _crowd_increment = crowdFactor - ((1.0 - i) * i * (crowdFactor - 1.0));
@@ -181,7 +184,7 @@ void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, cons
 		}
 	}
 }
-
+#endif
 
 void sim::checkinAsInf   (const agent& ag, const node& v) {
 	currentNode[ag] = v;
@@ -349,17 +352,18 @@ void sim::fateAndNextNode(const agent& ag, const real& now) {
 	}
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
+	using graph::Graph;
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
-	return graph::Graph::nextNodeForS(U());
+	return Graph::nextNodeForS(U());
 #else
-	return graph::Graph::g[randomInt(graph::Graph::n)];
+	return Graph::g[randomInt(graph::Graph::n)];
 #endif //PROTECTION_FX
 #else
 #ifdef PROTECTION_FX
-	return graph::Graph::nextNodeForS(_currNode, U());
+	return Graph::nextNodeForS(_currNode, U());
 #else
-	return g[_currNode][randomInt(g[_currNode].size())];
+	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
 #endif //PROTECTION_FX
 #endif //CLIQUE
 }
@@ -375,9 +379,12 @@ const graph::node& sim::nextNodeForInf(const node& _currNode) {
 #ifdef PROTECTION_FX
 	return Graph::nextNodeForI(_currNode, U());
 #else
-	return Graph::g[_currNode][randomInt(Graph::g[_currNode].size())];
+	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
 #endif //PROTECTION_FX
 #endif //CLIQUE
+}
+const graph::node& sim::randomLCCNode() { 
+	return graph::Graph::lcc[(size_t)floor(graph::Graph::lcc.size() * sim::U())]; 
 }
 void sim::nextJob(job& _j, real& _time) {
 	_j = schedule.top();
@@ -489,12 +496,22 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 			// * DISTRIBUTING THE AGENTS ACROSS THE NETWORK *
 			//Random distribution of the INFECTED agents:
+#ifdef CLIQUE
 			for (agent i = 0; i < itotal; ++i)
 				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
+#else
+			for (agent i = 0; i < itotal; ++i)
+				enterNodeAsInf(i, randomLCCNode(), TIME_ZERO);
+#endif
 
 			//Random distribution of the SUSCEPTIBLE agents:
+#ifdef CLIQUE
 			for (agent i = itotal; i < _numAgents; ++i)
 				enterNodeAsSus(i, randomInt(Graph::n), TIME_ZERO);
+#else
+			for (agent i = itotal; i < _numAgents; ++i)
+				enterNodeAsSus(i, randomLCCNode(), TIME_ZERO);
+#endif
 
 			// * MAIN LOOP *
 			bool timeLimit = true;

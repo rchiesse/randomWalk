@@ -4,6 +4,9 @@ using namespace graph;
 
 std::unordered_map<uint, uint> Graph::idMap;
 uint Graph::n;													// ----> Network size, i.e. the number of nodes.
+//std::random_device graph::_rd;
+//std::mt19937_64 graph::_generator(graph::_rd());				// ----> "mt" = "Mersenne Twister".
+//std::uniform_real_distribution<real> graph::_distribution(0, 1);
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
 vector<node> Graph::gs;
@@ -50,8 +53,8 @@ void Graph::setProbs() {
 #ifdef CLIQUE
 	_ps.resize((size_t)n + 1);
 	_pi.resize((size_t)n + 1);
-	vector<real>& probsS = _ps;	// ----> It is important to create the reference only AFTER _ps BEING RESIZED. The need for contiguous space may lead '_ps' to be reallocated in memory upon resizing, what in turn would invalidate any previously-created reference (as it would still be pointing to _ps's old address).
-	vector<real>& probsI = _pi;	// ----> It is important to create the reference only AFTER _pi BEING RESIZED. The need for contiguous space may lead '_pi' to be reallocated in memory upon resizing, what in turn would invalidate any previously-created reference (as it would still be pointing to _pi's old address).
+	vector<real>& probsS = _ps;	// ----> It is important to create the reference only AFTER _ps BEING RESIZED. The need for contiguous space may lead '_ps' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _ps's old address).
+	vector<real>& probsI = _pi;	// ----> It is important to create the reference only AFTER _pi BEING RESIZED. The need for contiguous space may lead '_pi' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _pi's old address).
 	real sumW = 0;
 	for (uint schema = 0; schema < probsS.size(); ++schema) {
 		probsS[schema] = sumW / (n - schema + sumW);
@@ -63,6 +66,8 @@ void Graph::setProbs() {
 		sumW += sim::Wi;
 	}
 #else
+	ps.resize(n);
+	pi.resize(n);
 	for (node v = 0; v < n; ++v) ps[v].resize((size_t)gs[v].size() + 1);
 	for (node v = 0; v < n; ++v) pi[v].resize((size_t)gi[v].size() + 1);
 
@@ -72,11 +77,13 @@ void Graph::setProbs() {
 		const real vDegree = (real)(gs[v].size());
 		real sumW = 0;
 		for (uint schema = 0; schema < vProbsS.size(); ++schema) {
+			if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
 			vProbsS[schema] = sumW / (vDegree - schema + sumW);
 			sumW += sim::Ws;
 		}
 		sumW = 0;
 		for (uint schema = 0; schema < vProbsI.size(); ++schema) {
+			if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
 			vProbsI[schema] = sumW / (vDegree - schema + sumW);
 			sumW += sim::Wi;
 		}
@@ -84,11 +91,16 @@ void Graph::setProbs() {
 #endif //#ifdef CLIQUE
 }
 
-#ifdef CLIQUE
 void Graph::resetSchema() {
+#ifdef CLIQUE
 	_schema_s = 0;
 	_schema_i = 0;
+#else
+	for (size_t i = 0; i < schema_s.size(); ++i) schema_s[i] = 0;
+	for (size_t i = 0; i < schema_i.size(); ++i) schema_i[i] = 0;
+#endif
 }
+#ifdef CLIQUE
 void Graph::resetAgentIdx() {
 	_myIdx_s = Graph::gs;
 	_myIdx_i = Graph::gi;
@@ -168,50 +180,62 @@ void Graph::updateNoS(const node& v) {
 	updateIBound(v);
 }
 void Graph::updateSBound(const node& v) {
+	//For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
 	const uint vNeighbSz = (uint)gs[v].size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW) {
-		//Not necessary but quite convenient REFERENCES (for both efficiency and readability):
+		//Convenient references (for both efficiency and readability):
 		const node& w = gs[v][idxW];
 		vector<node>& wNeighbors = gs[w];
-		uint& wSchema = schema_s[w];
-		uint& v_index_in_w = myForeignIdx_s[v][w];
-		const uint& w_index_in_u = myForeignIdx_s[w][wSchema];
+		const uint& wSchema = schema_s[w];
 
-		//Swap v and u. Note that u is the node at w's schema bound, to be swapped with v on w's neighborhood list. Also, v and u exchange their indexes and update their respective 'myForeignIdx' lists accordingly.
-		const node u = wNeighbors[wSchema];
-		wNeighbors[wSchema] = v;
-		wNeighbors[v_index_in_w] = u;
-		myForeignIdx_s[u][w_index_in_u] = v_index_in_w;
-		v_index_in_w = wSchema;
+		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' is exchanged with 'v' (and the reference would then be to 'v' instead of 'u').
+		if (u != v) {
+			const uint w_index_in_u = myForeignIdx_s[w][wSchema];
+			uint& u_index_in_w = myForeignIdx_s[u][w_index_in_u];
+			uint& v_index_in_w = myForeignIdx_s[v][idxW];
+#ifdef DEBUG
+			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
+			assertm(u_index_in_w == wSchema, message);
+#endif
+			std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
+			std::swap(myForeignIdx_s[w][v_index_in_w], myForeignIdx_s[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
+			std::swap(v_index_in_w, u_index_in_w);
+		}
 	}
 }
 void Graph::updateIBound(const node& v) {
+	//For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
 	const uint vNeighbSz = (uint)gi[v].size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW) {
-		//Not necessary but quite convenient REFERENCES (for both efficiency and readability):
+		//Convenient references (for both efficiency and readability):
 		const node& w = gi[v][idxW];
 		vector<node>& wNeighbors = gi[w];
-		uint& wSchema = schema_i[w];
-		uint& v_index_in_w = myForeignIdx_i[v][w];
-		const uint& w_index_in_u = myForeignIdx_i[w][wSchema];
+		const uint& wSchema = schema_i[w];
 
-		//Swap v and u. Note that u is the node at w's schema bound, to be swapped with v on w's neighborhood list. Also, v and u exchange their indexes and update their respective 'myForeignIdx' lists accordingly.
-		const node u = wNeighbors[wSchema];
-		wNeighbors[wSchema] = v;
-		wNeighbors[v_index_in_w] = u;
-		myForeignIdx_i[u][w_index_in_u] = v_index_in_w;
-		v_index_in_w = wSchema;
+		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' is exchanged with 'v' (and the reference would then be to 'v' instead of 'u').
+		if (u != v) {
+			const uint w_index_in_u = myForeignIdx_i[w][wSchema];
+			uint& u_index_in_w = myForeignIdx_i[u][w_index_in_u];
+			uint& v_index_in_w = myForeignIdx_i[v][idxW];
+#ifdef DEBUG
+			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
+			assertm(u_index_in_w == wSchema, message);
+#endif
+			std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
+			std::swap(myForeignIdx_i[w][v_index_in_w], myForeignIdx_i[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
+			std::swap(v_index_in_w, u_index_in_w);
+		}
 	}
 }
 void Graph::raiseSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
 	const uint vNeighbSz = (uint)neighbors.size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)
-		++schema[neighbors[idxW]];
+		++(schema[neighbors[idxW]]);
 }
 void Graph::lowSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
 	const uint vNeighbSz = (uint)neighbors.size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)
-		--schema[neighbors[idxW]];
+		--(schema[neighbors[idxW]]);
 }
 const node& Graph::nextNodeForS(const node& _currNode, const real& p) {
 	const uint& schema = schema_s[_currNode];
@@ -314,8 +338,12 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 			m++;
 #ifdef PROTECTION_FX
 #ifndef CLIQUE
-			myForeignIdx_s[idV1][gs[idV1].size() - 1] = gs[idV2].size() - 1;
-			myForeignIdx_i[idV1][gi[idV1].size() - 1] = gi[idV2].size() - 1;
+			myForeignIdx_s[idV1].emplace_back((uint)(gs[idV2].size() - 1));
+			myForeignIdx_s[idV2].emplace_back((uint)(gs[idV1].size() - 1));
+			myForeignIdx_i[idV1].emplace_back((uint)(gi[idV2].size() - 1));
+			myForeignIdx_i[idV2].emplace_back((uint)(gi[idV1].size() - 1));
+			//myForeignIdx_s[idV1][gs[idV1].size() - 1] = (uint)(gs[idV2].size() - 1);
+			//myForeignIdx_i[idV1][gi[idV1].size() - 1] = (uint)(gi[idV2].size() - 1);
 #endif
 #endif
 		}
@@ -351,9 +379,13 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 				gi[idV2].emplace_back(idV1);
 				m++;
 #ifndef CLIQUE
-				myForeignIdx_s[idV1][gs[idV1].size() - 1] = gs[idV2].size() - 1;
-				myForeignIdx_i[idV1][gi[idV1].size() - 1] = gi[idV2].size() - 1;
-#endif
+				//myForeignIdx_s[idV1][gs[idV1].size() - 1] = (uint)(gs[idV2].size() - 1);
+				//myForeignIdx_i[idV1][gi[idV1].size() - 1] = (uint)(gi[idV2].size() - 1);
+#endif			
+				myForeignIdx_s[idV1].emplace_back((uint)(gs[idV2].size() - 1));
+				myForeignIdx_s[idV2].emplace_back((uint)(gs[idV1].size() - 1));
+				myForeignIdx_i[idV1].emplace_back((uint)(gi[idV2].size() - 1));
+				myForeignIdx_i[idV2].emplace_back((uint)(gi[idV1].size() - 1));
 			}
 #else
 			if (find(g[idV1].begin(), g[idV1].end(), idV2) == g[idV1].end()) {
@@ -363,6 +395,33 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 		}
 #endif
 		}
+
+#ifdef DEBUG
+		// * ASSERTS BOTH myForeignIdx_s AND myForeignIdx_i ARE BUILT CORRECTLY *
+		{ // ----> Extra scope, so that inner variables are destroyed upon assertion.
+			uint errors = 0;
+			for (node v = 0; v < n; ++v) {
+				for (uint pos = 0; pos < gs[v].size(); ++pos) {
+					const node& u = gs[v][pos];
+					const uint v_index_in_u = myForeignIdx_s[v][pos];
+					if (v != gs[u][v_index_in_u]) { ++errors; }
+				}
+			}
+			assertm(errors == 0, "bad 'myForeignIdx_s': not all indexes map to node's actual position on 'gs'");
+			for (node v = 0; v < n; ++v) {
+				for (uint pos = 0; pos < gi[v].size(); ++pos) {
+					const node& u = gi[v][pos];
+					const uint v_index_in_u = myForeignIdx_i[v][pos];
+					if (v != gi[u][v_index_in_u]) { ++errors; }
+				}
+			}
+			assertm(errors == 0, "bad 'myForeignIdx_i': not all indexes map to node's actual position on 'gi'");
+		} 
+#endif //DEBUG
+#ifdef PROTECTION_FX
+		schema_s.resize(n);
+		schema_i.resize(n);
+#endif
 		sim::Reporter::stopChronometer("done");
 
 		averageDegree = 2 * (float)m / n;

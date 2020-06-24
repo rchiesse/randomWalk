@@ -6,14 +6,18 @@
 #include <sstream>
 #include <string>
 #include <fstream>
-#include <time.h>
-#include <chrono>
-#include <ctime>
 #include <vector>
 #include <unordered_map>
 #include <queue>
 #include <functional>	// bind()
 #include <random>		// uniform_real_distribution<>
+#include <cassert>
+
+// * DEBUG * 
+#define assertm(exp, msg) assert(((void)msg, exp))
+//#define DEBUG															// ----> Uncomment for debug purposes only.
+
+// ---------------------------//----------------------------- //
 
 // * BASE DIRECTORY * 
 #define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
@@ -33,8 +37,8 @@ namespace graph {
 // ---------------------------//----------------------------- //
 
 // * NETWORK *
-#define GENERATE_NETWORK												// ----> Undefine this directive to make the simulator read the network from a file.
-#define CLIQUE										
+//#define GENERATE_NETWORK												// ----> Undefine in order to read the network from a file.
+//#define CLIQUE										
 
 // ---------------------------//----------------------------- //
 
@@ -48,11 +52,11 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 // ---------------------------//----------------------------- //
 
 // * STATS * 
-#define OCCUPANCY
+//#define OCCUPANCY
 #define INFECTED_FRACTION
 //#define ESTIMATE_PROBS
-#define i_t_FROM_MODEL
-#define SOLVE_NUMERICALLY
+//#define i_t_FROM_MODEL
+//#define SOLVE_NUMERICALLY
 
 // ---------------------------//----------------------------- //
 
@@ -66,19 +70,21 @@ namespace sim{		// ----> Simulator's namespace.
 // * SIMULATION PARAMETERS *
 #ifdef CLIQUE
 static constexpr uint N = 1000;										// ----> Clique's size (in number of nodes)
+#else
+static constexpr uint N = 12008;										// ----> Network size
 #endif
 #ifdef PROTECTION_FX
-static constexpr real Ws  = 0.005;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
-static constexpr real Wi  = 0.005;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
+static constexpr real Ws  = 0.5;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
+static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
 #endif 
-static constexpr uint T					= 100000;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 1950;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 100;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 1000;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 4000;							
-static constexpr uint GRAN_NUM_AG		= 10;							
+static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
 static constexpr real TAU				= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. LAMBDA is the parameter of an exponentially-distributed random-number generator.
 static constexpr real GAMMA				= 0.019;						// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of agents initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
@@ -174,7 +180,7 @@ static constexpr uint OVERLOOK = (uint)(NUM_AGENTS * OVERLOOK_RATE);	// ----> De
 #ifdef CLIQUE
 static const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * N)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 #else
-const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * NTWK_SIZE)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
+const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * N)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 #endif
 
 #ifdef i_t_FROM_MODEL

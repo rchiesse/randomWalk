@@ -1,6 +1,9 @@
 #pragma once
 #include "defs.h"
 #include <iomanip>		// ----> std::setprecision()
+#include <time.h>
+#include <chrono>
+#include <ctime>
 
 namespace sim {		// ----> Simulator's namespace.
 class Reporter {

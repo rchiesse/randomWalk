@@ -1,77 +1,84 @@
 #pragma once
 #include "defs.h"
+#include <algorithm>	// swap(int, int)
 
 #define READ_NTWK_FROM_FILE
 //#define SERIALIZE
 //#define DE_SERIALIZE
 #define COMMENTARY '#'
 
-#define NWTK_LABEL "Clique"
-#define SHORT_LABEL "CL"
+//#define NWTK_LABEL "Clique"
+//#define SHORT_LABEL "CL"
 
 //#define NTWK_SIZE 55
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\grafoDeTestes.txt"), 55
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\grafoDeTestes.txt"), 55
 //#define NWTK_LABEL "Ronald"
 //#define SHORT_LABEL "ron"
 
 //#define NTWK_SIZE 4039
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\facebook_combined.txt"), 4039
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\facebook_combined.txt"), 4039
 //#define NWTK_LABEL "Fb"
 //#define SHORT_LABEL "fb"
 
-//#define NTWK_SIZE 12008
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
-//#define NWTK_LABEL "HepPh"
-//#define SHORT_LABEL "hep"
+#define NTWK_SIZE 12008
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
+#define NWTK_LABEL "HepPh"
+#define SHORT_LABEL "hep"
 
 //#define NTWK_SIZE 15233
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
 //#define NWTK_LABEL "net"
 //#define SHORT_LABEL "net"
 
 //#define NTWK_SIZE 18772
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\CA-AstroPh.txt"), 18772
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-AstroPh.txt"), 18772
 //#define NWTK_LABEL "AstroPh"
 //#define SHORT_LABEL "astro"
 
 //#define NTWK_SIZE 23133
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\CA-CondMat.txt"), 23133
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-CondMat.txt"), 23133
 //#define NWTK_LABEL "CondMat"
 //#define SHORT_LABEL "cmat"
 
 //#define NTWK_SIZE 36692
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\Email-Enron.txt"), 36692
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Email-Enron.txt"), 36692
 //#define NWTK_LABEL "Enron"
 //#define SHORT_LABEL "enron"
 
 //#define NTWK_SIZE 58228
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\Brightkite_edges.txt"), 58228
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Brightkite_edges.txt"), 58228
 //#define NWTK_LABEL "Brightkite"
 //#define SHORT_LABEL "bk"
 
 //#define NTWK_SIZE 196591
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\Gowalla_edges.txt"), 196591
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Gowalla_edges.txt"), 196591
 //#define NWTK_LABEL "Gowalla"
 //#define SHORT_LABEL "gw"
 
 //#define NTWK_SIZE 317080
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\com-dblp.ungraph.txt"), 317080
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-dblp.ungraph.txt"), 317080
 //#define NWTK_LABEL "dblp"
 //#define SHORT_LABEL "dblp"
 
 //#define NTWK_SIZE 334863
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\com-amazon.ungraph.txt"), 334863
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-amazon.ungraph.txt"), 334863
 //#define NWTK_LABEL "amazon"
 //#define SHORT_LABEL "amz"
 
 //#define NTWK_SIZE 1696415
-//#define SOURCE_FILE string(string(EXE_DIR) + "\\redes\\as-skitter.txt"), 1696415
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\as-skitter.txt"), 1696415
 //#define NWTK_LABEL "as-skitter"
 //#define SHORT_LABEL "as"
 
 namespace graph {
 	using std::vector; using std::string; using std::cout; using std::endl;
-class Graph {
+	
+	// Uniform(0,1) random-number generator
+	//static std::random_device _rd;
+	//static std::mt19937_64 _generator(_rd());								// ----> 64-bit Mersenne-Twister.
+	//static std::uniform_real_distribution<real> _distribution(0, 1);
+	//inline static real U();
+static class Graph {
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
@@ -86,6 +93,8 @@ public:
 #ifdef PROTECTION_FX
 	static vector<vector<node>> gs;									// ----> The graph, as an edge list, with nodes varying their index according to the susceptible agents' random walk.
 	static vector<vector<node>> gi;									// ----> The graph, as an edge list, with nodes varying their index according to the infected agents' random walk.
+	//static vector<vector<node>> gs_safe;
+
 #else 
 	static vector<vector<node>> g;									// ----> The graph, as an edge list.
 #endif // PROTECTION_FX
@@ -118,8 +127,6 @@ public:
 #endif
 	static void readGraph(const string& fileName, const uint& totalNodes);
 #endif // CLIQUE
-
-	static const uint randomInt(const uint& openRange, const double& base) { return (uint)(floor(openRange * base)); }
 #ifdef PROTECTION_FX
 private:
 #ifdef CLIQUE
@@ -164,8 +171,8 @@ private:
 	static void raiseSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 	static void lowSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 #endif
-	static void updateSBound	(const node& newBound);
-	static void updateIBound	(const node& newBound);
-#endif //PROTECTION_FX	
+	static void updateSBound	(const node& newBound);				// ----> SUSCEPTIBLES:	For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
+	static void updateIBound	(const node& newBound);				// ----> INFECTIVES:	For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
+#endif //PROTECTION_FX
 };
 }

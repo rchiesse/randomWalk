@@ -19,6 +19,10 @@ vector<node> Graph::g;
 #ifdef PROTECTION_FX
 vector<vector<node>> Graph::gs;									// ----> The graph, as an edge list.
 vector<vector<node>> Graph::gi;									// ----> The graph, as an edge list.
+vector<vector<node>> Graph::gs_safe;
+vector<vector<node>> Graph::gs_unsafe;
+vector<vector<node>> Graph::gi_safe;
+vector<vector<node>> Graph::gi_unsafe;
 #else
 vector<vector<node>> Graph::g;									// ----> The graph, as an edge list.
 #endif //PROTECTION_FX
@@ -77,13 +81,13 @@ void Graph::setProbs() {
 		const real vDegree = (real)(gs[v].size());
 		real sumW = 0;
 		for (uint schema = 0; schema < vProbsS.size(); ++schema) {
-			if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
+			//if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
 			vProbsS[schema] = sumW / (vDegree - schema + sumW);
 			sumW += sim::Ws;
 		}
 		sumW = 0;
 		for (uint schema = 0; schema < vProbsI.size(); ++schema) {
-			if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
+			//if ((vDegree - schema + sumW) == 0) std::cout << "v=" << v << ", d=" << vDegree << ", schema=" << schema << ", sumW=" << sumW << '\n';
 			vProbsI[schema] = sumW / (vDegree - schema + sumW);
 			sumW += sim::Wi;
 		}
@@ -251,7 +255,7 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #endif //PROTECTION_FX
 
 #ifndef CLIQUE
-void Graph::readGraph(const string& fileName, const uint& totalNodes) {
+void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	string serialFileName = string(EXE_DIR) + string("\\serializadas\\") + string(NWTK_LABEL) + string(".txt");
 
 	bool buildNetwork = false; // ----> TRUE if the network still needs to be built; FALSE otherwise (serialized file).
@@ -286,6 +290,11 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 #ifdef PROTECTION_FX
 		gs.resize(totalNodes);
 		gi.resize(totalNodes);
+
+		gs_safe.resize	(totalNodes); // An extra spot for each node (the last one) will be later added, in order to store the actual size of the list (0 initially), which will often differ from the container size.
+		gs_unsafe.resize(totalNodes); // An extra spot for each node (the last one) will be later added, in order to store the actual size of the list (0 initially), which will often differ from the container size.
+		gi_safe.resize	(totalNodes); // An extra spot for each node (the last one) will be later added, in order to store the actual size of the list (0 initially), which will often differ from the container size.
+		gi_unsafe.resize(totalNodes); // An extra spot for each node (the last one) will be later added, in order to store the actual size of the list (0 initially), which will often differ from the container size.
 #ifndef CLIQUE
 		myForeignIdx_s.resize(totalNodes);
 		myForeignIdx_i.resize(totalNodes);
@@ -314,11 +323,11 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 		ss >> idV2;
 
 		if (idMap.count(idV1) == 0) {
-			n++;
+			++n;
 			idMap[idV1] = sequentialIDs++;
 		}
 		if (idMap.count(idV2) == 0) {
-			n++;
+			++n;
 			idMap[idV2] = sequentialIDs++;
 		}
 		idV1 = idMap[idV1];
@@ -331,6 +340,15 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 			gs[idV2].emplace_back(idV1);
 			gi[idV1].emplace_back(idV2);
 			gi[idV2].emplace_back(idV1);
+			
+			gs_safe[idV1].emplace_back(idV2);
+			//++(gs_safe[idV1][LIST_SIZE_POS]);
+			gs_safe[idV2].emplace_back(idV1);
+			//++(gs_safe[idV2][LIST_SIZE_POS]);
+			gi_safe[idV1].emplace_back(idV2);
+			//++(gi_safe[idV1][LIST_SIZE_POS]);
+			gi_safe[idV2].emplace_back(idV1);
+			//++(gi_safe[idV2][LIST_SIZE_POS]);
 #else
 			g[idV1].emplace_back(idV2);
 			g[idV2].emplace_back(idV1);
@@ -338,12 +356,10 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 			m++;
 #ifdef PROTECTION_FX
 #ifndef CLIQUE
-			myForeignIdx_s[idV1].emplace_back((uint)(gs[idV2].size() - 1));
-			myForeignIdx_s[idV2].emplace_back((uint)(gs[idV1].size() - 1));
-			myForeignIdx_i[idV1].emplace_back((uint)(gi[idV2].size() - 1));
-			myForeignIdx_i[idV2].emplace_back((uint)(gi[idV1].size() - 1));
-			//myForeignIdx_s[idV1][gs[idV1].size() - 1] = (uint)(gs[idV2].size() - 1);
-			//myForeignIdx_i[idV1][gi[idV1].size() - 1] = (uint)(gi[idV2].size() - 1);
+			myForeignIdx_s[idV1].emplace_back((uint)(gs_safe[idV2].size() - 1));
+			myForeignIdx_s[idV2].emplace_back((uint)(gs_safe[idV1].size() - 1));
+			myForeignIdx_i[idV1].emplace_back((uint)(gi_safe[idV2].size() - 1));
+			myForeignIdx_i[idV2].emplace_back((uint)(gi_safe[idV1].size() - 1));
 #endif
 #endif
 		}
@@ -354,11 +370,11 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 
 			//IDs' translation:
 			if (idMap.count(idV1) == 0) {
-				n++;
+				++n;
 				idMap[idV1] = sequentialIDs++;
 			}
 			if (idMap.count(idV2) == 0) {
-				n++;
+				++n;
 				idMap[idV2] = sequentialIDs++;
 			}
 			idV1 = idMap[idV1];
@@ -372,20 +388,27 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 
 			// Creates an edge between idV1 and idV2 if it still does not exist.
 #ifdef PROTECTION_FX
-			if (find(gs[idV1].begin(), gs[idV1].end(), idV2) == gs[idV1].end()) {
+			if (find(gs_safe[idV1].begin(), gs_safe[idV1].end(), idV2) == gs_safe[idV1].end()) {
 				gs[idV1].emplace_back(idV2);
 				gs[idV2].emplace_back(idV1);
 				gi[idV1].emplace_back(idV2);
 				gi[idV2].emplace_back(idV1);
+
+				gs_safe[idV1].emplace_back(idV2);
+				//++(gs_safe[idV1][LIST_SIZE_POS]);
+				gs_safe[idV2].emplace_back(idV1);
+				//++(gs_safe[idV2][LIST_SIZE_POS]);
+				gi_safe[idV1].emplace_back(idV2);
+				//++(gi_safe[idV1][LIST_SIZE_POS]);
+				gi_safe[idV2].emplace_back(idV1);
+				//++(gi_safe[idV2][LIST_SIZE_POS]);
 				m++;
 #ifndef CLIQUE
-				//myForeignIdx_s[idV1][gs[idV1].size() - 1] = (uint)(gs[idV2].size() - 1);
-				//myForeignIdx_i[idV1][gi[idV1].size() - 1] = (uint)(gi[idV2].size() - 1);
+				myForeignIdx_s[idV1].emplace_back((uint)(gs_safe[idV2].size() - 1));
+				myForeignIdx_s[idV2].emplace_back((uint)(gs_safe[idV1].size() - 1));
+				myForeignIdx_i[idV1].emplace_back((uint)(gi_safe[idV2].size() - 1));
+				myForeignIdx_i[idV2].emplace_back((uint)(gi_safe[idV1].size() - 1));
 #endif			
-				myForeignIdx_s[idV1].emplace_back((uint)(gs[idV2].size() - 1));
-				myForeignIdx_s[idV2].emplace_back((uint)(gs[idV1].size() - 1));
-				myForeignIdx_i[idV1].emplace_back((uint)(gi[idV2].size() - 1));
-				myForeignIdx_i[idV2].emplace_back((uint)(gi[idV1].size() - 1));
 			}
 #else
 			if (find(g[idV1].begin(), g[idV1].end(), idV2) == g[idV1].end()) {
@@ -421,6 +444,13 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 #ifdef PROTECTION_FX
 		schema_s.resize(n);
 		schema_i.resize(n);
+
+		gs_unsafe = gs_safe;
+		gi_unsafe = gi_safe;
+		for (size_t i = 0; i < totalNodes; ++i) gs_safe[i].emplace_back((uint)(gs_safe[i].size()));
+		for (size_t i = 0; i < totalNodes; ++i) gi_safe[i].emplace_back((uint)(gs_safe[i].size()));
+		for (size_t i = 0; i < totalNodes; ++i) gs_unsafe[i].emplace_back(0);
+		for (size_t i = 0; i < totalNodes; ++i) gi_unsafe[i].emplace_back(0);
 #endif
 		sim::Reporter::stopChronometer("done");
 
@@ -444,7 +474,7 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 	}
 #endif
 #ifdef PROTECTION_FX
-	const vector<vector<node>>& g = gs;
+	const vector<vector<node>>& g = gs_safe;
 #endif
 	smallestDegree = (uint)g[0].size();
 	largestDegree = (uint)g[0].size();
@@ -498,6 +528,6 @@ void Graph::readGraph(const string& fileName, const uint& totalNodes) {
 	sim::Reporter::networkInfo(n, m, averageDegree, largestDegree, smallestDegree, lccSize);
 
 	if (buildNetwork && selfLoops > 0)
-		cout << "\t ---> Removed self-loops: " << selfLoops << endl << endl;
+		cout << "\t ---> Removed self-loops: " << selfLoops << "\n\n";
 }
 #endif // CLIQUE

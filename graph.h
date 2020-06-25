@@ -73,12 +73,8 @@
 namespace graph {
 	using std::vector; using std::string; using std::cout; using std::endl;
 	
-	// Uniform(0,1) random-number generator
-	//static std::random_device _rd;
-	//static std::mt19937_64 _generator(_rd());								// ----> 64-bit Mersenne-Twister.
-	//static std::uniform_real_distribution<real> _distribution(0, 1);
-	//inline static real U();
-static class Graph {
+	
+class Graph {
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
@@ -93,7 +89,11 @@ public:
 #ifdef PROTECTION_FX
 	static vector<vector<node>> gs;									// ----> The graph, as an edge list, with nodes varying their index according to the susceptible agents' random walk.
 	static vector<vector<node>> gi;									// ----> The graph, as an edge list, with nodes varying their index according to the infected agents' random walk.
-	//static vector<vector<node>> gs_safe;
+	
+	static vector<vector<node>> gs_safe;
+	static vector<vector<node>> gs_unsafe;
+	static vector<vector<node>> gi_safe;
+	static vector<vector<node>> gi_unsafe;
 
 #else 
 	static vector<vector<node>> g;									// ----> The graph, as an edge list.
@@ -125,10 +125,11 @@ public:
 		}
 	};
 #endif
-	static void readGraph(const string& fileName, const uint& totalNodes);
+	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
 #ifdef PROTECTION_FX
 private:
+	static const uint LIST_SIZE_POS = 0;
 #ifdef CLIQUE
 	static uint _schema_s;
 	static uint _schema_i;

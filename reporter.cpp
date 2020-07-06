@@ -8,8 +8,8 @@ std::vector<clock_t> Reporter::timeScope;
 
 void Reporter::highlight(const std::string& message) {
 	using std::cout; using std::endl;
-	cout << endl << endl << endl << "**************************************************************";
-	cout << message << endl;
+	cout << "\n\n\n" << "**************************************************************";
+	cout << message << "\n";
 }
 void Reporter::tell(const std::string& message) {
 	std::cout << message;

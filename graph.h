@@ -2,14 +2,18 @@
 #include "defs.h"
 #include <algorithm>	// swap(int, int)
 
-#define READ_NTWK_FROM_FILE
 //#define SERIALIZE
 //#define DE_SERIALIZE
 #define COMMENTARY '#'
 
 //#define NWTK_LABEL "Clique"
 //#define SHORT_LABEL "CL"
-
+#ifdef GNP
+#define NTWK_SIZE 12008
+#define SOURCE_FILE "", NTWK_SIZE
+#define NWTK_LABEL "Gnp"
+#define SHORT_LABEL "gnp"
+#endif
 //#define NTWK_SIZE 55
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\grafoDeTestes.txt"), 55
 //#define NWTK_LABEL "Ronald"
@@ -89,12 +93,6 @@ public:
 #ifdef PROTECTION_FX
 	static vector<vector<node>> gs;									// ----> The graph, as an edge list, with nodes varying their index according to the susceptible agents' random walk.
 	static vector<vector<node>> gi;									// ----> The graph, as an edge list, with nodes varying their index according to the infected agents' random walk.
-	
-	static vector<vector<node>> gs_safe;
-	static vector<vector<node>> gs_unsafe;
-	static vector<vector<node>> gi_safe;
-	static vector<vector<node>> gi_unsafe;
-
 #else 
 	static vector<vector<node>> g;									// ----> The graph, as an edge list.
 #endif // PROTECTION_FX
@@ -129,7 +127,8 @@ public:
 #endif // CLIQUE
 #ifdef PROTECTION_FX
 private:
-	static const uint LIST_SIZE_POS = 0;
+	enum class direction{raise, lower};
+	//static const uint LIST_SIZE_POS = 0;
 #ifdef CLIQUE
 	static uint _schema_s;
 	static uint _schema_i;
@@ -157,9 +156,9 @@ public:
 	static const node& nextNodeForI(const node& _currNode, const real& p);
 #endif
 
-	//Updates node v's neighbors' schema, in the sense that v wasn't hosting any infected agent, but now one of such agents has just arrived at v. It means v is no longer a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes smaller.
+	//Updates node v's neighbors' schema, to reflect that v wasn't hosting any infected agent, and now one of such agents has just arrived at v. It means v is no longer a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes smaller.
 	static void updateHasI	(const node& v);
-	//Updates node v's neighbors' schema, in the sense that v was hosting an infected agent, but now none of such agents is located at v. It means v is now a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes larger.
+	//Updates node v's neighbors' schema, to reflect that v was hosting an infected agent, and now none of such agents is located at v. It means v is now a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes larger.
 	static void updateNoI	(const node& v);
 	static void updateHasS	(const node& v);
 	static void updateNoS	(const node& v);
@@ -170,10 +169,9 @@ private:
 	static void lowSchema	(uint& _schema);
 #else
 	static void raiseSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
-	static void lowSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
+	static void lowerSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 #endif
-	static void updateSBound	(const node& newBound);				// ----> SUSCEPTIBLES:	For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
-	static void updateIBound	(const node& newBound);				// ----> INFECTIVES:	For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
+	static void updateNeighborsBound(const node&, vector<vector<node>>& g, vector<vector<uint>>& foreignIdx, const vector<uint>& schema);
 #endif //PROTECTION_FX
 };
 }

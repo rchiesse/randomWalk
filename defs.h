@@ -37,8 +37,9 @@ namespace graph {
 // ---------------------------//----------------------------- //
 
 // * NETWORK *
-//#define GENERATE_NETWORK												// ----> Undefine in order to read the network from a file.
-//#define CLIQUE										
+//#define CLIQUE
+#define READ_NTWK_FROM_FILE
+//#define GNP
 
 // ---------------------------//----------------------------- //
 
@@ -55,7 +56,7 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 //#define OCCUPANCY
 #define INFECTED_FRACTION
 //#define ESTIMATE_PROBS
-//#define i_t_FROM_MODEL
+#define i_t_FROM_MODEL
 //#define SOLVE_NUMERICALLY
 
 // ---------------------------//----------------------------- //
@@ -68,17 +69,13 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 namespace sim{		// ----> Simulator's namespace.
 
 // * SIMULATION PARAMETERS *
-#ifdef CLIQUE
-static constexpr uint N = 1000;										// ----> Clique's size (in number of nodes)
-#else
-static constexpr uint N = 12008;										// ----> Network size
-#endif
+static constexpr uint N = 12008;											// ----> Network size
 #ifdef PROTECTION_FX
-static constexpr real Ws  = 0.5;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
-static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
+static constexpr real Ws  = 0.7;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
+static constexpr real Wi  = 0.7;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
 #endif 
-static constexpr uint T					= 100;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 1000;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 20000;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 600;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 4000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 

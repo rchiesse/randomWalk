@@ -98,7 +98,7 @@ const node& randomLCCNode();
 int main() {
 	sim::Reporter::logTimestamp("Simulation requested.");
 	sim::Reporter::startChronometer();
-#ifndef GENERATE_NETWORK
+#ifndef CLIQUE
 	graph::Graph::readGraph(SOURCE_FILE);
 #endif
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);

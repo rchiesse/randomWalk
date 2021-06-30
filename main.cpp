@@ -90,7 +90,9 @@ void fateAndNextNode(const agent& ag, const real& now);
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
+#ifndef CLIQUE
 const node& randomLCCNode();
+#endif
 } // Namespace sim
 
 
@@ -209,7 +211,7 @@ void sim::checkinAsSus   (const agent& ag, const node& v) {
 void sim::checkoutAsSus  (const agent& ag, const node& v) {
 	vector<agent>& list = sAgents[v];
 	uint& lastPos = list[ELEMS];
-	if (lastPos > 1) {	// ----> "will there be still any susceptible agent at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent comes to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
+	if (lastPos > 1) {	// ----> "Is it still going to remain any susceptible agent at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
 		list[indexWithinNode[ag]] = list[lastPos];
 		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
 	}
@@ -218,7 +220,7 @@ void sim::checkoutAsSus  (const agent& ag, const node& v) {
 void sim::checkoutAsInf  (const agent& ag, const node& v) {
 	vector<agent>& list = iAgents[v];
 	uint& lastPos = list[ELEMS];
-	if (lastPos > 1) {	// ----> "will there be still any  infected  agent at 'v' once 'ag' has been removed?".  If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent comes to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
+	if (lastPos > 1) {	// ----> "Is it still going to remain any infected agent at 'v' once 'ag' has been removed?".  If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
 		list[indexWithinNode[ag]] = list[lastPos];
 		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
 	}
@@ -335,6 +337,8 @@ void sim::fateAndNextNode(const agent& ag, const real& now) {
 	if (exposure[ag] > 0) 
 		stat::Stats::totalExposition += exposure[ag]; 
 #endif
+	//TESTE!!!
+	//if(false){
 	if ((exposure[ag] > 0) && (EXPTau() < exposure[ag])) {
 		isInfected[ag] = true;
 		--stotal;
@@ -355,7 +359,11 @@ const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
+#ifdef PROPORTIONAL
+	return Graph::nextNodeForS(U(), itotal, stotal);
+#else
 	return Graph::nextNodeForS(U());
+#endif //PROPORTIONAL
 #else
 	return Graph::g[randomInt(graph::Graph::n)];
 #endif //PROTECTION_FX
@@ -371,7 +379,11 @@ const graph::node& sim::nextNodeForInf(const node& _currNode) {
 	using graph::Graph;
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
+#ifdef PROPORTIONAL
+	return Graph::nextNodeForI(U(), itotal, stotal);
+#else
 	return Graph::nextNodeForI(U());
+#endif //PROPORTIONAL
 #else
 	return Graph::g[randomInt(Graph::n)];
 #endif //PROTECTION_FX
@@ -383,9 +395,11 @@ const graph::node& sim::nextNodeForInf(const node& _currNode) {
 #endif //PROTECTION_FX
 #endif //CLIQUE
 }
+#ifndef CLIQUE
 const graph::node& sim::randomLCCNode() { 
 	return graph::Graph::lcc[(size_t)floor(graph::Graph::lcc.size() * sim::U())]; 
 }
+#endif
 void sim::nextJob(job& _j, real& _time) {
 	_j = schedule.top();
 	schedule.pop();
@@ -468,9 +482,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Reporter::startChronometer("\n\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(ROUNDS, T, _numAgents, itotal, Graph::n, TAU, GAMMA, LAMBDA, Ws, Wi);
 #ifdef PROTECTION_FX
-		long real s1 = 0, s2 = 0;
-		stat::Stats::roots(C13, C14, C15, s1, s2);
-		std::cout << "\ti_inf_pfx from di/dt = 0: " << ((s1 > 0 && s1 < 1)? s1 : s2) << '\n';
+		//long real s1 = 0, s2 = 0;
+		//stat::Stats::roots(C13, C14, C15, s1, s2);
+		//std::cout << "\ti_inf_pfx from di/dt = 0: " << ((s1 > 0 && s1 < 1)? s1 : s2) << '\n';
 #endif
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
@@ -553,7 +567,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Reporter::minMaxOccInfo(_min, _max, whereMin, whereMax, Graph::n, _numAgents);
 		real _totalTime = 0;
 		for (uint i = 0; i < totalSimTime.size(); ++i)
-			_totalTime += totalSimTime[i];
+			_totalTime += totalSimTime[i];	// ----> TODO: Verify whether it is the case of using an accumulator here instead of a for-loop. 
 		Stats::computeOcc(_totalTime);
 		Stats::writeToFile(stat::streamType::occupancy , Ws, Wi, _numAgents);
 		Stats::endStream  (stat::streamType::occupancy);

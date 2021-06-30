@@ -6,10 +6,10 @@
 //#define DE_SERIALIZE
 #define COMMENTARY '#'
 
-//#define NWTK_LABEL "Clique"
-//#define SHORT_LABEL "CL"
+#define NWTK_LABEL "Clique"
+#define SHORT_LABEL "CL"
 #ifdef GNP
-#define NTWK_SIZE 12008
+#define NTWK_SIZE 23133
 #define SOURCE_FILE "", NTWK_SIZE
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
@@ -24,10 +24,10 @@
 //#define NWTK_LABEL "Fb"
 //#define SHORT_LABEL "fb"
 
-#define NTWK_SIZE 12008
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
-#define NWTK_LABEL "HepPh"
-#define SHORT_LABEL "hep"
+//#define NTWK_SIZE 12008
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
+//#define NWTK_LABEL "HepPh"
+//#define SHORT_LABEL "hep"
 
 //#define NTWK_SIZE 15233
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
@@ -149,12 +149,17 @@ public:
 	static void resetAgentIdx();
 	static void setProbs();
 #ifdef CLIQUE
+#ifdef PROPORTIONAL
+	static const node& nextNodeForS(const real& randBase, const real& itotal, const real& stotal);
+	static const node& nextNodeForI(const real& randBase, const real& itotal, const real& stotal);
+#else
 	static const node& nextNodeForS(const real& randBase);
 	static const node& nextNodeForI(const real& randBase);
+#endif //PROPORTIONAL
 #else
 	static const node& nextNodeForS(const node& _currNode, const real& p);
 	static const node& nextNodeForI(const node& _currNode, const real& p);
-#endif
+#endif //CLIQUE
 
 	//Updates node v's neighbors' schema, to reflect that v wasn't hosting any infected agent, and now one of such agents has just arrived at v. It means v is no longer a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes smaller.
 	static void updateHasI	(const node& v);
@@ -165,13 +170,15 @@ public:
 
 private:
 #ifdef CLIQUE
+	static void updateSBound(const node& v);
+	static void updateIBound(const node& v);
 	static void raiseSchema (uint& _schema);
-	static void lowSchema	(uint& _schema);
+	static void lowerSchema	(uint& _schema);
 #else
 	static void raiseSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 	static void lowerSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
-#endif
 	static void updateNeighborsBound(const node&, vector<vector<node>>& g, vector<vector<uint>>& foreignIdx, const vector<uint>& schema);
+#endif //CLIQUE
 #endif //PROTECTION_FX
 };
 }

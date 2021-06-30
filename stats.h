@@ -89,7 +89,7 @@ public:
 
 			updateInfOccRaised(_time, _A, _I, _v);
 
-	   and this could in turn lead to REALLY "HARD-TO-DEBUG" ERRORS.
+	   and this could in turn lead to REALLY-HARD-TO-DEBUG ERRORS.
 
 	   **OBS: "= delete" since C++11.  */
 	template <class arg_UINT, class arg_NODE>

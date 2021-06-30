@@ -100,14 +100,14 @@ void Graph::resetAgentIdx() {
 	_myIdx_i = Graph::gi;
 }
 void Graph::raiseSchema	(uint& _schema) { ++_schema; }
-void Graph::lowSchema	(uint& _schema) { --_schema; }
+void Graph::lowerSchema	(uint& _schema) { --_schema; }
 void Graph::updateHasI(const node& v) {
 	updateSBound(v);
 	raiseSchema(_schema_s);
 }
 void Graph::updateNoI(const node& v) {
 	//Opposite to 'updateHasI()', here we must first modify v's neighbors' schema and only then update their respective bounds:
-	lowSchema(_schema_s);
+	lowerSchema(_schema_s);
 	updateSBound(v);
 }
 void Graph::updateHasS(const node& v) {
@@ -116,7 +116,7 @@ void Graph::updateHasS(const node& v) {
 }
 void Graph::updateNoS(const node& v) {
 	//Opposite to 'updateHasS()', here we must first modify v's neighbors' schema and only then update their respective bounds:
-	lowSchema(_schema_i);
+	lowerSchema(_schema_i);
 	updateIBound(v);
 }
 void Graph::updateSBound(const node& v) {
@@ -137,16 +137,24 @@ void Graph::updateIBound(const node& v) {
 	_myIdx_i[u] = vIdx;
 	vIdx = _schema_i;
 }
+#ifdef PROPORTIONAL
+const node& Graph::nextNodeForS(const real& randBase, const real& itotal, const real& stotal) {
+	real ps = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_s;
+	ps /= (ps + (Graph::n - _schema_s));
+#else
 const node& Graph::nextNodeForS(const real& randBase) {
-	//return (randBase < _ps[_schema_s]) ? g[sim::randomInt(_schema_s)] : g[sim::randomInt(n - _schema_s) + _schema_s];
 	const real& ps = _ps[_schema_s];
-	//return (randBase < ps) ? g[(uint)(floor((randBase * _schema_s) / ps))] : g[(uint)(floor((randBase * g.size()) / (1.0 - ps)))];
-	return (randBase < ps) ? gs[(uint)(floor((randBase * _schema_s) / ps))] : gs[(uint)floor(  randBase * (gs.size() - _schema_s)  ) + _schema_s];
+#endif
+	return (randBase < ps) ? gs[(size_t)(floor((randBase * _schema_s) / ps))] : gs[(size_t)floor(  randBase * (gs.size() - _schema_s)  ) + _schema_s];
 }
+#ifdef PROPORTIONAL
+const node& Graph::nextNodeForI(const real& randBase, const real& itotal, const real& stotal) {
+	real pi = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_i;
+	pi /= (pi + (Graph::n - _schema_s));
+#else
 const node& Graph::nextNodeForI(const real& randBase) {
-	//return (randBase < _pi[_schema_i]) ? g[sim::randomInt(_schema_i)] : g[sim::randomInt(n - _schema_i) + _schema_i];
 	const real& pi = _pi[_schema_i];
-	//return (randBase < pi) ? g[(uint)(floor((randBase * _schema_i) / pi))] : g[(uint)(floor((randBase * g.size()) / (1.0 - pi)))];
+#endif
 	return (randBase < pi) ? gi[(uint)(floor((randBase * _schema_i) / pi))] : gi[(uint)floor(  randBase * (gi.size() - _schema_i) ) + _schema_i];
 }
 
@@ -180,7 +188,17 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 		vector<node>& wNeighbors = g[w];
 		const uint wSchema = schema[w];
 		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' is exchanged with 'v' (and the reference would then be to 'v' instead of 'u').
+#ifdef AUTO_RELATION
+		if (w == v && u != v) {
+			const uint w_index_in_u = foreignIdx[w][wSchema];
+			std::swap(wNeighbors[idxW], wNeighbors[wSchema]);
+			foreignIdx[u][w_index_in_u] = (uint)idxW;
+			std::swap(foreignIdx[w][idxW], foreignIdx[w][wSchema]);
+		}
+		else if (u != v && u != w) {
+#else
 		if (u != v) {
+#endif
 			const uint w_index_in_u = foreignIdx[w][wSchema];
 			uint& u_index_in_w		= foreignIdx[u][w_index_in_u];
 			uint& v_index_in_w		= foreignIdx[v][idxW];
@@ -303,7 +321,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	std::mt19937_64 _gen(_rd());										// ----> Generator.
 	std::uniform_real_distribution<real> _U(0, 1);
 
-	constexpr real _avDegree = 19.735;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
+	constexpr real _avDegree = 8.07842;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
 	constexpr uint _n = sim::N;
 	constexpr real _p = _avDegree / (_n - 1);
 	const real log_q  = log(1 - _p);
@@ -567,7 +585,47 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 
 	sim::Reporter::networkInfo(n, m, averageDegree, largestDegree, smallestDegree, lccSize);
 
+	//TESTE!!!
+	//std::ofstream graphData;
+	//std::stringstream tt;
+	//tt.str("");			// ----> Clear content.
+	//tt << EXE_DIR << "/stats/graphData_" << NWTK_LABEL << ".csv";
+	//string dataFile = tt.str();
+	//graphData.open(dataFile);
+	//graphData.seekp(0, std::ios::end);
+	//if (graphData.tellp() == 0)
+	//	cout << "new";
+	//else
+	//	cout << "appending...";
+	////Header
+	//graphData << "node\td(v)\td(v)/2m\tm" << std::endl;
+	////Data:
+	//for (size_t i = 0; i < g.size(); ++i){
+	//	graphData 
+	//		<< i << "\t"
+	//		<< g[i].size() + 1 << "\t"
+	//		<< ((real)(g[i].size() + 1))/(real)((2*m)+n) << "\t"
+	//		<< m
+	//		<< std::endl;
+	//}
+	//graphData.close();
+
 	if (selfLoops > 0)
-		cout << "\t ---> Removed self-loops: " << selfLoops << "\n\n";
+		cout << "\t ---> " << selfLoops << " native self-loops identified and removed." <<  "\n";
+
+#ifdef PROTECTION_FX
+#ifndef CLIQUE
+#ifdef AUTO_RELATION
+	for (node v = 0; v < n; ++v) gs[v].emplace_back(v);
+	for (node v = 0; v < n; ++v) gi[v].emplace_back(v);
+	m += n;
+
+	for (node v = 0; v < n; ++v) myForeignIdx_s[v].emplace_back((uint)(gs[v].size() - 1));
+	for (node v = 0; v < n; ++v) myForeignIdx_i[v].emplace_back((uint)(gi[v].size() - 1));
+	
+	cout << "\t ---> PFx self-loop added for each node. Updated m = " << m << "\n\n";
+#endif //AUTO_RELATION
+#endif //CLIQUE
+#endif //PROTECTION_FX
 }
 #endif // CLIQUE

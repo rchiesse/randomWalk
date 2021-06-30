@@ -253,18 +253,20 @@ void Stats::roots(const long real& a, const long real& b, const long real& c, lo
 }
 #ifdef OCCUPANCY
 void Stats::initOcc(const uint& n) {
-	avOcc	   .resize(n,0);
-	avSOcc	   .resize(n,0);
-	avIOcc	   .resize(n,0);
-	lastUpdate .resize(n,0);
-	sLastUpdate.resize(n,0);
-	iLastUpdate.resize(n,0);
-	maxOcc	   .resize(n,0);
-	maxSOcc	   .resize(n,0);
-	maxIOcc	   .resize(n,0);
-	minOcc	   .resize(n,n);
-	minSOcc	   .resize(n,n);
-	minIOcc	   .resize(n,n);
+	if(avOcc.empty()){
+		avOcc	   .resize(n,0);
+		avSOcc	   .resize(n,0);
+		avIOcc	   .resize(n,0);
+		lastUpdate .resize(n,0);
+		sLastUpdate.resize(n,0);
+		iLastUpdate.resize(n,0);
+		maxOcc	   .resize(n,0);
+		maxSOcc	   .resize(n,0);
+		maxIOcc	   .resize(n,0);
+		minOcc	   .resize(n,n);
+		minSOcc	   .resize(n,n);
+		minIOcc	   .resize(n,n);
+	}
 }
 void Stats::updateInfOccAv(const graph::node& v, const uint& prevNumA, const uint& prevNumI, const real& now) {
 	const double timeFrame  = now - lastUpdate [v];

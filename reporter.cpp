@@ -27,13 +27,13 @@ void Reporter::startChronometer(const std::string& message) {
 }
 void Reporter::stopChronometer(const std::string& message) {
 	if (timeScope.size() == 0) {
-		std::cout << "Invalid 'stopChronometer()' call. No chronometer exist to be stopped (i.e. no 'startChronometer()' call remains left for being stopped) in this scope.";
+		std::cout << "Invalid 'stopChronometer()' call. No chronometer exists to be stopped (i.e. no 'startChronometer()' call remains left for being stopped) in this scope.";
 		return;
 	}
 	timeElapsed = (real)clock() - timeScope[timeScope.size() - 1];
 	timeScope.resize(timeScope.size() - 1);
 
-	//User-friendly "elapsed-time" message (i.e. in the format "hh:mm:ss"):
+	//User-friendly "elapsed-time" message ("hh:mm:ss" format):
 	real s = timeElapsed / CLOCKS_PER_SEC;	//seconds
 	uint m = (uint)s / 60;					//minutes
 	uint h = 0;								//hours
@@ -77,7 +77,7 @@ void Reporter::simulationInfo(const uint& ROUNDS, const uint& T, const uint& num
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
 		<< "\tNUM_AGENTS: "							<< numAg		<< '\n'
-		<< "\tInitially inf: "						<< itotal		<< '\n'
+		<< "\tInitially infected: "					<< itotal		<< '\n'
 		<< "\tN: "									<< n			<< '\n'
 		<< "\tTAU (Infect): "						<< TAU			<< '\n'
 		<< "\tGAMMA (Recover): "					<< GAMMA		<< '\n'
@@ -85,9 +85,15 @@ void Reporter::simulationInfo(const uint& ROUNDS, const uint& T, const uint& num
 		<< "\tWs (dangerous-destiny tolerance): "	<< Ws			<< '\n'
 		<< "\tWi (safe-destiny tolerance): "		<< Wi			<< '\n'
 #ifdef i_t_FROM_MODEL
-		<< "\tR0 (Reprod. number = BETA/GAMMA): "			<< BETA/GAMMA			<< '\n'
+		<< "\tR0 (Reprod. number = BETA/GAMMA): "	<< BETA/GAMMA	<< '\n'
+		//TESTE!!!
+		//<< "\tR0 (Reprod. number = BETA/GAMMA): "			<< 1			<< '\n'
+		
 		<< "\tR0_pfx (Protection FX considered): "			<< Ro_pfx << '\n'
 		<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 - GAMMA/BETA		<< '\n'
+		//TESTE!!!
+		//<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 		<< '\n'
+		
 		<< "\ti_inf_pfx (from \\beta(i_0)): "		<< i_inf_pfx << '\n'
 #endif
 		;

@@ -31,7 +31,8 @@ uint stotal;														// ----> Up-to-date number of SUSCEPTIBLE agents durin
 uint itotal;														// ----> Up-to-date number of INFECTED agents during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
-
+real beta2ndMmt;
+long real C_2ndMmt;
 
 //Agent control variables
 using std::vector; using graph::node;
@@ -90,6 +91,7 @@ void fateAndNextNode(const agent& ag, const real& now);
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
+void setBeta2ndMmt();
 #ifndef CLIQUE
 const node& randomLCCNode();
 #endif
@@ -102,6 +104,8 @@ int main() {
 	sim::Reporter::startChronometer();
 #ifndef CLIQUE
 	graph::Graph::readGraph(SOURCE_FILE);
+	graph::Graph::set2ndMoment();
+	sim::setBeta2ndMmt();
 #endif
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
@@ -121,11 +125,19 @@ real sim::i_t(const real& t) {
 	long real Ce = sim::C * exp(B_MINUS_G * t);
 	return std::max((_1_MINUS_G_OVER_B) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
+real sim::i_t_2ndMmt(const real& t) {
+	long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
+	return std::max((1.0 - (GAMMA/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
+}
 real sim::i_t_pfx(const real& t) {
 	long real Ce = sim::C_pfx * exp(B_MINUS_G_pfx * t);
 	return std::max((_1_MINUS_G_OVER_B_pfx) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
-#endif
+void sim::setBeta2ndMmt() {
+	beta2ndMmt = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	C_2ndMmt = i_0 / (1 - i_0 - (GAMMA / beta2ndMmt));
+}
+#endif //i_t_FROM_MODEL
 
 #ifdef SOLVE_NUMERICALLY
 //real sim::didt(const real& i) { return  _g * (i * (C_1 * i + C_2)) / (i + _h); }

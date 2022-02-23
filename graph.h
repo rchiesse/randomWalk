@@ -6,10 +6,10 @@
 //#define DE_SERIALIZE
 #define COMMENTARY '#'
 
-#define NWTK_LABEL "Clique"
-#define SHORT_LABEL "CL"
+//#define NWTK_LABEL "Clique"
+//#define SHORT_LABEL "CL"
 #ifdef GNP
-#define NTWK_SIZE 23133
+#define NTWK_SIZE 12008
 #define SOURCE_FILE "", NTWK_SIZE
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
@@ -28,6 +28,11 @@
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
 //#define NWTK_LABEL "HepPh"
 //#define SHORT_LABEL "hep"
+
+#define NTWK_SIZE 12008
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
+#define NWTK_LABEL "BA"
+#define SHORT_LABEL "BA"
 
 //#define NTWK_SIZE 15233
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
@@ -103,7 +108,8 @@ public:
 	static uint largestDgNode;
 	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
-	static float averageDegree;
+	static real averageDegree;
+	static real _2ndMmt;
 	
 #ifdef PROTECTION_FX
 	struct largerDegreeGS {
@@ -124,6 +130,7 @@ public:
 	};
 #endif
 	static void readGraph(const string& fileName, const size_t& totalNodes);
+	static void set2ndMoment();
 #endif // CLIQUE
 #ifdef PROTECTION_FX
 private:

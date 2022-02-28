@@ -27,6 +27,7 @@ uint Graph::lccSize;											// ---> The size of the Largest Connected Compone
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::averageDegree;
 real Graph::_2ndMmt;
+vector<double> Graph::frequency;
 #endif //CLIQUE
 
 #ifdef PROTECTION_FX
@@ -303,14 +304,14 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #ifndef CLIQUE
 
 void Graph::set2ndMoment() {
-	vector<double> frequency(largestDegree + 1, 0);	// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'frequency[5]' instead of 'frequency[4]'. Note that, as a consequence, frequency[0] will always be 0 (since no 0-degree nodes exist in the LCC).
+	frequency.resize(largestDegree + 1, 0);	// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'frequency[5]' instead of 'frequency[4]'. Note that, as a consequence, frequency[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i)
 		++(frequency[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 
 	//Probabilities:
-	for (uint i = 0; i < frequency.size(); ++i)
+	for (uint i = 0; i < frequency.size(); ++i)	// ----> Equivalent to "p_b" in [1].
 		frequency[i] /= n;
 
 	//2nd moment:

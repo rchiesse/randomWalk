@@ -110,6 +110,7 @@ public:
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real averageDegree;
 	static real _2ndMmt;
+	static vector<double> frequency;								// ----> Degree blocks.
 	
 #ifdef PROTECTION_FX
 	struct largerDegreeGS {

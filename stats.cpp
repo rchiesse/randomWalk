@@ -76,7 +76,7 @@ void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, cons
 #ifdef i_t_FROM_MODEL
 		//Header
 		//infFracData << "Agent\tAction\tTime\tInfFrac\tStdModel\tPFXModel\n";
-		infFracData << "Agent\tAction\tTime\tInfFrac\tStdModel\t2ndMmtModel\n";
+		infFracData << "Agent\tAction\tTime\tInfFrac\tStdModel\t2ndMmtNaive\t2ndMmt\t2ndMmt_log\n";
 #else
 		//Header
 		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
@@ -163,7 +163,7 @@ void Stats::iFracToFile(const uint& overlook) {
 	for (uint i = 0; i < _bufferPos; ++i) {
 #ifdef i_t_FROM_MODEL
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_pfx(timestampBuffer[i]) << '\n';
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
+		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_logistic(timestampBuffer[i])  << '\n';
 #else
 		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #endif

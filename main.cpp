@@ -2,6 +2,10 @@
 #include "reporter.h"
 #include "stats.h"
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
+
 namespace sim { // Simulator's namespace.
 
 //Main structures
@@ -32,7 +36,11 @@ uint itotal;														// ----> Up-to-date number of INFECTED agents during t
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
 real beta2ndMmt;
+real beta2ndMmt_logistic;
+real beta2ndMmt_naive;
 long real C_2ndMmt;
+long real C_2ndMmt_logistic;
+long real C_2ndMmt_naive;
 
 //Agent control variables
 using std::vector; using graph::node;
@@ -129,6 +137,14 @@ real sim::i_t_2ndMmt(const real& t) {
 	long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
 	return std::max((1.0 - (GAMMA/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
+real sim::i_t_2ndMmt_logistic(const real& t) {
+	long real Ce = C_2ndMmt_logistic * exp((beta2ndMmt_logistic - GAMMA) * t);
+	return std::max((1.0 - (GAMMA / beta2ndMmt_logistic)) * (Ce / (1.0 + Ce)), (long real)0.0);
+}
+real sim::i_t_2ndMmt_naive(const real& t) {
+	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * t);
+	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
+}
 //real sim::i_t_2ndMmt_sys(const real& t) {
 //	for (size_t i = 0; i < sim::frequency.size(); i++) {
 //
@@ -141,40 +157,117 @@ real sim::i_t_pfx(const real& t) {
 	return std::max((_1_MINUS_G_OVER_B_pfx) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
 void sim::setBeta2ndMmt() {
-	//Excess:
-	vector<double> expAgBlock;				// ----> Expected number of agents within each degree block.
-	expAgBlock.resize(graph::Graph::largestDegree + 1, 0);
-	for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
-		expAgBlock[b] = NUM_AGENTS * b * graph::Graph::frequency[b];
-	}
-	vector<double> expOcc;					// ----> Expected node occupancy within block b, i.e. the expected number of agents within each node of some specific degree block.
-	expOcc.resize(graph::Graph::largestDegree + 1, 0);
-	for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
-		if(graph::Graph::frequency[b] > 0)
-			expOcc[b] = expAgBlock[b] / (N * graph::Graph::frequency[b]);
-	}
-	double excess = 0;
-	double countExcess = 0;
-	for (size_t b = 1; b < expOcc.size(); ++b) {
-		if (expOcc[b] - 1.0 > 0) {
-			//excess += expOcc[b] - (expOcc[b] - 1.0);
-			excess += expOcc[b] - 1.0;
-			++countExcess;
+	////Excess:
+	//vector<double> expAgBlock;				// ----> Expected number of agents within each degree block.
+	//expAgBlock.resize(graph::Graph::largestDegree + 1, 0);
+	//for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+	//	expAgBlock[_b] = (NUM_AGENTS * _b * graph::Graph::frequency[_b])/graph::Graph::averageDegree;
+	//}
+	//vector<double> expOcc;					// ----> Expected node occupancy within block _b, i.e. the expected number of agents within each node of some specific degree block.
+	//expOcc.resize(graph::Graph::largestDegree + 1, 0);
+	//for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+	//	if(graph::Graph::frequency[_b] > 0)
+	//		expOcc[_b] = expAgBlock[_b] / (N * graph::Graph::frequency[_b]);
+	//}
+	//double generalExpOcc = 0;
+	//double _generalExpOcc = 0;
+	////uint activeBlocks = 0;
+	//for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
+	//	generalExpOcc += expOcc[b] * ((double)b / N);
+	//	_generalExpOcc += expOcc[b] * graph::Graph::frequency[b];
+	//	//if (graph::Graph::frequency[b] > 0)
+	//	//	++activeBlocks;
+	//}
+	//double excess = 0;
+	//double countExcess = 0;
+	//for (size_t b = 1; b < expOcc.size(); ++b) {
+	//	if (expOcc[b] - 1.0 > 0) {
+	//		//excess += expOcc[b] - (expOcc[b] - 1.0);
+	//		excess += expOcc[b] - 1.0;
+	//		++countExcess;
+	//	}
+	//}
+	////excess /= NUM_AGENTS;
+
+	//1st approach: 
+	vector<double> beta_b(graph::Graph::frequency.size(), 0);
+	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b){
+		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::frequency[_b]) / (2 * graph::Graph::m);
+		if (_kb_ < N * graph::Graph::frequency[_b]) {
+			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
+		}
+		else {
+			//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
+			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
 		}
 	}
-	//excess /= NUM_AGENTS;
+	beta2ndMmt = 0;
+	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+		beta2ndMmt += beta_b[_b];
+	}
 
-	double probC = 0;	// ----> Probability "correction".
-	probC =  (infectionProb * (((double)NUM_AGENTS - excess) / NUM_AGENTS)) + ((TAU/(LAMBDA + TAU)) * ((excess) / NUM_AGENTS));
-	double meetingRateC = 0;
-	meetingRateC = (meetingRate * (((double)NUM_AGENTS - excess) / NUM_AGENTS)) + ((((2 + ((excess/2)/NUM_AGENTS))*LAMBDA) / N) * (excess / NUM_AGENTS));
+	//2nd approach:
+	beta_b.resize(0);
+	beta_b.resize(graph::Graph::frequency.size(), 0);
+	double sigma = 0;
+	uint validBlock = 0;
+	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
+	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
+	double variance = abs(graph::Graph::_2ndMmt - pow(graph::Graph::averageDegree, 2));
+	double _diff = abs(graph::Graph::averageDegree - graph::Graph::_2ndMmt);
+	double std_dev = abs(sqrt(variance));
+	const double& avDg = graph::Graph::averageDegree;
+	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::frequency[_b]) / (2.0 * graph::Graph::m);
+		//double kbnb = _kb_ / N * graph::Graph::frequency[_b];
+		double norm_kb = (_kb_/N)/ ((_kb_/N)+ std::exp(-(_kb_/N)));
+		//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU + (LAMBDA * (1- norm_kbnb)) )) * (_kb_ * (1 - norm_kbnb))) / graph::Graph::m;
+		beta_b[_b] = (LAMBDA * _b * (TAU / (2*LAMBDA + TAU) * norm_kb * N )) / graph::Graph::m;
+		
+		if (graph::Graph::frequency[_b] > 0) {
+			++validBlock;
+			//double dimmer = 1.0 - ((_kb_/(4.0 + _kb_)) / ((_kb_/ (4.0 + _kb_)) + exp(-(_kb_/ (4.0 + _kb_)))));
+			//double dimmer = 1.0 - ((_kb_/(expBlock)) / ((_kb_/ (expBlock)) + exp(-(_kb_/ (expBlock)))));
+			//double val = (_kb_) / (abs(std_dev - (log2(avDg) * _kb_)));
+			//double val = (_kb_) / (1 + abs(variance - avDg));
+			//double val = (_kb_) / (expBlock + (2 * _kb_));
+			//double val = graph::Graph::averageDegree / graph::Graph::_2ndMmt;
+			//double val = _kb_/(abs(expBlock - avDg) + _kb_);
+			//double val = _kb_/(avDg + _kb_);
+			//double val = _kb_/(log2(avDg)*max_kb);
+			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
+			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
+			double dimmer = 1.0 - (val / (val + exp(-val)));
+			
+			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
+			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
+			sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
+		}
+	}
+	sigma /= validBlock;
+	beta2ndMmt_logistic = 0;
+	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+		beta2ndMmt_logistic += beta_b[_b];
+	}
+
+	//double kOverN = (double)NUM_AGENTS / N;
+	//double sigma = (double)TAU / (LAMBDA + TAU + LAMBDA * (1 - _k_n));
+	//double _k_n = (kOverN) / (kOverN + std::exp(-(kOverN * (std::_Pi/2))));
+	//beta2ndMmt_logistic = (double)((LAMBDA * _b * sigma * _k_n)) / graph::Graph::m;
 
 
-	//beta2ndMmt = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	//beta2ndMmt = (meetingRate * probC * (NUM_AGENTS - (excess/NUM_AGENTS)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	//beta2ndMmt = (meetingRate * probC * (NUM_AGENTS - countExcess) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	beta2ndMmt = (meetingRateC * probC * (NUM_AGENTS - ((excess/2))) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	C_2ndMmt = i_0 / (1 - i_0 - (GAMMA / beta2ndMmt));
+	//double probC = 0;	// ----> Probability "correction".
+	//probC =  TAU/(LAMBDA + TAU);
+
+	//3rd approach:
+	//double _aux = (excess * (1.0 / std::exp(log(N) - log(NUM_AGENTS))));
+	//beta2ndMmt = (meetingRate * infectionProb * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	
+	//beta2ndMmt_naive = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	beta2ndMmt_naive = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
+	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));
+	C_2ndMmt_naive = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_naive));
 }
 #endif //i_t_FROM_MODEL
 

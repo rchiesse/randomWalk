@@ -210,6 +210,7 @@ void sim::setBeta2ndMmt() {
 	beta_b.resize(0);
 	beta_b.resize(graph::Graph::frequency.size(), 0);
 	double sigma = 0;
+	double sigma_2 = 0;
 	uint validBlock = 0;
 	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
 	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
@@ -238,13 +239,19 @@ void sim::setBeta2ndMmt() {
 			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
 			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
 			double dimmer = 1.0 - (val / (val + exp(-val)));
+
+			//Bom resultado:
+			double nTau = (double)(TAU) / std::max(1.0, _kb_ * std::min(1.0, graph::Graph::_2ndMmt/avDg));
 			
 			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
 			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
 			sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
+			sigma_2 += nTau / (2 * LAMBDA + nTau);
 		}
 	}
+	double psi = 1.0 - pow(1.0 - (1.0/N), NUM_AGENTS);
 	sigma /= validBlock;
+	sigma_2 /= validBlock;
 	beta2ndMmt_logistic = 0;
 	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
 		beta2ndMmt_logistic += beta_b[_b];
@@ -264,7 +271,19 @@ void sim::setBeta2ndMmt() {
 	//beta2ndMmt = (meetingRate * infectionProb * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
 	
 	//beta2ndMmt_naive = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	beta2ndMmt_naive = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	
+	//beta2ndMmt_naive = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	
+	//Bom resultado na BA:
+	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	
+	//Matheus (prosseguir implementação):
+	//beta2ndMmt_naive = (2 * LAMBDA * NUM_AGENTS * psi * sigma) / pow(graph::Graph::averageDegree,2);
+	
+	//Ronald v2:
+	
+	beta2ndMmt_naive = (LAMBDA * infectionProb * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
+
 	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
 	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));
 	C_2ndMmt_naive = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_naive));

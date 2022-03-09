@@ -2,23 +2,24 @@
 #include "reporter.h"
 #include "stats.h"
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 
 namespace sim { // Simulator's namespace.
 
 //Main structures
-enum class action{walk, recover};
+enum class action{walk, recover, infect};
 struct job {
-	agent ag;														// ----> Agent ID.
-	real time;
-	action a;
+	agent ag		= INT32_MAX;														// ----> Agent ID.
+	real time		= 0;
+	action a		= action::walk;
+	size_t location	= UINT_MAX;
 
 	job(const agent&& _ag, const real&& _time, const action&& _action) : ag(_ag), time(_time), a(_action) {}
-	job() : job(INT32_MAX, INT32_MAX, action::walk) {}
+	job(const agent&& _ag, const real&& _time, const action&& _action, const real&& _location) : ag(_ag), time(_time), a(_action), location(_location) {}
+	//job() : job(INT32_MAX, INT32_MAX, action::walk) {}
+	job() {}
 	job(const agent& _ag, const real&& _time, const action&& _action) : ag(_ag), time(_time), a(_action) {}
-	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (under a priority-queue approach --- see the "schedule" declaration). It thus requires a copy contructor to be explicitly defined. 
+	job(const agent& _ag, const real&& _time, const action&& _action, const real&& _location) : ag(_ag), time(_time), a(_action), location(_location) {}
+	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
 };
 struct earlier {
@@ -84,6 +85,9 @@ void readParams();
 void runSimulation	(const uint& startingNumAg = 0, const uint& granularity = 5);
 void walk		    (const agent& ag, const real& now);
 void recover	    (const agent& ag, const real& now);
+// Determines (i) whether or not an exposed, susceptible agent 'ag' will become infected and (ii) the next node 'ag' is going to visit.
+//void fateAndNextNode(const agent& ag, const real& now);
+void fate(const agent& ag, const size_t& location, const real& now);
 using graph::node;
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
 void checkinAsSus   (const agent& ag, const node& v);
@@ -93,8 +97,6 @@ void leaveNodeAsSus (const agent& ag, const node& v, const real& now);
 void checkoutAsSus  (const agent& ag, const node& v);
 void leaveNodeAsInf (const agent& ag, const node& v, const real& now);
 void checkoutAsInf  (const agent& ag, const node& v);
-// Determines (i) whether or not an exposed, susceptible agent 'ag' will become infected and (ii) the next node 'ag' is going to visit.
-void fateAndNextNode(const agent& ag, const real& now);
 //Defines the next node an agent is going to visit.
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
@@ -494,15 +496,17 @@ void sim::recover		 (const agent& ag, const real& now) {
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
 }
-void sim::fateAndNextNode(const agent& ag, const real& now) {
+void sim::fate(const agent& ag, const size_t& location, const real& now) {
 #ifdef ESTIMATE_PROBS
 	++stat::Stats::totalFate;
 	if (exposure[ag] > 0) 
 		stat::Stats::totalExposition += exposure[ag]; 
 #endif
-	//TESTE!!!
-	//if(false){
-	if ((exposure[ag] > 0) && (EXPTau() < exposure[ag])) {
+	if (currentNode[ag] != location)
+		return;	// ----> Event became obsolete.
+
+	//if (EXPTau() < exposure[ag]) {
+	if (now < exposure[ag]) {
 		isInfected[ag] = true;
 		--stotal;
 		++itotal;
@@ -697,12 +701,18 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			nextJob(j, now);
 			while (now < T) {
 				roundDuration += (now - roundDuration);
-				if (j.a == action::recover) {
-					recover(j.ag, now);
-					if (itotal == 0) { timeLimit = false; break; }
-				} else {
+				switch (j.a) {
+				case action::walk:
 					walk(j.ag, now);
 					schedule.emplace(j.ag, now + EXPLambda(), action::walk);
+					break;
+				case action::infect:
+					fate(j.ag, j.location, now);
+					break;
+				default:	//recover
+					recover(j.ag, now);
+					if (itotal == 0) { timeLimit = false; break; }
+					break;
 				}
 				nextJob(j, now);
 			}

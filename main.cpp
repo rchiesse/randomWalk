@@ -94,7 +94,8 @@ void checkoutAsSus  (const agent& ag, const node& v);
 void leaveNodeAsInf (const agent& ag, const node& v, const real& now);
 void checkoutAsInf  (const agent& ag, const node& v);
 // Determines (i) whether or not an exposed, susceptible agent 'ag' will become infected and (ii) the next node 'ag' is going to visit.
-void fateAndNextNode(const agent& ag, const real& now);
+void fateAndNextNode(const agent& ag, const node& v, const real& now);
+bool getsInfected(const agent& ag);
 //Defines the next node an agent is going to visit.
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
@@ -128,6 +129,7 @@ static const real sim::EXP(const real& param) { return -(1.0 / param) * log(U())
 static const real sim::EXPTau()		{ return NEG_RECIPR_TAU		* log(U()); }
 static const real sim::EXPGamma()	{ return NEG_RECIPR_GAMMA	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
+bool sim::getsInfected(const agent& ag)  { return (exposure[ag] > 0) && (EXPTau() < exposure[ag]); };
 #ifdef i_t_FROM_MODEL
 real sim::i_t(const real& t) {
 	long real Ce = sim::C * exp(B_MINUS_G * t);
@@ -475,12 +477,21 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 #endif
 }
 void sim::walk			 (const agent& ag, const real& now) {
+	node v = (isInfected[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
+	if (v == currentNode[ag])
+		return;
 	if (isInfected[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
-		enterNodeAsInf(ag, nextNodeForInf(currentNode[ag]), now);
+		enterNodeAsInf(ag, v, now);
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
-		fateAndNextNode(ag, now);
+		if (getsInfected(ag)) {
+			v = nextNodeForInf(currentNode[ag]);
+			fateAndNextNode(ag, v, now);
+		}
+		else {
+			enterNodeAsSus(ag, v, now);
+		}
 	}
 }
 void sim::recover		 (const agent& ag, const real& now) {
@@ -494,7 +505,7 @@ void sim::recover		 (const agent& ag, const real& now) {
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
 }
-void sim::fateAndNextNode(const agent& ag, const real& now) {
+void sim::fateAndNextNode(const agent& ag, const node& v, const real& now) {
 #ifdef ESTIMATE_PROBS
 	++stat::Stats::totalFate;
 	if (exposure[ag] > 0) 
@@ -502,7 +513,7 @@ void sim::fateAndNextNode(const agent& ag, const real& now) {
 #endif
 	//TESTE!!!
 	//if(false){
-	if ((exposure[ag] > 0) && (EXPTau() < exposure[ag])) {
+	//if ((exposure[ag] > 0) && (EXPTau() < exposure[ag])) {
 		isInfected[ag] = true;
 		--stotal;
 		++itotal;
@@ -512,11 +523,13 @@ void sim::fateAndNextNode(const agent& ag, const real& now) {
 #ifdef INFECTED_FRACTION
 		stat::Stats::bufferizeIFrac(ag, now, 'I', itotal, NUM_AGENTS, OVERLOOK);
 #endif
-		enterNodeAsInf(ag, nextNodeForInf(currentNode[ag]), now);
+		//enterNodeAsInf(ag, nextNodeForInf(currentNode[ag]), now);
+		enterNodeAsInf(ag, v, now);
 		schedule.emplace(ag, now + EXPGamma(), action::recover); // ----> 'Recover' event is scheduled.
-	} else { 
-		enterNodeAsSus(ag, nextNodeForSus(currentNode[ag]), now);
-	}
+	//} else { 
+	//	//enterNodeAsSus(ag, nextNodeForSus(currentNode[ag]), now);
+	//	enterNodeAsSus(ag, v, now);
+	//}
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;

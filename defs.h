@@ -38,14 +38,14 @@ namespace graph {
 
 // * NETWORK *
 //#define CLIQUE
-//#define READ_NTWK_FROM_FILE
-#define GNP
+#define READ_NTWK_FROM_FILE
+//#define GNP
 
 // ---------------------------//----------------------------- //
 
 // * AGENTS' BEHAVIOR *
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-#define PROTECTION_FX
+//#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -83,12 +83,12 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROTECTION_FX
 
 static constexpr uint T					= 20000;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 800;							// ----> Total number of agents in a simulation.
+static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
 static constexpr real TAU				= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA				= 0.0131;						// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA				= 0.006;						// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of agents initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.

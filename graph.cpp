@@ -199,8 +199,8 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 		if (u != v) {
 #endif
 			const uint w_index_in_u = foreignIdx[w][wSchema];
-			uint& u_index_in_w		= foreignIdx[u][w_index_in_u];
-			uint& v_index_in_w		= foreignIdx[v][idxW];
+			uint& u_index_in_w = foreignIdx[u][w_index_in_u];
+			uint& v_index_in_w = foreignIdx[v][idxW];
 #ifdef DEBUG
 			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
 			assertm(u_index_in_w == wSchema, message);
@@ -210,7 +210,7 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 			std::swap(v_index_in_w, u_index_in_w);
 		}
 	}
-
+}
 void Graph::raiseSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
 	const uint vNeighbSz = (uint)neighbors.size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)

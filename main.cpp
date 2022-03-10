@@ -11,14 +11,17 @@ struct job {
 	agent ag		= INT32_MAX;														// ----> Agent ID.
 	real time		= 0;
 	action a		= action::walk;
-	size_t location	= UINT_MAX;
+
+	//Infection only:
+	uint validity	= UINT_MAX;		// ----> Snapshot. If the S-agent's current snapshot does not match this one, then the event is ignored and the infection does not occur.
+	real delta		= UINT_MAX;		// ----> Time gap between the event being generated and then processed. If the S-agent's exposition time is smaller than this interval, then it does *not* get infected.
 
 	job(const agent&& _ag, const real&& _time, const action&& _action) : ag(_ag), time(_time), a(_action) {}
-	job(const agent&& _ag, const real&& _time, const action&& _action, const real&& _location) : ag(_ag), time(_time), a(_action), location(_location) {}
-	//job() : job(INT32_MAX, INT32_MAX, action::walk) {}
+	job(const agent&& _ag, const real&& _time, const action&& _action, const uint&& _snapshot, const real&& _delta) : ag(_ag), time(_time), a(_action), validity(_snapshot), delta(_delta) {}
 	job() {}
 	job(const agent& _ag, const real&& _time, const action&& _action) : ag(_ag), time(_time), a(_action) {}
-	job(const agent& _ag, const real&& _time, const action&& _action, const real&& _location) : ag(_ag), time(_time), a(_action), location(_location) {}
+	job(const agent& _ag, const real&& _time, const action&& _action, const uint&& _snapshot, const real&& _delta) : ag(_ag), time(_time), a(_action), validity(_snapshot), delta(_delta) {}
+
 	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
 };
@@ -46,6 +49,7 @@ long real C_2ndMmt_naive;
 //Agent control variables
 using std::vector; using graph::node;
 vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
+vector<uint> snapshot		(NUM_AGENTS,0);							// ----> A counter assigned to each agent and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
 vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
 vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
 vector<uint> indexWithinNode(NUM_AGENTS);							// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
@@ -409,8 +413,10 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	}
 #endif
 	exposure[ag] = 0;
-	if (numI > 0)
+	if (numI > 0) {
 		iniExposureTime[ag] = now;
+		schedule.emplace(ag, now + EXPTau(), action::infect, currentNode[ag], snapshot[ag]);
+	}
 #ifdef PROTECTION_FX
 	if (numS == 1)
 		graph::Graph::updateHasS(v);
@@ -476,12 +482,18 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 		graph::Graph::updateNoS(v);
 #endif
 }
-void sim::walk			 (const agent& ag, const real& now) {
+void sim::walk(const agent& ag, const real& now) {
+	node v = (isInfected[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
+	if (v == currentNode[ag])
+		return;
+
+	++snapshot[ag];
 	if (isInfected[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
-		enterNodeAsInf(ag, nextNodeForInf(currentNode[ag]), now);
+		enterNodeAsInf(ag, v, now);
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
+		enterNodeAsSus(ag, v, now);
 		fateAndNextNode(ag, now);
 	}
 }
@@ -581,6 +593,7 @@ void sim::resetVariables() {
 	now = 0;
 	while (!schedule.empty()) schedule.pop();	// ----> Needed from the 2nd round on.
 	for (agent a = 0; a < isInfected.size(); ++a) isInfected[a] = false;
+	snapshot.resize(NUM_AGENTS, 0);
 	using graph::Graph; using graph::node;
 	for (node v = 0; v < Graph::n; ++v) iAgents[v][ELEMS] = 0;
 	for (node v = 0; v < Graph::n; ++v) sAgents[v][ELEMS] = 0;

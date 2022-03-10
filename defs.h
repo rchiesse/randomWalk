@@ -13,8 +13,10 @@
 #include <cassert>
 
 // * DEBUG * 
-//#define assertm(exp, msg) assert(((void)msg, exp))
 //#define DEBUG
+#ifdef DEBUG
+#define assertm(exp, msg) assert(((void)msg, exp))
+#endif
 
 // ---------------------------//----------------------------- //
 
@@ -45,7 +47,7 @@ namespace graph {
 
 // * AGENTS' BEHAVIOR *
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-#define PROTECTION_FX
+//#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -112,19 +114,6 @@ static constexpr long real TIME_ZERO = 0;
 static constexpr uint K = NUM_AGENTS;
 static constexpr long real a = Ws;
 static constexpr long real b = Wi;
-#ifdef PROTECTION_FX
-
-
-//static constexpr long real C10 = (GAMMA * K) * (a - a * b + b - 1);
-//static constexpr long real C11 = (GAMMA * K) * (a * b - a - b + 1) - (GAMMA * N) * (b * K + K + a - 1);
-//static constexpr long real C12 = (GAMMA * N) * (N - K + b * K);
-//static constexpr long real C13 = -C5 - C10;	//a
-//static constexpr long real C14 = C6 - C11;	//b
-//static constexpr long real C15 = C4 - C12;	//c
-//static constexpr long real p_ = C14/C13;	//p
-//static constexpr long real q_ = C15/C13;	//q
-#endif
-
 static constexpr long real meetingRate_pfx = LAMBDA * (a / (i_0 * (a - 1) + N) + b / ((1 - i_0) * K * (b - 1) + N));
 static constexpr long real meetingRate_pfx_approx = LAMBDA * ((a+b)/N);
 static constexpr long real BETA_pfx = infectionProb * K * meetingRate_pfx;

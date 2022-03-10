@@ -161,10 +161,7 @@ const node& Graph::nextNodeForI(const real& randBase) {
 }
 
 #else //CLIQUE
-//void Graph::resetProtectionFX() {
-//	for (size_t i = 0; i < schema_s.size(); ++i) schema_s[i] = 0;
-//	for (size_t i = 0; i < schema_i.size(); ++i) schema_i[i] = 0;
-//}
+
 void Graph::updateHasI(const node& v) {
 	updateNeighborsBound(v, gs, myForeignIdx_s, schema_s);
 	raiseSchema(v, schema_s, gs[v]);
@@ -208,76 +205,12 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
 			assertm(u_index_in_w == wSchema, message);
 #endif
-			//uint aux = wNeighbors[v_index_in_w];
-			//wNeighbors[v_index_in_w] = wNeighbors[u_index_in_w];
-			//wNeighbors[u_index_in_w] = aux;
-			//
-			//aux = foreignIdx[w][v_index_in_w];
-			//foreignIdx[w][v_index_in_w] = foreignIdx[w][u_index_in_w];
-			//foreignIdx[w][u_index_in_w] = aux;
-			//
-			//aux = v_index_in_w;
-			//v_index_in_w = u_index_in_w;
-			//u_index_in_w = aux;
 			std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
 			std::swap(foreignIdx[w][v_index_in_w], foreignIdx[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
 			std::swap(v_index_in_w, u_index_in_w);
 		}
 	}
 
-//	const uint vNeighbSz = (uint)gs[v].size();
-//	for (uint idxW = 0; idxW < vNeighbSz; ++idxW) {
-//		//Convenient references:
-//		const node w = gs[v][idxW]; // Talvez inteiro seja melhor. Testar.
-//		uint v_index_in_w = foreignIdx[v][idxW];
-//		uint& size_in  = g_in [w][g_in [w].size() - 1];
-//		uint& size_out = g_out[w][g_out[w].size() - 1];
-//		const node u   = g_out[w][size_out - 1];
-//
-//		//Lists are updated:
-//		g_in[w][size_in] = g_out[w][v_index_in_w]; //comentar essa sequência.
-//		g_out[w][v_index_in_w] = u;
-//		const uint& w_index_in_u = foreignIdx[w][size_out - 1];//ERRADO
-//		uint& u_index_in_w = foreignIdx[u][w_index_in_u];
-//		foreignIdx[u][w_index_in_u] = v_index_in_w;
-//		foreignIdx[v][idxW] = size_in; //v_index_in_w = size_in;
-//
-//		//Atualizar foreign index de v e u em w:
-//		std::swap(myForeignIdx_i[w][v_index_in_w], myForeignIdx_i[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
-//
-//		++size_in;
-//		if (size_out == 0) cout << "DOOH ";
-//		--size_out;
-//#ifdef DEBUG
-//			//std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
-//			//assertm(u_index_in_w == wSchema, message);
-//#endif
-//	}
-}
-//void Graph::updateIBound(const node& v, const direction& d) {
-//	//For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
-//	const uint vNeighbSz = (uint)gi[v].size();
-//	for (uint idxW = 0; idxW < vNeighbSz; ++idxW) {
-//		//Convenient references (for both efficiency and readability):
-//		const node& w = gi[v][idxW];
-//		vector<node>& wNeighbors = gi[w];
-//		const uint& wSchema = schema_i[w];
-//
-//		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' is exchanged with 'v' (and the reference would then be to 'v' instead of 'u').
-//		if (u != v) {
-//			const uint w_index_in_u = myForeignIdx_i[w][wSchema];
-//			uint& u_index_in_w = myForeignIdx_i[u][w_index_in_u];
-//			uint& v_index_in_w = myForeignIdx_i[v][idxW];
-//#ifdef DEBUG
-//			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
-//			assertm(u_index_in_w == wSchema, message);
-//#endif
-//			std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
-//			std::swap(myForeignIdx_i[w][v_index_in_w], myForeignIdx_i[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
-//			std::swap(v_index_in_w, u_index_in_w);
-//		}
-//	}
-//}
 void Graph::raiseSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
 	const uint vNeighbSz = (uint)neighbors.size();
 	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)
@@ -308,8 +241,11 @@ void Graph::set2ndMoment() {
 
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i)
+#ifdef PROTECTION_FX
 		++(frequency[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
-
+#else
+		++(frequency[g[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+#endif
 	//Probabilities:
 	for (uint i = 0; i < frequency.size(); ++i)	// ----> Equivalent to "p_b" in [1].
 		frequency[i] /= n;
@@ -356,6 +292,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 			++v;
 		}
 		if (v < _n) {
+#ifdef PROTECTION_FX
 			gs[v].emplace_back(w);
 			gs[w].emplace_back(v);
 			gi[v].emplace_back(w);
@@ -364,22 +301,15 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 			myForeignIdx_s[w].emplace_back((uint)(gs[v].size() - 1));
 			myForeignIdx_i[v].emplace_back((uint)(gs[w].size() - 1));
 			myForeignIdx_i[w].emplace_back((uint)(gs[v].size() - 1));
+#else
+			g[v].emplace_back(w);
+			g[w].emplace_back(v);
+#endif
 			++m;
 		}
 	}
 	n = _n;
 	
-	// * temp *
-	//{
-	//	vector<uint> vDegree(n, 0);
-	//	for (size_t i = 0; i < vDegree.size(); ++i) {
-	//		++vDegree[gs[i].size()];
-	//	}
-	//	for (size_t i = 0; i < 50; ++i) {
-	//		cout << vDegree[i] << " ";
-	//	}
-	//	cout << '\n';
-	//}
 #endif
 #ifdef READ_NTWK_FROM_FILE
 	string serialFileName = string(EXE_DIR) + string("\\serializadas\\") + string(NWTK_LABEL) + string(".txt");
@@ -633,9 +563,9 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	if (selfLoops > 0)
 		cout << "\t ---> " << selfLoops << " native self-loops identified and removed." <<  "\n";
 
-#ifdef PROTECTION_FX
 #ifndef CLIQUE
 #ifdef AUTO_RELATION
+#ifdef PROTECTION_FX
 	for (node v = 0; v < n; ++v) gs[v].emplace_back(v);
 	for (node v = 0; v < n; ++v) gi[v].emplace_back(v);
 	m += n;
@@ -644,10 +574,17 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 
 	for (node v = 0; v < n; ++v) myForeignIdx_s[v].emplace_back((uint)(gs[v].size() - 1));
 	for (node v = 0; v < n; ++v) myForeignIdx_i[v].emplace_back((uint)(gi[v].size() - 1));
-	
-	cout << "\t ---> PFx self-loop added for each node. Updated m = " << m << "\n\n";
+#else
+	for (node v = 0; v < n; ++v) g[v].emplace_back(v);
+	m += n;
+	averageDegree = (2.0 * m) / n;
+	++largestDegree;
+#endif //PROTECTION_FX
+	cout << "\t ---> AUTORELATION active. Self-loop added for each node. Updated stats: \n";
+	cout << "\t\t" << m << " nodes.\n";
+	cout << "\t\tAverage degree = " << averageDegree << "\n";
+	cout << "\t\tLargest degree = " << largestDegree << "\n\n";
 #endif //AUTO_RELATION
 #endif //CLIQUE
-#endif //PROTECTION_FX
 }
 #endif // CLIQUE

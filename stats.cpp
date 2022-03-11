@@ -1,6 +1,8 @@
 #include "stats.h"
 using namespace sim::stat;
 std::ofstream Stats::infFracData;
+std::ofstream Stats::lite;
+
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
 std::vector<real> Stats::infectedFractionBuffer	(BUFFER_SIZE);
@@ -81,6 +83,19 @@ void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, cons
 		//Header
 		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
 #endif
+		//Lite version:
+		ss.str("");			// ----> Clear content.
+		ss << "fractionInfected---_" << ntwLabel << "_Ws" << Ws << "_Wi" << Wi << "_N" << ntwSize << "_AG" << numAgents << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds;
+		{
+			std::string ref = ss.str();
+			genPlotScript(ref);
+		}
+		ss.str("");			// ----> Clear content.
+		ss << EXE_DIR << "/stats/fractionInfected---_" << ntwLabel << "_Ws" << Ws << "_Wi" << Wi << "_N" << ntwSize << "_AG" << numAgents << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds << ".csv";
+		fileName = ss.str();
+		lite.open(fileName);
+		lite << "Time\tInfFrac\t2ndMmt\n";
+
 		break;
 #endif //INFECTED_FRACTION
 #ifdef ESTIMATE_PROBS
@@ -142,6 +157,7 @@ void Stats::endStream(const streamType& s) {
 #endif //OCCUPANCY
 	default:
 		infFracData.close();
+		lite.close();
 	}
 }
 #ifdef INFECTED_FRACTION
@@ -164,12 +180,56 @@ void Stats::iFracToFile(const uint& overlook) {
 #ifdef i_t_FROM_MODEL
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_pfx(timestampBuffer[i]) << '\n';
 		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_logistic(timestampBuffer[i])  << '\n';
+		lite << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
 #else
 		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #endif
 		i += overlook;
 	}
-	infFracData.close();
+	//infFracData.close();
+	//lite.close();
+}
+void Stats::genPlotScript(const std::string& referenceFile) {
+	std::string fileName(EXE_DIR + std::string("/genplot.py"));
+	std::ofstream of;
+	of.open(fileName);
+	of <<
+		"import matplotlib\n" <<
+		"#Prevents the plot from being shown in the screen when saving it to file\n" <<
+		"matplotlib.use('Agg')\n\n" <<
+
+		"import matplotlib.pyplot as plt\n" <<
+		"import numpy as np\n" <<
+		"import csv\n\n" <<
+
+		"#Import CSV data\n" <<
+		"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
+		"\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
+
+		"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
+		"timeData = myData[:, 0]\n" <<
+		"ifSimul = myData[:, 1]\n" <<
+		"ifModel2ndMmt = myData[:, 2]\n\n" <<
+
+		"#Plot\n" <<
+		"plt.figure(1, dpi = 120)\n" <<
+		"plt.title(\"Fraction of Infected Agents over Time\")\n" <<
+		"plt.xlabel(\"Time\")\n" <<
+		"plt.ylabel(\"Fraction of Infected Agents\")\n" <<
+		"plt.xlim(0, " << T << ")\n" <<
+		"plt.ylim(0, 1)\n" <<
+		"plt.plot(timeData, ifSimul, label = \"InfFrac\")\n" <<
+		"plt.plot(timeData, ifModel2ndMmt, label = \"Model\")\n" <<
+		"plt.legend()\n" <<
+		"plt.grid()\n" <<
+		"#plt.xlabel(rawdata[0][0])\n" <<
+		"#plt.ylabel(rawdata[0][1])\n" <<
+		"#plt.xscale(\"log\")\n" <<
+		"#plt.yscale(\"log\")\n\n" <<
+
+		"plt.savefig(" << "\"./plots/" << referenceFile << ".pdf\"" << ")\n" <<
+		"#plt.show()\n";
+	of.close();
 }
 #endif //INFECTED_FRACTION
 void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAg) {

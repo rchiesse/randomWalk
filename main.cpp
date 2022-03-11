@@ -303,7 +303,10 @@ void sim::setBeta2ndMmt() {
 	
 	//Ronald v2:
 	
-	beta2ndMmt_naive = (LAMBDA * infectionProb * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
+	//beta2ndMmt_naive = (LAMBDA * infectionProb * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
+	
+	
+	beta2ndMmt = (LAMBDA * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
 
 	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
 	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));

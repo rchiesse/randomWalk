@@ -7,6 +7,7 @@ namespace stat {
 class Stats {
 private:
 	static std::ofstream infFracData;
+	static std::ofstream lite;
 #ifdef INFECTED_FRACTION
 private:
 	static const uint BUFFER_SIZE = (uint)10e6;
@@ -143,6 +144,9 @@ public:
 	static bool isEmpty(std::ofstream& s);
 	static void resetStats();
 	static void roots(const long real& a, const long real& b, const long real& c, long real& r1, long real& r2);
+#ifdef INFECTED_FRACTION
+	static void genPlotScript(const std::string& referenceFile);
+#endif
 };
 } //namespace stat
 } //namespace sim

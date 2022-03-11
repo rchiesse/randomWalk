@@ -750,12 +750,12 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			nextJob(j, now);
 			while (now < T) {
 				roundDuration += (now - roundDuration);
-				if (j.a == action::recover) {
-					recover(j.ag, now);
-					if (itotal == 0) { timeLimit = false; break; }
-				} else {
+				if (j.a == action::walk) {
 					walk(j.ag, now);
 					schedule.emplace(j.ag, now + EXPLambda(), action::walk);
+				} else {
+					recover(j.ag, now);
+					if (itotal == 0) { timeLimit = false; break; }
 				}
 				nextJob(j, now);
 			}

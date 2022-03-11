@@ -38,8 +38,8 @@ namespace graph {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 
 // ---------------------------//----------------------------- //
 
@@ -82,7 +82,7 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 20000;						// ----> Simulation time.
+static constexpr uint T					= 50000;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							

@@ -29,10 +29,10 @@
 //#define NWTK_LABEL "HepPh"
 //#define SHORT_LABEL "hep"
 
-//#define NTWK_SIZE 12008
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
-//#define NWTK_LABEL "BA"
-//#define SHORT_LABEL "BA"
+#define NTWK_SIZE 12008
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
+#define NWTK_LABEL "BA"
+#define SHORT_LABEL "BA"
 
 //#define NTWK_SIZE 15233
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233

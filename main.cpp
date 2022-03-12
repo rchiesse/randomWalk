@@ -201,12 +201,12 @@ void sim::setBeta2ndMmt() {
 	vector<double> beta_b(graph::Graph::frequency.size(), 0);
 	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b){
 		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::frequency[_b]) / (2 * graph::Graph::m);
+		//if (_kb_ < N * graph::Graph::frequency[_b]) {
 		if (_kb_ < N * graph::Graph::frequency[_b]) {
 			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
 		}
 		else {
-			//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
-			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
+			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
 		}
 	}
 	beta2ndMmt = 0;
@@ -246,14 +246,23 @@ void sim::setBeta2ndMmt() {
 			//double val = _kb_/(log2(avDg)*max_kb);
 			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
 			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
-			double dimmer = 1.0 - (val / (val + exp(-val)));
+			//double dimmer = 1.0 - (val / (val + exp(-val)));
 
 			//Bom resultado:
 			double nTau = (double)(TAU) / std::max(1.0, _kb_ * std::min(1.0, graph::Graph::_2ndMmt/avDg));
 			
 			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
 			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
-			sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
+			
+			//double dimmer = (_kb_ < 2.0) ? 1.0 : 1.0 - (_kb_) / (_kb_ + exp(-(1.0 / (_kb_))));
+			//sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
+			
+			//sigma += (double)TAU / (LAMBDA + TAU + LAMBDA * (1.0 - (std::min(1.0,(_kb_/2.0)))));
+
+			//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
+			sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : TAU / (LAMBDA + TAU);
+			
+			//sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : (TAU*dimmer) / (LAMBDA + (TAU*dimmer));
 			sigma_2 += nTau / (2 * LAMBDA + nTau);
 		}
 	}
@@ -278,9 +287,13 @@ void sim::setBeta2ndMmt() {
 	//double _aux = (excess * (1.0 / std::exp(log(N) - log(NUM_AGENTS))));
 	//beta2ndMmt = (meetingRate * infectionProb * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
 	
-	beta2ndMmt_naive = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	//beta2ndMmt_naive = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
 	
-	//beta2ndMmt_naive = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
+	//beta2ndMmt = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	beta2ndMmt = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	
+	
 	
 	//Bom resultado na BA:
 	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);

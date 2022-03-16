@@ -43,6 +43,81 @@ namespace graph {
 #define READ_NTWK_FROM_FILE
 //#define GNP
 
+//static constexpr uint N = 12008;										// ----> Network size
+//#define NWTK_LABEL "Clique"
+//#define SHORT_LABEL "CL"
+#ifdef GNP
+static constexpr uint N = 12008;
+#define SOURCE_FILE "", NTWK_SIZE
+#define NWTK_LABEL "Gnp"
+#define SHORT_LABEL "gnp"
+#endif
+#ifdef READ_NTWK_FROM_FILE
+//static constexpr uint N = 55;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\grafoDeTestes.txt"), 55
+//#define NWTK_LABEL "Ronald"
+//#define SHORT_LABEL "ron"
+//
+//static constexpr uint N = 4039;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\facebook_combined.txt"), 4039
+//#define NWTK_LABEL "Fb"
+//#define SHORT_LABEL "fb"
+//
+//static constexpr uint N = 12008;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
+//#define NWTK_LABEL "HepPh"
+//#define SHORT_LABEL "hep"
+//
+static constexpr uint N = 12008;										// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
+#define NWTK_LABEL "BA"
+#define SHORT_LABEL "BA"
+//
+//static constexpr uint N = 15233;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
+//#define NWTK_LABEL "net"
+//#define SHORT_LABEL "net"
+//
+//static constexpr uint N = 18772;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-AstroPh.txt"), 18772
+//#define NWTK_LABEL "AstroPh"
+//#define SHORT_LABEL "astro"
+//
+//static constexpr uint N = 23133;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-CondMat.txt"), 23133
+//#define NWTK_LABEL "CondMat"
+//#define SHORT_LABEL "cmat"
+//
+//static constexpr uint N = 36692;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Email-Enron.txt"), 36692
+//#define NWTK_LABEL "Enron"
+//#define SHORT_LABEL "enron"
+//
+//static constexpr uint N = 58228;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Brightkite_edges.txt"), 58228
+//#define NWTK_LABEL "Brightkite"
+//#define SHORT_LABEL "bk"
+//
+//static constexpr uint N = 196591;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Gowalla_edges.txt"), 196591
+//#define NWTK_LABEL "Gowalla"
+//#define SHORT_LABEL "gw"
+//
+//static constexpr uint N = 317080;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-dblp.ungraph.txt"), 317080
+//#define NWTK_LABEL "dblp"
+//#define SHORT_LABEL "dblp"
+//
+//static constexpr uint N = 334863;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-amazon.ungraph.txt"), 334863
+//#define NWTK_LABEL "amazon"
+//#define SHORT_LABEL "amz"
+//
+//static constexpr uint N = 1696415;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\as-skitter.txt"), 1696415
+//#define NWTK_LABEL "as-skitter"
+//#define SHORT_LABEL "as"
+#endif
 // ---------------------------//----------------------------- //
 
 // * AGENTS' BEHAVIOR *
@@ -72,7 +147,6 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 namespace sim{		// ----> Simulator's namespace.
 
 // * SIMULATION PARAMETERS *
-static constexpr uint N = 12008;										// ----> Network size
 #ifdef PROTECTION_FX
 static constexpr real Ws  = 1.0;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
 static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.

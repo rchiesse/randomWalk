@@ -204,7 +204,7 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 
 		"#Import CSV data\n" <<
 		"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
-		"\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
+		"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
 
 		"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
 		"timeData = myData[:, 0]\n" <<
@@ -220,6 +220,7 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"plt.ylim(0, 1)\n" <<
 		"plt.plot(timeData, ifSimul, label = \"InfFrac\")\n" <<
 		"plt.plot(timeData, ifModel2ndMmt, label = \"Model\")\n" <<
+		"plt.plot(timeData, [np.mean(ifSimul) for i in range(len(timeData))], label = \"Av. #inf\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"#plt.xlabel(rawdata[0][0])\n" <<

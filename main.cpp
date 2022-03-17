@@ -148,7 +148,7 @@ real sim::i_t_2ndMmt(const real& t) {
 	if(val > 500) val = 500;
 
 	//long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
-	long real Ce = C_2ndMmt * exp(500);
+	long real Ce = C_2ndMmt * exp(val);
 
 	return std::max((1.0 - (GAMMA/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
 }

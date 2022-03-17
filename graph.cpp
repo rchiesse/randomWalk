@@ -273,44 +273,80 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 			Phys. Rev. E 71, 036113
 	*/
 	
-	std::random_device _rd;
-	std::mt19937_64 _gen(_rd());										// ----> Generator.
-	std::uniform_real_distribution<real> _U(0, 1);
+	{// ----> Extra scope.
+		std::random_device _rd;
+		std::mt19937_64 _gen(_rd());										// ----> Generator.
+		std::uniform_real_distribution<real> _U(0, 1);
 
-	constexpr real _avDegree = 19.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
-	constexpr uint _n = sim::N;
-	constexpr real _p = _avDegree / (_n - 1);
-	const real log_q  = log(1 - _p);
+		constexpr real _avDegree = 19.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
+		constexpr uint _n = N;
+		constexpr real _p = _avDegree / (_n - 1);
+		const real log_q = log(1 - _p);
 
-	int v = 1, w = -1;
-	real r;
-	while (v < _n) {
-		r = _U(_gen);													// ----> Random number uniformly drawn from the interval (0,1).
-		w = w + 1 + (int)std::floor(log(1 - r) / log_q);
-		while (w >= v && v < _n) {
-			w -= v;
-			++v;
-		}
-		if (v < _n) {
+		int v = 1, w = -1;
+		real r;
+		while (v < _n) {
+			r = _U(_gen);													// ----> Random number uniformly drawn from the interval (0,1).
+			w = w + 1 + (int)std::floor(log(1 - r) / log_q);
+			while (w >= v && v < _n) {
+				w -= v;
+				++v;
+			}
+			if (v < _n) {
 #ifdef PROTECTION_FX
-			gs[v].emplace_back(w);
-			gs[w].emplace_back(v);
-			gi[v].emplace_back(w);
-			gi[w].emplace_back(v);
-			myForeignIdx_s[v].emplace_back((uint)(gs[w].size() - 1));
-			myForeignIdx_s[w].emplace_back((uint)(gs[v].size() - 1));
-			myForeignIdx_i[v].emplace_back((uint)(gs[w].size() - 1));
-			myForeignIdx_i[w].emplace_back((uint)(gs[v].size() - 1));
+				gs[v].emplace_back(w);
+				gs[w].emplace_back(v);
+				gi[v].emplace_back(w);
+				gi[w].emplace_back(v);
+				myForeignIdx_s[v].emplace_back((uint)(gs[w].size() - 1));
+				myForeignIdx_s[w].emplace_back((uint)(gs[v].size() - 1));
+				myForeignIdx_i[v].emplace_back((uint)(gs[w].size() - 1));
+				myForeignIdx_i[w].emplace_back((uint)(gs[v].size() - 1));
 #else
-			g[v].emplace_back(w);
-			g[w].emplace_back(v);
+				g[v].emplace_back(w);
+				g[w].emplace_back(v);
 #endif
-			++m;
+				++m;
+			}
 		}
-	}
-	n = _n;
-	
+		n = _n;
+	} //Extra scope.
 #endif
+
+#ifdef STAR
+	{
+#ifdef PROTECTION_FX
+		for (size_t i = 1; i < N; ++i) {
+			gs[0].emplace_back(i);
+			gs[i].emplace_back(0);
+			myForeignIdx_s[0].emplace_back((uint)(gs[i].size() - 1));
+			myForeignIdx_s[i].emplace_back((uint)(gs[0].size() - 1));
+		}
+		
+		for (size_t i = 1; i < N; ++i) {
+			gi[0].emplace_back(i);
+			gi[i].emplace_back(0);
+			myForeignIdx_i[0].emplace_back((uint)(gs[i].size() - 1));
+			myForeignIdx_i[i].emplace_back((uint)(gs[0].size() - 1));
+		}
+		
+		//gs[v].emplace_back(w);
+		//gs[w].emplace_back(v);
+		//gi[v].emplace_back(w);
+		//gi[w].emplace_back(v);
+
+#else
+		for (node i = 1; i < N; ++i) 
+			g[0].emplace_back(i);
+		for (node i = 1; i < N; ++i) 
+			g[i].emplace_back(0);
+#endif
+		m = 2*(N-1) + 1;
+		n = N;
+	}
+#endif
+
+
 #ifdef READ_NTWK_FROM_FILE
 	string serialFileName = string(EXE_DIR) + string("\\serializadas\\") + string(NWTK_LABEL) + string(".txt");
 	string msg = "\nReading the network " + string(NWTK_LABEL) + "...";

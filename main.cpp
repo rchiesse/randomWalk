@@ -138,19 +138,30 @@ static const real sim::EXPGamma()	{ return NEG_RECIPR_GAMMA	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #ifdef i_t_FROM_MODEL
 real sim::i_t(const real& t) {
-	long real Ce = sim::C * exp(B_MINUS_G * t);
+	double val = (t > 1000) ? 1000 : t;
+
+	long real Ce = sim::C * exp(B_MINUS_G * val);
 	return std::max((_1_MINUS_G_OVER_B) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
 real sim::i_t_2ndMmt(const real& t) {
-	long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
+	double val = (beta2ndMmt - GAMMA) * t;
+	if(val > 500) val = 500;
+
+	//long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
+	long real Ce = C_2ndMmt * exp(500);
+
 	return std::max((1.0 - (GAMMA/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
 real sim::i_t_2ndMmt_logistic(const real& t) {
-	long real Ce = C_2ndMmt_logistic * exp((beta2ndMmt_logistic - GAMMA) * t);
+	double val = (t > 1000) ? 1000 : t;
+
+	long real Ce = C_2ndMmt_logistic * exp((beta2ndMmt_logistic - GAMMA) * val);
 	return std::max((1.0 - (GAMMA / beta2ndMmt_logistic)) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
 real sim::i_t_2ndMmt_naive(const real& t) {
-	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * t);
+	double val = (t > 1000) ? 1000 : t;
+
+	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * val);
 	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
 }
 //real sim::i_t_2ndMmt_sys(const real& t) {
@@ -430,15 +441,15 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 		stat::Stats::siMeetings += (numI);
 	}
 #endif
-	exposure[ag] = 0;
+	//exposure[ag] = 0;
 	if (numI > 0) {
-		iniExposureTime[ag] = now;
-	}
-	const vector<uint>& list = iAgents[v];
-	for (uint i = 1; i <= numI; ++i) {
-		const real delta = EXPTau();
-		//schedule.emplace(ag, now + delta, action::infect, snapshot[ag], delta, v);
-		schedule.emplace(ag, now + delta, action::infect, list[i], snapshot[ag], snapshot[list[i]]);
+		//iniExposureTime[ag] = now;
+		const vector<uint>& list = iAgents[v];
+		for (uint i = 1; i <= numI; ++i) {
+			const real delta = EXPTau();
+			//schedule.emplace(ag, now + delta, action::infect, snapshot[ag], delta, v);
+			schedule.emplace(ag, now + delta, action::infect, list[i], snapshot[ag], snapshot[list[i]]);
+		}
 	}
 #ifdef PROTECTION_FX
 	if (numS == 1)
@@ -463,15 +474,15 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		stat::Stats::meetings += (numI - 1);
 	}
 #endif
-	const vector<uint>& list = sAgents[v];
-	if (numI == 1) {
-		for (uint i = 1; i <= numS; ++i) {		// ----> We start by idx 1 since sAgents' position 0 is NOT an agent, but the list's actual size.
-			iniExposureTime[list[i]] = now;
-		}
+		//for (uint i = 1; i <= numS; ++i) {		// ----> We start by idx 1 since sAgents' position 0 is NOT an agent, but the list's actual size.
+		//	iniExposureTime[list[i]] = now;
+		//}
 #ifdef PROTECTION_FX
+	if (numI == 1) {
 		graph::Graph::updateHasI(v);
-#endif
 	}
+#endif
+	const vector<uint>& list = sAgents[v];
 	for (uint i = 1; i <= numS; ++i) {
 		const real delta = EXPTau();
 		schedule.emplace(list[i], now + delta, action::infect, ag, snapshot[list[i]], snapshot[ag]);
@@ -481,26 +492,26 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot[ag];
 	checkoutAsInf(ag, v);
-	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
+	//const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 #ifdef OCCUPANCY
 	stat::Stats::updateInfOccLowered(v, numI + numS, numI, now);
 #endif
-	if (numI == 0) {
-		const vector<uint>& list = sAgents[v];
-		for (uint i = 1; i <= numS; ++i) {		// ----> We start by idx 1 since sAgents' position 0 is NOT an agent, but the list's actual size.
-			exposure[list[i]] += now - iniExposureTime[list[i]];
-		}
+		//const vector<uint>& list = sAgents[v];
+		//for (uint i = 1; i <= numS; ++i) {		// ----> We start by idx 1 since sAgents' position 0 is NOT an agent, but the list's actual size.
+		//	exposure[list[i]] += now - iniExposureTime[list[i]];
+		//}
 #ifdef PROTECTION_FX
+	if (numI == 0) {
 		graph::Graph::updateNoI(v);
-#endif
 	}
+#endif
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot[ag];
 	checkoutAsSus(ag, v);
-	const uint& numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
+	//const uint& numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
 #ifdef OCCUPANCY

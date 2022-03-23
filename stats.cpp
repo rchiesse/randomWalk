@@ -208,8 +208,10 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 
 		"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
 		"timeData = myData[:, 0]\n" <<
-		"ifSimul = myData[:, 1]\n" <<
-		"ifModel2ndMmt = myData[:, 2]\n\n" <<
+		"infSimul = myData[:, 1]\n" <<
+		"ifModel2ndMmt = myData[:, 2]\n" <<
+		"cumSum = np.cumsum(infSimul)\n" <<
+		"cumMean = cumSum / np.arange(0, len(timeData))\n\n" <<
 
 		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
@@ -218,9 +220,10 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"plt.ylabel(\"Fraction of Infected Agents\")\n" <<
 		"plt.xlim(0, " << T << ")\n" <<
 		"plt.ylim(0, 1)\n" <<
-		"plt.plot(timeData, ifSimul, label = \"InfFrac\")\n" <<
+		"plt.plot(timeData, infSimul, label = \"InfFrac\")\n" <<
 		"plt.plot(timeData, ifModel2ndMmt, label = \"Model\")\n" <<
-		"plt.plot(timeData, [np.mean(ifSimul) for i in range(len(timeData))], label = \"Av. #inf\")\n" <<
+		"plt.plot(timeData, [np.mean(infSimul) for i in range(len(timeData))], label = \"Av. #inf\")\n" <<
+		"plt.plot(timeData, cumMean, label = \"Cum. Av. #inf\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"#plt.xlabel(rawdata[0][0])\n" <<

@@ -326,11 +326,12 @@ void sim::setBeta2ndMmt() {
 
 #ifdef SOLVE_NUMERICALLY
 //real sim::didt(const real& i) { return  _g * (i * (C_1 * i + C_2)) / (i + _h); }
-real sim::didt(const real& i) {
-	const real _crowd_increment = crowdFactor - ((1.0 - i) * i * (crowdFactor - 1.0));
-	return  BETA_pfx * (1 - i) * i * _crowd_increment - GAMMA * i; 
-}
-//real sim::didt(const real& i) { return  BETA_pfx * i * (1 - i) - (GAMMA * i); }
+//real sim::didt(const real& i) {
+//	//const real _crowd_increment = crowdFactor - ((1.0 - i) * i * (crowdFactor - 1.0));
+//	//return  BETA_pfx * (1 - i) * i * _crowd_increment - GAMMA * i; 
+//	return  BETA_pfx * (1 - i) * i - GAMMA * i;
+//}
+real sim::didt(const real& i) { return  BETA_pfx * i * (1 - i) - (GAMMA * i); }
 void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile.resize((uint64_t)largerDetailUntil + (totalSteps - (uint)largerDetailUntil)/outputGranularity);

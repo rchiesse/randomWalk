@@ -331,10 +331,14 @@ void sim::setBeta2ndMmt() {
 //	//return  BETA_pfx * (1 - i) * i * _crowd_increment - GAMMA * i; 
 //	return  BETA_pfx * (1 - i) * i - GAMMA * i;
 //}
-real sim::didt(const real& i) { return  BETA_pfx * i * (1 - i) - (GAMMA * i); }
+//real sim::didt(const real& i) { return  BETA_pfx * i * (1 - i) - (GAMMA * i); }
+real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
+
+
+
 void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
-	saveToFile.resize((uint64_t)largerDetailUntil + (totalSteps - (uint)largerDetailUntil)/outputGranularity);
+	saveToFile.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
 	constexpr real one_sixth = 1.0 / 6.0;
 	real k1, k2, k3, k4;
@@ -354,6 +358,7 @@ void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, cons
 		if (i < epsilon) {
 			saveToFile[s] = 0;
 			end = true;
+			++outputSize;
 			break;
 		}
 		saveToFile[s] = i;
@@ -376,6 +381,7 @@ void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, cons
 		i = i + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
 		if (i < epsilon) { 
 			saveToFile[outputSize] = 0;
+			++outputSize;
 			break;
 		}
 		if (s % outputGranularity == 0) {
@@ -844,14 +850,14 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	_ss << EXE_DIR << "/stats/Runge-Kutta_" << NWTK_LABEL << "_Wi" << Wi << "_Ws" << Ws << "_N" << N << "_AG" << K << "_T" << TAU << "_G" << GAMMA << "_L" << LAMBDA << "_STime" << T << ".csv";
 	std::string _fileName = _ss.str();
 	RKdata.open(_fileName);
-	RKdata << "Time\ti\n"; // ----> Header
+	RKdata << "Time i\n"; // ----> Header
 	real _time = 0;
 	for (size_t s = 0; s < largerDetailUntil; ++s) {
-		RKdata << _time << '\t' << saveToFile[s] << '\n';
+		RKdata << _time << ' ' << saveToFile[s] << '\n';
 		_time += stepSize;
 	}
 	for (size_t s = largerDetailUntil; s < outputSize; ++s){
-		RKdata << _time << '\t' << saveToFile[s] << '\n';
+		RKdata << _time << ' ' << saveToFile[s] << '\n';
 		_time += timeIncrement;
 	}
 	RKdata.close();

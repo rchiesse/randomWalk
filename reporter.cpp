@@ -71,30 +71,23 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 		<< "\t ---> Smallest degree: "	<< smallestDegree	<< endl
 		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)" << std::endl;
 }
-void Reporter::simulationInfo(const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const real& TAU, const real& GAMMA, const real& LAMBDA, const real& Ws, const real& Wi) {
+void Reporter::simulationInfo(const uint& itotal) {
 	using std::endl;
 	std::cout << endl
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
-		<< "\tNUM_AGENTS: "							<< numAg		<< '\n'
+		<< "\tNUM_AGENTS: "							<< NUM_AGENTS << '\n'
 		<< "\tInitially infected: "					<< itotal		<< '\n'
-		<< "\tN: "									<< n			<< '\n'
-		<< "\tTAU (Infect): "						<< TAU			<< '\n'
-		<< "\tGAMMA (Recover): "					<< GAMMA		<< '\n'
+		<< "\tN: "									<< N			<< '\n'
+		<< "\tTAU_aa (Infect): "					<< TAU_aa		<< '\n'
+		<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
+		<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
+		<< "\tGAMMA_a (Recover): "					<< GAMMA_a		<< '\n'
+		<< "\tGAMMA_l (Recover): "					<< GAMMA_l		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-		<< "\tWs (dangerous-destiny tolerance): "	<< Ws			<< '\n'
-		<< "\tWi (safe-destiny tolerance): "		<< Wi			<< '\n'
 #ifdef i_t_FROM_MODEL
-		<< "\tR0 (Reprod. number = BETA/GAMMA): "	<< BETA/GAMMA	<< '\n'
-		//TESTE!!!
-		//<< "\tR0 (Reprod. number = BETA/GAMMA): "			<< 1			<< '\n'
-		
-		<< "\tR0_pfx (Protection FX considered): "			<< Ro_pfx << '\n'
-		<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 - GAMMA/BETA		<< '\n'
-		//TESTE!!!
-		//<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 		<< '\n'
-		
-		<< "\ti_inf_pfx (from \\beta(i_0)): "		<< i_inf_pfx << '\n'
+		<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< (sim::beta_a + sim::beta_la)/GAMMA_a	<< '\n'
+		<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 - GAMMA_a / (sim::beta_a + sim::beta_la) << '\n'
 #endif
 		;
 }

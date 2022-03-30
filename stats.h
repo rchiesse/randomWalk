@@ -7,7 +7,6 @@ namespace sim {
 		class Stats {
 		private:
 			static std::ofstream infFracData;
-			static std::ofstream lite;
 #ifdef INFECTED_FRACTION
 		private:
 			static const uint BUFFER_SIZE = (uint)10e6;
@@ -138,11 +137,12 @@ namespace sim {
 #endif
 
 	//Utils
-			static void initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds);
+			static void initStream(const streamType& s);
 			static void endStream(const streamType& s);
 			static void writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAgents);
 			static bool isEmpty(std::ofstream& s);
 			static void resetStats();
+			static void setBasename();
 			static void roots(const long real& a, const long real& b, const long real& c, long real& r1, long real& r2);
 #ifdef INFECTED_FRACTION
 			static void genPlotScript(const std::string& referenceFile);

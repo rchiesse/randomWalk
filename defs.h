@@ -9,19 +9,15 @@
 #include <vector>
 #include <unordered_map>
 #include <queue>
-#include <random>		// uniform_real_distribution<>
+#include <random>		// ----> uniform_real_distribution<>
 #include <cassert>
+#include <functional>	// ----> Function as an argument
 
 // * DEBUG * 
 //#define DEBUG
 #ifdef DEBUG
 #define assertm(exp, msg) assert(((void)msg, exp))
 #endif
-
-// ---------------------------//----------------------------- //
-
-// * BASE DIRECTORY * 
-#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 
 // ---------------------------//----------------------------- //
 
@@ -32,11 +28,24 @@
 #define real double
 //#define real float
 typedef uint32_t agent;
+typedef enum class rates {diadt, dildt};
 namespace graph {
 	typedef uint32_t node;
 }
 
 // ---------------------------//----------------------------- //
+
+// * BASE DIRECTORY AND FILE NAME * 
+#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
+namespace sim {
+	static std::string baseName;
+	static real beta_a;														// ----> Force of infection from an I-agent to an S-agent
+	static real beta_al;														// ----> Force of infection from an I-agent to a site
+	static real beta_la;														// ----> Force of infection from a site to an I-agent
+}
+
+// ---------------------------//----------------------------- //
+
 
 // * NETWORK *
 //#define CLIQUE
@@ -174,43 +183,52 @@ static constexpr uint NUM_AGENTS		= 100;							// ----> Total number of agents i
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU				= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA				= 0.0012;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_aa			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_al			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_la			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_a			= 0.0012;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_l			= 0.0012;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of agents initially infected (i.e. when the simulation starts).
+static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+static constexpr real FRAC_ST_INFECTED	= 0.0;							// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
 // * CONSTANTS * 
 static constexpr uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
 static constexpr long real i_0 = (real)I_0 / NUM_AGENTS;
 static constexpr long real meetingRate = 2.0 * LAMBDA / N;
-static constexpr long real infectionProb = (TAU / (2.0 * LAMBDA + TAU + GAMMA));
-static constexpr long real BETA = meetingRate * infectionProb * NUM_AGENTS;
-static constexpr long real B_MINUS_G = BETA - GAMMA;
-static constexpr long real G_OVER_B = GAMMA / BETA;
-static constexpr long real _1_MINUS_G_OVER_B = 1.0 - G_OVER_B;
-static constexpr long real C = i_0 / (1 - i_0 - G_OVER_B);
-static constexpr long real NEG_RECIPR_LAMBDA = -(1.0 / LAMBDA);				// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
-static constexpr long real NEG_RECIPR_GAMMA	= -(1.0 / GAMMA);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
-static constexpr long real NEG_RECIPR_TAU	= -(1.0 / TAU);					// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
-static constexpr uint ELEMS = 0;											// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
+static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa + GAMMA_a));
+static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al + GAMMA_a));
+static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_l));
+//static constexpr long real BETA = meetingRate * SIGMA_aa * NUM_AGENTS;
+//static constexpr long real B_MINUS_G = BETA - GAMMA;
+//static constexpr long real G_OVER_B = GAMMA / BETA;
+//static constexpr long real _1_MINUS_G_OVER_B = 1.0 - G_OVER_B;
+//static constexpr long real C = i_0 / (1 - i_0 - G_OVER_B);
+static constexpr long real NEG_RECIPR_LAMBDA	= -(1.0 / LAMBDA);				// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_GAMMA_a	= -(1.0 / GAMMA_a);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_GAMMA_l	= -(1.0 / GAMMA_l);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_aa	= -(1.0 / TAU_aa);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_al	= -(1.0 / TAU_al);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_la	= -(1.0 / TAU_la);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr uint ELEMS = 0;												// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
 static constexpr long real TIME_ZERO = 0;
 
 static constexpr uint K = NUM_AGENTS;
-static constexpr long real a = Ws;
-static constexpr long real b = Wi;
-static constexpr long real meetingRate_pfx = LAMBDA * (a / (i_0 * (a - 1) + N) + b / ((1 - i_0) * K * (b - 1) + N));
-static constexpr long real meetingRate_pfx_approx = LAMBDA * ((a+b)/N);
-static constexpr long real BETA_pfx = infectionProb * K * meetingRate_pfx;
-static constexpr long real BETA_pfx_approx = infectionProb * K * meetingRate_pfx_approx;
-static constexpr real B_MINUS_G_pfx = BETA_pfx_approx - GAMMA;
-static constexpr real G_OVER_B_pfx = GAMMA / BETA_pfx_approx;
-static constexpr real _1_MINUS_G_OVER_B_pfx = 1.0 - G_OVER_B_pfx;
-static constexpr real C_pfx = i_0 / (1 - i_0 - G_OVER_B_pfx);
-static constexpr long real Ro_pfx = BETA_pfx / GAMMA;
-static constexpr long real Ro_pfx_approx = BETA_pfx_approx / GAMMA;
-static constexpr long real i_inf_pfx = 1 - (GAMMA / BETA_pfx);
-static constexpr long real i_inf_pfx_approx = 1 - (GAMMA / BETA_pfx_approx);
+//static constexpr long real a = Ws;
+//static constexpr long real b = Wi;
+//static constexpr long real meetingRate_pfx = LAMBDA * (a / (i_0 * (a - 1) + N) + b / ((1 - i_0) * K * (b - 1) + N));
+//static constexpr long real meetingRate_pfx_approx = LAMBDA * ((a+b)/N);
+//static constexpr long real BETA_pfx = SIGMA_aa * K * meetingRate_pfx;
+//static constexpr long real BETA_pfx_approx = SIGMA_aa * K * meetingRate_pfx_approx;
+//static constexpr real B_MINUS_G_pfx = BETA_pfx_approx - GAMMA;
+//static constexpr real G_OVER_B_pfx = GAMMA / BETA_pfx_approx;
+//static constexpr real _1_MINUS_G_OVER_B_pfx = 1.0 - G_OVER_B_pfx;
+//static constexpr real C_pfx = i_0 / (1 - i_0 - G_OVER_B_pfx);
+//static constexpr long real Ro_pfx = BETA_pfx / GAMMA;
+//static constexpr long real Ro_pfx_approx = BETA_pfx_approx / GAMMA;
+//static constexpr long real i_inf_pfx = 1 - (GAMMA / BETA_pfx);
+//static constexpr long real i_inf_pfx_approx = 1 - (GAMMA / BETA_pfx_approx);
 
 #ifdef INFECTED_FRACTION
 static constexpr real OVERLOOK_RATE = 1;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
@@ -224,19 +242,17 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 #endif
 
 // * SIMULATION UTILS *
-#ifdef i_t_FROM_MODEL
-real i_t(const real& t);
-real i_t_2ndMmt(const real& t);
-real i_t_2ndMmt_naive(const real& t);
-real i_t_2ndMmt_logistic(const real& t);
-//real i_t_2ndMmt_sys(const real& t);
-real i_t_pfx(const real& t);
-#endif
+//#ifdef i_t_FROM_MODEL
+//real i_t_2ndMmt(const real& t);
+//real i_t_2ndMmt_naive(const real& t);
+//real i_t_pfx(const real& t);
+//#endif
 
 #ifdef SOLVE_NUMERICALLY
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
-real didt(const real& i);
-void rungeKutta4thOrder(const real& t0, const real& i0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+real diadt(const real& ia, const real& il);
+real dildt(const real& ia, const real& il);
+void rungeKutta4thOrder(const rates& funcName, const std::function<real(const real&, const real&)> rate, const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif
 
 } //namespace sim

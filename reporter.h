@@ -22,7 +22,8 @@ public:
 	static void progress		 (const uint& round, const uint& granularity = 10);
 	static void avSimTimeInfo	 (const real& avDuration);
 	static void networkInfo		 (const uint& n, const uint& m, const real& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize);
-	static void simulationInfo	 (const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const real& TAU, const real& GAMMA, const real& LAMBDA, const real& Ws, const real& Wi);
+	//static void simulationInfo	 (const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const real& TAU_aa, const real& TAU_al, const real& TAU_la, const real& GAMMA_a, const real& GAMMA_l, const real& LAMBDA);
+	static void simulationInfo	 (const uint& itotal);
 	static void errorOpening	 (const std::string& fileName);
 	static void openedWithSuccess(const std::string& fileName);
 #ifdef OCCUPANCY

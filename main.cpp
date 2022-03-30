@@ -2,7 +2,6 @@
 #include "reporter.h"
 #include "stats.h"
 
-
 namespace sim { // Simulator's namespace.
 
 //Main structures
@@ -42,12 +41,15 @@ uint stotal;														// ----> Up-to-date number of SUSCEPTIBLE agents durin
 uint itotal;														// ----> Up-to-date number of INFECTED agents during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
-real beta2ndMmt;
-real beta2ndMmt_logistic;
-real beta2ndMmt_naive;
-long real C_2ndMmt;
-long real C_2ndMmt_logistic;
-long real C_2ndMmt_naive;
+real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
+real sim::beta_al;													// ----> Force of infection from an I-agent to a site
+real sim::beta_la;													// ----> Force of infection from a site to an I-agent
+std::string sim::baseName;
+//real beta2ndMmt_logistic;
+//real beta2ndMmt_naive;
+//long real C_2ndMmt;
+//long real C_2ndMmt_logistic;
+//long real C_2ndMmt_naive;
 
 //Agent control variables
 using std::vector; using graph::node;
@@ -81,10 +83,13 @@ inline static real U() { return distribution(generator); }
 static const uint randomInt(const uint& openRange);
 //Exponential random-number generator.
 static const real EXP(const real& param);
-//Exponential random-number generator that determines whether or not an agent will become infected.
-static const real EXPTau();
+//Exponential random-number generator based on the transmissibility parameter.
+static const real EXPTau_aa();
+static const real EXPTau_al();
+static const real EXPTau_la();
 //Exponential random-number generator that sets the moment an infected agent will recover.
-static const real EXPGamma();
+static const real EXPGamma_a();
+static const real EXPGamma_l();
 //Exponential random-number generator that sets the next moment an agent walks.
 static const real EXPLambda();
 void resetVariables();
@@ -133,37 +138,30 @@ int main() {
 /* IMPLEMENTATION */
 static const uint sim::randomInt(const uint& openRange) { return (uint)(floor(openRange * U())); }
 static const real sim::EXP(const real& param) { return -(1.0 / param) * log(U()); }
-static const real sim::EXPTau()		{ return NEG_RECIPR_TAU		* log(U()); }
-static const real sim::EXPGamma()	{ return NEG_RECIPR_GAMMA	* log(U()); }
+static const real sim::EXPTau_aa()		{ return NEG_RECIPR_TAU_aa	* log(U()); }
+static const real sim::EXPTau_al()		{ return NEG_RECIPR_TAU_al	* log(U()); }
+static const real sim::EXPTau_la()		{ return NEG_RECIPR_TAU_la	* log(U()); }
+static const real sim::EXPGamma_a()	{ return NEG_RECIPR_GAMMA_a	* log(U()); }
+static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #ifdef i_t_FROM_MODEL
-real sim::i_t(const real& t) {
-	double val = (t > 1000) ? 1000 : t;
 
-	long real Ce = sim::C * exp(B_MINUS_G * val);
-	return std::max((_1_MINUS_G_OVER_B) * (Ce / (1.0 + Ce)), (long real)0.0);
-}
-real sim::i_t_2ndMmt(const real& t) {
-	double val = (beta2ndMmt - GAMMA) * t;
-	if(val > 500) val = 500;
-
-	//long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
-	long real Ce = C_2ndMmt * exp(val);
-
-	return std::max((1.0 - (GAMMA/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
-}
-real sim::i_t_2ndMmt_logistic(const real& t) {
-	double val = (t > 1000) ? 1000 : t;
-
-	long real Ce = C_2ndMmt_logistic * exp((beta2ndMmt_logistic - GAMMA) * val);
-	return std::max((1.0 - (GAMMA / beta2ndMmt_logistic)) * (Ce / (1.0 + Ce)), (long real)0.0);
-}
-real sim::i_t_2ndMmt_naive(const real& t) {
-	double val = (t > 1000) ? 1000 : t;
-
-	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * val);
-	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
-}
+//real sim::i_t_2ndMmt(const real& t) {
+//	double val = (beta2ndMmt - GAMMA_a) * t;
+//	if(val > 500) val = 500;
+//
+//	//long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
+//	long real Ce = C_2ndMmt * exp(val);
+//
+//	return std::max((1.0 - (GAMMA_a/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
+//}
+//
+//real sim::i_t_2ndMmt_naive(const real& t) {
+//	double val = (t > 1000) ? 1000 : t;
+//
+//	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * val);
+//	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
+//}
 //real sim::i_t_2ndMmt_sys(const real& t) {
 //	for (size_t i = 0; i < sim::frequency.size(); i++) {
 //
@@ -171,158 +169,133 @@ real sim::i_t_2ndMmt_naive(const real& t) {
 //		return std::max((1.0 - (GAMMA / beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
 //	}
 //}
-real sim::i_t_pfx(const real& t) {
-	long real Ce = sim::C_pfx * exp(B_MINUS_G_pfx * t);
-	return std::max((_1_MINUS_G_OVER_B_pfx) * (Ce / (1.0 + Ce)), (long real)0.0);
-}
-void sim::setBeta2ndMmt() {
-	////Excess:
-	//vector<double> expAgBlock;				// ----> Expected number of agents within each degree block.
-	//expAgBlock.resize(graph::Graph::largestDegree + 1, 0);
-	//for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-	//	expAgBlock[_b] = (NUM_AGENTS * _b * graph::Graph::frequency[_b])/graph::Graph::averageDegree;
-	//}
-	//vector<double> expOcc;					// ----> Expected node occupancy within block _b, i.e. the expected number of agents within each node of some specific degree block.
-	//expOcc.resize(graph::Graph::largestDegree + 1, 0);
-	//for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-	//	if(graph::Graph::frequency[_b] > 0)
-	//		expOcc[_b] = expAgBlock[_b] / (N * graph::Graph::frequency[_b]);
-	//}
-	//double generalExpOcc = 0;
-	//double _generalExpOcc = 0;
-	////uint activeBlocks = 0;
-	//for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
-	//	generalExpOcc += expOcc[b] * ((double)b / N);
-	//	_generalExpOcc += expOcc[b] * graph::Graph::frequency[b];
-	//	//if (graph::Graph::frequency[b] > 0)
-	//	//	++activeBlocks;
-	//}
-	//double excess = 0;
-	//double countExcess = 0;
-	//for (size_t b = 1; b < expOcc.size(); ++b) {
-	//	if (expOcc[b] - 1.0 > 0) {
-	//		//excess += expOcc[b] - (expOcc[b] - 1.0);
-	//		excess += expOcc[b] - 1.0;
-	//		++countExcess;
-	//	}
-	//}
-	////excess /= NUM_AGENTS;
-
-	//1st approach: 
-	vector<double> beta_b(graph::Graph::frequency.size(), 0);
-	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b){
-		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::frequency[_b]) / (2 * graph::Graph::m);
-		//if (_kb_ < N * graph::Graph::frequency[_b]) {
-		if (_kb_ < N * graph::Graph::frequency[_b]) {
-			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
-		}
-		else {
-			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
-		}
-	}
-	beta2ndMmt = 0;
-	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-		beta2ndMmt += beta_b[_b];
-	}
-
-	//2nd approach:
-	beta_b.resize(0);
-	beta_b.resize(graph::Graph::frequency.size(), 0);
-	double sigma = 0;
-	double sigma_2 = 0;
-	double psi = 0;
-	uint validBlock = 0;
-	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
-	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
-	double variance = abs(graph::Graph::_2ndMmt - pow(graph::Graph::averageDegree, 2));
-	double _diff = abs(graph::Graph::averageDegree - graph::Graph::_2ndMmt);
-	double std_dev = abs(sqrt(variance));
-	const double& avDg = graph::Graph::averageDegree;
-	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::frequency[_b]) / (2.0 * graph::Graph::m);
-		//double kbnb = _kb_ / N * graph::Graph::frequency[_b];
-		double norm_kb = (_kb_/N)/ ((_kb_/N)+ std::exp(-(_kb_/N)));
-		//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU + (LAMBDA * (1- norm_kbnb)) )) * (_kb_ * (1 - norm_kbnb))) / graph::Graph::m;
-		beta_b[_b] = (LAMBDA * _b * (TAU / (2*LAMBDA + TAU) * norm_kb * N )) / graph::Graph::m;
-		
-		if (graph::Graph::frequency[_b] > 0) {
-			++validBlock;
-			//double dimmer = 1.0 - ((_kb_/(4.0 + _kb_)) / ((_kb_/ (4.0 + _kb_)) + exp(-(_kb_/ (4.0 + _kb_)))));
-			//double dimmer = 1.0 - ((_kb_/(expBlock)) / ((_kb_/ (expBlock)) + exp(-(_kb_/ (expBlock)))));
-			//double val = (_kb_) / (abs(std_dev - (log2(avDg) * _kb_)));
-			//double val = (_kb_) / (1 + abs(variance - avDg));
-			//double val = (_kb_) / (expBlock + (2 * _kb_));
-			//double val = graph::Graph::averageDegree / graph::Graph::_2ndMmt;
-			//double val = _kb_/(abs(expBlock - avDg) + _kb_);
-			//double val = _kb_/(avDg + _kb_);
-			//double val = _kb_/(log2(avDg)*max_kb);
-			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
-			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
-			//double dimmer = 1.0 - (val / (val + exp(-val)));
-
-			//Bom resultado:
-			double nTau = (double)(TAU) / std::max(1.0, _kb_ * std::min(1.0, graph::Graph::_2ndMmt/avDg));
-			
-			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
-			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
-			
-			//double dimmer = (_kb_ < 2.0) ? 1.0 : 1.0 - (_kb_) / (_kb_ + exp(-(1.0 / (_kb_))));
-			//sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
-			
-			//sigma += (double)TAU / (LAMBDA + TAU + LAMBDA * (1.0 - (std::min(1.0,(_kb_/2.0)))));
-
-			psi += 1.0 - pow(1.0 - (1.0 / ((double)N * graph::Graph::frequency[_b])), _kb_);
-
-			//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
-			sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : TAU / (LAMBDA + TAU);
-			
-			//sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : (TAU*dimmer) / (LAMBDA + (TAU*dimmer));
-			sigma_2 += nTau / (2 * LAMBDA + nTau);
-		}
-	}
-	//psi /= validBlock;
-	sigma /= validBlock;
-	sigma_2 /= validBlock;
-	beta2ndMmt_logistic = 0;
-	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-		beta2ndMmt_logistic += beta_b[_b];
-	}
-
-	//double kOverN = (double)NUM_AGENTS / N;
-	//double sigma = (double)TAU / (LAMBDA + TAU + LAMBDA * (1 - _k_n));
-	//double _k_n = (kOverN) / (kOverN + std::exp(-(kOverN * (std::_Pi/2))));
-	//beta2ndMmt_logistic = (double)((LAMBDA * _b * sigma * _k_n)) / graph::Graph::m;
-
-
-	//double probC = 0;	// ----> Probability "correction".
-	//probC =  TAU/(LAMBDA + TAU);
-
-	//3rd approach:
-	//double _aux = (excess * (1.0 / std::exp(log(N) - log(NUM_AGENTS))));
-	//beta2ndMmt = (meetingRate * infectionProb * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	
-	//beta2ndMmt_naive = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	
-	//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
-	//beta2ndMmt = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	beta2ndMmt = (meetingRate * infectionProb * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	//beta2ndMmt_naive = (2*LAMBDA * NUM_AGENTS * psi * infectionProb) / graph::Graph::averageDegree;
-	
-	
-	
-	//Bom resultado na BA:
-	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	
-	//Matheus (prosseguir implementação):
-	//beta2ndMmt_naive = (2 * LAMBDA * NUM_AGENTS * psi * sigma) / pow(graph::Graph::averageDegree,2);
-	
-	//beta2ndMmt_naive = (LAMBDA * infectionProb * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
-
-	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
-	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));
-	C_2ndMmt_naive = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_naive));
-}
+//real sim::i_t_pfx(const real& t) {
+//	long real Ce = sim::C_pfx * exp(B_MINUS_G_pfx * t);
+//	return std::max((_1_MINUS_G_OVER_B_pfx) * (Ce / (1.0 + Ce)), (long real)0.0);
+//}
+//void sim::setBeta2ndMmt() {
+//	
+//	//1st approach: 
+//	vector<double> beta_b(graph::Graph::frequency.size(), 0);
+//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b){
+//		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::frequency[_b]) / (2 * graph::Graph::m);
+//		//if (_kb_ < N * graph::Graph::frequency[_b]) {
+//		if (_kb_ < N * graph::Graph::frequency[_b]) {
+//			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
+//		}
+//		else {
+//			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
+//		}
+//	}
+//	beta2ndMmt = 0;
+//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+//		beta2ndMmt += beta_b[_b];
+//	}
+//
+//	//2nd approach:
+//	beta_b.resize(0);
+//	beta_b.resize(graph::Graph::frequency.size(), 0);
+//	double sigma = 0;
+//	double sigma_2 = 0;
+//	double psi = 0;
+//	uint validBlock = 0;
+//	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
+//	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
+//	double variance = abs(graph::Graph::_2ndMmt - pow(graph::Graph::averageDegree, 2));
+//	double _diff = abs(graph::Graph::averageDegree - graph::Graph::_2ndMmt);
+//	double std_dev = abs(sqrt(variance));
+//	const double& avDg = graph::Graph::averageDegree;
+//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+//		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::frequency[_b]) / (2.0 * graph::Graph::m);
+//		//double kbnb = _kb_ / N * graph::Graph::frequency[_b];
+//		double norm_kb = (_kb_/N)/ ((_kb_/N)+ std::exp(-(_kb_/N)));
+//		//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU + (LAMBDA * (1- norm_kbnb)) )) * (_kb_ * (1 - norm_kbnb))) / graph::Graph::m;
+//		beta_b[_b] = (LAMBDA * _b * (TAU / (2*LAMBDA + TAU) * norm_kb * N )) / graph::Graph::m;
+//		
+//		if (graph::Graph::frequency[_b] > 0) {
+//			++validBlock;
+//			//double dimmer = 1.0 - ((_kb_/(4.0 + _kb_)) / ((_kb_/ (4.0 + _kb_)) + exp(-(_kb_/ (4.0 + _kb_)))));
+//			//double dimmer = 1.0 - ((_kb_/(expBlock)) / ((_kb_/ (expBlock)) + exp(-(_kb_/ (expBlock)))));
+//			//double val = (_kb_) / (abs(std_dev - (log2(avDg) * _kb_)));
+//			//double val = (_kb_) / (1 + abs(variance - avDg));
+//			//double val = (_kb_) / (expBlock + (2 * _kb_));
+//			//double val = graph::Graph::averageDegree / graph::Graph::_2ndMmt;
+//			//double val = _kb_/(abs(expBlock - avDg) + _kb_);
+//			//double val = _kb_/(avDg + _kb_);
+//			//double val = _kb_/(log2(avDg)*max_kb);
+//			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
+//			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
+//			//double dimmer = 1.0 - (val / (val + exp(-val)));
+//
+//			//Bom resultado:
+//			double nTau = (double)(TAU) / std::max(1.0, _kb_ * std::min(1.0, graph::Graph::_2ndMmt/avDg));
+//			
+//			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
+//			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
+//			
+//			//double dimmer = (_kb_ < 2.0) ? 1.0 : 1.0 - (_kb_) / (_kb_ + exp(-(1.0 / (_kb_))));
+//			//sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
+//			
+//			//sigma += (double)TAU / (LAMBDA + TAU + LAMBDA * (1.0 - (std::min(1.0,(_kb_/2.0)))));
+//
+//			psi += 1.0 - pow(1.0 - (1.0 / ((double)N * graph::Graph::frequency[_b])), _kb_);
+//
+//			//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
+//			sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : TAU / (LAMBDA + TAU);
+//			
+//			//sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : (TAU*dimmer) / (LAMBDA + (TAU*dimmer));
+//			sigma_2 += nTau / (2 * LAMBDA + nTau);
+//		}
+//	}
+//	//psi /= validBlock;
+//	sigma /= validBlock;
+//	sigma_2 /= validBlock;
+//	beta2ndMmt_logistic = 0;
+//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+//		beta2ndMmt_logistic += beta_b[_b];
+//	}
+//
+//	//double kOverN = (double)NUM_AGENTS / N;
+//	//double sigma = (double)TAU / (LAMBDA + TAU + LAMBDA * (1 - _k_n));
+//	//double _k_n = (kOverN) / (kOverN + std::exp(-(kOverN * (std::_Pi/2))));
+//	//beta2ndMmt_logistic = (double)((LAMBDA * _b * sigma * _k_n)) / graph::Graph::m;
+//
+//
+//	//double probC = 0;	// ----> Probability "correction".
+//	//probC =  TAU/(LAMBDA + TAU);
+//
+//	//3rd approach:
+//	//double _aux = (excess * (1.0 / std::exp(log(N) - log(NUM_AGENTS))));
+//	//beta2ndMmt = (meetingRate * SIGMA_aa * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+//	
+//	//beta2ndMmt_naive = (meetingRate * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+//	
+//	//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
+//	//beta2ndMmt = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+//	beta2ndMmt = (meetingRate * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+//	//beta2ndMmt_naive = (2*LAMBDA * NUM_AGENTS * psi * SIGMA_aa) / graph::Graph::averageDegree;
+//	
+//	
+//	
+//	//Bom resultado na BA:
+//	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+//	
+//	//Matheus (prosseguir implementação):
+//	//beta2ndMmt_naive = (2 * LAMBDA * NUM_AGENTS * psi * sigma) / pow(graph::Graph::averageDegree,2);
+//	
+//	//beta2ndMmt_naive = (LAMBDA * SIGMA_aa * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
+//
+//	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
+//	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));
+//	C_2ndMmt_naive = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_naive));
+//}
 #endif //i_t_FROM_MODEL
+
+void sim::setBeta2ndMmt() {
+	beta_a = (2 * LAMBDA * SIGMA_aa *NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
+	beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
+	beta_la = LAMBDA * N * SIGMA_la;
+}
 
 #ifdef SOLVE_NUMERICALLY
 //real sim::didt(const real& i) { return  _g * (i * (C_1 * i + C_2)) / (i + _h); }
@@ -332,29 +305,37 @@ void sim::setBeta2ndMmt() {
 //	return  BETA_pfx * (1 - i) * i - GAMMA * i;
 //}
 //real sim::didt(const real& i) { return  BETA_pfx * i * (1 - i) - (GAMMA * i); }
-real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
+//real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
+real sim::diadt(const real& ia, const real& il) {
+	return  beta_a * ia * (1 - ia) + beta_la * (1 - ia) * il - GAMMA_a * ia;
+}
+real sim::dildt(const real& ia, const real& il) {
+	return  beta_al * (1 - il) * ia - GAMMA_l * il;
+}
 
-void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void sim::rungeKutta4thOrder(const rates& funcName, const std::function<real(const real&, const real&)> rate, const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
 	constexpr real one_sixth = 1.0 / 6.0;
 	real k1, k2, k3, k4;
-	real i = i0;
+	real i			= (funcName == rates::diadt) ? ia0 : il0;
+	real j			= (funcName == rates::diadt) ? il0 : ia0;
+	saveToFile[0]	= (funcName == rates::diadt) ? ia0 : il0;
 	bool end = false;
-	saveToFile[0] = i0;
 	++outputSize;
 
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		k1 = h * didt(i);
-		k2 = h * didt(i + 0.5 * k1);
-		k3 = h * didt(i + 0.5 * k2);
-		k4 = h * didt(i + k3);
+		k1 = h * rate(i, j);
+		k2 = h * rate(i + 0.5 * k1, j + 0.5 * k1);
+		k3 = h * rate(i + 0.5 * k2, j + 0.5 * k2);
+		k4 = h * rate(i + k3, j + k3);
 
 		i = i + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
+		j = j + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
 		if (i < epsilon) {
 			saveToFile[s] = 0;
 			end = true;
@@ -368,10 +349,10 @@ void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, cons
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		k1 = h * didt(i);
-		k2 = h * didt(i + 0.5 * k1);
-		k3 = h * didt(i + 0.5 * k2);
-		k4 = h * didt(i + k3);
+		k1 = h * rate(i,j);
+		k2 = h * rate(i + 0.5 * k1, j + 0.5 * k1);
+		k3 = h * rate(i + 0.5 * k2, j + 0.5 * k2);
+		k4 = h * rate(i + k3, j + k3);
 		// ***  IF _T IS REQUIRED, USE THE VERSION BELOW  ***
 		//k1 = h * didt(_t, i);
 		//k2 = h * didt(_t + 0.5 * h, i + 0.5 * k1);
@@ -379,6 +360,7 @@ void sim::rungeKutta4thOrder(const real& t0, const real& i0, const real& t, cons
 		//k4 = h * didt(_t + h, i + k3);
 		//_t = t0 + h;
 		i = i + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
+		j = j + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
 		if (i < epsilon) { 
 			saveToFile[outputSize] = 0;
 			++outputSize;
@@ -448,13 +430,10 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 		stat::Stats::siMeetings += (numI);
 	}
 #endif
-	//exposure[ag] = 0;
 	if (numI > 0) {
-		//iniExposureTime[ag] = now;
 		const vector<uint>& list = iAgents[v];
 		for (uint i = 1; i <= numI; ++i) {
 			const real delta = EXPTau();
-			//schedule.emplace(ag, now + delta, action::infect, snapshot[ag], delta, v);
 			schedule.emplace(ag, now + delta, action::infect, list[i], snapshot[ag], snapshot[list[i]]);
 		}
 	}
@@ -696,7 +675,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		
 		//Initializing the applicable stats:
 #ifdef INFECTED_FRACTION
-		Stats::initStream(Ws, Wi, stat::streamType::infFrac, SHORT_LABEL, Graph::n, _numAgents, TAU, GAMMA, LAMBDA, T, ROUNDS);
+		Stats::initStream(stat::streamType::infFrac);
 #endif
 #ifdef ESTIMATE_PROBS
 		Stats::initStream(Ws, Wi, stat::streamType::probs, SHORT_LABEL, Graph::n, _numAgents, TAU, GAMMA, LAMBDA, T, ROUNDS);
@@ -705,7 +684,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Stats::initOcc(Graph::n);
 		Stats::initStream(Ws, Wi, stat::streamType::occupancy,  SHORT_LABEL, Graph::n, _numAgents, TAU, GAMMA, LAMBDA, T, ROUNDS);
 #endif
-		Stats::initStream(Ws, Wi, stat::streamType::avDuration, SHORT_LABEL, Graph::n, _numAgents, TAU, GAMMA, LAMBDA, T, ROUNDS);
+		Stats::initStream(stat::streamType::avDuration);
 		Reporter::startChronometer("\n\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(ROUNDS, T, _numAgents, itotal, Graph::n, TAU, GAMMA, LAMBDA, Ws, Wi);
 #ifdef PROTECTION_FX
@@ -839,25 +818,28 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	constexpr real stepSize = 0.1;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
-	vector<real> saveToFile;
+	vector<real> saveToFile_diadt;
+	vector<real> saveToFile_dildt;
 	uint outputSize = 0;
-	rungeKutta4thOrder(0, FRAC_AG_INFECTED, T, stepSize, epsilon, saveToFile, outputSize, outputGranularity, largerDetailUntil);
+	Stats::setBasename();
+	rungeKutta4thOrder(rates::diadt, &diadt, 0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, outputSize, outputGranularity, largerDetailUntil);
+	rungeKutta4thOrder(rates::dildt, &dildt, 0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 
 	//Saving to file:
 	std::ofstream RKdata;
 	std::stringstream _ss;
 	_ss.precision(4);
-	_ss << EXE_DIR << "/stats/Runge-Kutta_" << NWTK_LABEL << "_Wi" << Wi << "_Ws" << Ws << "_N" << N << "_AG" << K << "_T" << TAU << "_G" << GAMMA << "_L" << LAMBDA << "_STime" << T << ".csv";
+	_ss << EXE_DIR << "/stats/Runge-Kutta_" << baseName << ".csv";
 	std::string _fileName = _ss.str();
 	RKdata.open(_fileName);
-	RKdata << "Time i\n"; // ----> Header
+	RKdata << "Time\tia\til\n"; // ----> Header
 	real _time = 0;
 	for (size_t s = 0; s < largerDetailUntil; ++s) {
-		RKdata << _time << ' ' << saveToFile[s] << '\n';
+		RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_dildt[s] << '\n';
 		_time += stepSize;
 	}
 	for (size_t s = largerDetailUntil; s < outputSize; ++s){
-		RKdata << _time << ' ' << saveToFile[s] << '\n';
+		RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_dildt[s] << '\n';
 		_time += timeIncrement;
 	}
 	RKdata.close();

@@ -1,7 +1,6 @@
 #include "stats.h"
 using namespace sim::stat;
 std::ofstream Stats::infFracData;
-std::ofstream Stats::lite;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
@@ -55,16 +54,18 @@ void Stats::probsToFile() {
 	siMeetingRate = siMeetings / T;
 	probsData << Psi << '\t'
 		<< Pinf << '\t'
-		<< sim::infectionProb << '\t' //modelPinf
+		<< sim::SIGMA_aa << '\t' //modelPinf
 		//<< meetingRate_		 								<< '\t' //meeting rate from simulation
 		//<< meetingRate_ * Pinf * K							<< '\t' //meeting rate from PFX model
 		//<< (sim::meetingRate * (pow(10,(uint)log10(N))))	<< '\t' //meeting rate from standard model
 		//<< (meetingRate_pfx  * (pow(10,(uint)log10(N))))	<< '\t' //meeting rate from PFX model
-		//<< infectionProb * meetingRate_pfx * K				<< '\t' //meeting rate from simulation
+		//<< SIGMA_aa * meetingRate_pfx * K				<< '\t' //meeting rate from simulation
 		<< siMeetingRate << std::endl;
 }
 #endif
-void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
+//void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
+void Stats::initStream(const streamType& s) {
+	setBasename();
 	std::stringstream ss;
 	ss.precision(2);
 	std::string fileName;
@@ -72,30 +73,22 @@ void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, cons
 #ifdef INFECTED_FRACTION
 	case streamType::infFrac:
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/fractionInfected_" << ntwLabel << "_Ws" << Ws << "_Wi" << Wi << "_N" << ntwSize << "_AG" << numAgents << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds << ".csv";
-		fileName = ss.str();
-		infFracData.open(fileName);
-#ifdef i_t_FROM_MODEL
-		//Header
-		//infFracData << "Agent\tAction\tTime\tInfFrac\tStdModel\tPFXModel\n";
-		infFracData << "Agent\tAction\tTime\tInfFrac\tStdModel\t2ndMmtNaive\t2ndMmt\t2ndMmt_log\n";
-#else
-		//Header
-		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
-#endif
-		//Lite version:
-		ss.str("");			// ----> Clear content.
-		ss << "fractionInfected---_" << ntwLabel << "_Ws" << Ws << "_Wi" << Wi << "_N" << ntwSize << "_AG" << numAgents << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds;
+		ss << "fractionInfected_" << baseName;
 		{
 			std::string ref = ss.str();
 			genPlotScript(ref);
 		}
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/fractionInfected---_" << ntwLabel << "_Ws" << Ws << "_Wi" << Wi << "_N" << ntwSize << "_AG" << numAgents << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds << ".csv";
+		ss << EXE_DIR << "/stats/fractionInfected_" << baseName << ".csv";
 		fileName = ss.str();
-		lite.open(fileName);
-		lite << "Time\tInfFrac\t2ndMmt\n";
-
+		infFracData.open(fileName);
+#ifdef i_t_FROM_MODEL
+		//Header
+		infFracData << "Agent\tAction\tTime\tInfFrac\ti_ag\ti_site\n";
+#else
+		//Header
+		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
+#endif
 		break;
 #endif //INFECTED_FRACTION
 #ifdef ESTIMATE_PROBS
@@ -130,7 +123,7 @@ void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, cons
 #endif //OCCUPANCY
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/averageDuration_" << ntwLabel << "_N" << ntwSize << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds << ".csv";
+		ss << EXE_DIR << "/stats/averageDuration_" << baseName << ".csv";
 		fileName = ss.str();
 		avDurData.open(fileName, std::ios::app);
 		//Header
@@ -157,7 +150,6 @@ void Stats::endStream(const streamType& s) {
 #endif //OCCUPANCY
 	default:
 		infFracData.close();
-		lite.close();
 	}
 }
 #ifdef INFECTED_FRACTION
@@ -169,7 +161,11 @@ void Stats::bufferizeIFrac(const uint& ag, const real& now, const char& action, 
 	++_bufferPos;
 	if (_bufferPos == BUFFER_SIZE) {	// ----> Flush
 		for (uint i = 0; i < BUFFER_SIZE; ++i) {
+#ifdef i_t_FROM_MODEL
+			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
+#else
 			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
+#endif
 			i += EVT_GRANULARITY;
 		}
 		_bufferPos = 0;
@@ -178,16 +174,13 @@ void Stats::bufferizeIFrac(const uint& ag, const real& now, const char& action, 
 void Stats::iFracToFile(const uint& overlook) {
 	for (uint i = 0; i < _bufferPos; ++i) {
 #ifdef i_t_FROM_MODEL
-		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_pfx(timestampBuffer[i]) << '\n';
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_logistic(timestampBuffer[i]) << '\n';
-		lite << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
+		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
+		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #else
 		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #endif
 		i += overlook;
 	}
-	//infFracData.close();
-	//lite.close();
 }
 void Stats::genPlotScript(const std::string& referenceFile) {
 	std::string fileName(EXE_DIR + std::string("/genplot.py"));
@@ -295,6 +288,9 @@ const double& Stats::avDuration() {
 bool Stats::isEmpty(std::ofstream& s) {
 	s.seekp(0, std::ios::end);
 	return s.tellp() == 0;
+}
+void Stats::setBasename() {
+	baseName = std::string(std::string(SHORT_LABEL) + "_Ws" + std::to_string(Ws) + "_Wi" + std::to_string(Wi) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
 }
 void Stats::resetStats() {
 #ifdef OCCUPANCY

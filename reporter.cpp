@@ -44,7 +44,7 @@ void Reporter::stopChronometer(const std::string& message) {
 	if (h) m /= (h * 60);
 	std::stringstream friendly;
 	friendly.precision(2);
-	if (h)		friendly << h << "h " << m << "m " << s << "s";
+	if		(h)	friendly << h << "h " << m << "m " << s << "s";
 	else if (m)	friendly << m << "m " << s << "s";
 	else		friendly << s << "s";
 	std::cout << message << " (" << timeElapsed / CLOCKS_PER_SEC << "s == " << friendly.str() << ").";

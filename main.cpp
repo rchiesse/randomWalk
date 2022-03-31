@@ -5,22 +5,22 @@
 namespace sim { // Simulator's namespace.
 
 //Main structures
-enum class action{walk, recoverAg, recoverSite, infectAg, infectSite};
+enum class action{walk, recoverAg, recoverSite, agInfectAg, agInfectSite, siteInfectAg };
 struct job {
 	uint target		= INT32_MAX;			// ----> Target ID (either an agent or a site).
 	real time		= 0;
 	action a		= action::walk;
 
 	//Infection only:
-	uint validity_S			= UINT_MAX;		// ----> Snapshot. If the S-agent's current snapshot does not match this one, then the event is ignored and the infection does not occur.
-	uint validity_I			= UINT_MAX;		
-	agent infective			= UINT_MAX;
+	uint validity_S			= UINT_MAX;		// ----> S-agent's snapshot from the moment the event was generated. If the S-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.
+	uint validity_I			= UINT_MAX;		// ----> I-agent's snapshot from the moment the event was generated. If the I-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.		
+	uint infective			= UINT_MAX;		// ----> ID of the infective actor (either an agent or a site). It will be necessary to later retrieve its snapshot by the time the infection event is processed. If this does not match 'validity_I', then the event is ignored and the infection does not occur.
 
 	job(const uint&& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
-	job(const uint&& _target, const real&& _time, const action&& _action, const agent&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
+	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 	job() {}
 	job(const uint& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
-	job(const uint& _target, const real& _time, const action&& _action, const agent& _infective, const uint& _snapshot_S, const uint& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
+	job(const uint& _target, const real& _time, const action&& _action, const uint& _infective, const uint& _snapshot_S, const uint& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 
 	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
@@ -35,8 +35,9 @@ std::priority_queue<job, std::vector<job>, earlier> schedule;
 
 
 //Simulation variables:
-uint stotal;														// ----> Up-to-date number of SUSCEPTIBLE agents during the simulation.
-uint itotal;														// ----> Up-to-date number of INFECTED agents during the simulation.
+uint saTotal;														// ----> Up-to-date number of SUSCEPTIBLE AGENTS during the simulation.
+uint iaTotal;														// ----> Up-to-date number of INFECTED AGENTS during the simulation.
+uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
 real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
@@ -52,7 +53,8 @@ std::string sim::baseName;
 //Agent control variables
 using std::vector; using graph::node;
 vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
-vector<uint> snapshot		(NUM_AGENTS,0);							// ----> A counter assigned to each agent and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
+vector<uint> snapshot_a		(NUM_AGENTS,0);							// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
+vector<uint> snapshot_l		(N, 0);									// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
 vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
 vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
 vector<uint> indexWithinNode(NUM_AGENTS);							// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
@@ -98,7 +100,7 @@ void recoverAg	    (const agent& ag, const real& now);
 void recoverSite    (const uint& site, const real& now);
 
 using graph::node;
-void fate			(const agent& ag, const real& now, const agent& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
+void fate			(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
 void checkinAsSus   (const agent& ag, const node& v);
 void enterNodeAsInf (const agent& ag, const node& v, const real& now);
@@ -412,7 +414,7 @@ void sim::checkoutAsInf  (const agent& ag, const node& v) {
 	--lastPos;
 }
 void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
-	++snapshot[ag];
+	++snapshot_a[ag];
 	checkinAsSus(ag, v);
 	const uint& numI = iInNode[v];					// ----> Number of infected agents currently hosted in v.
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
@@ -433,12 +435,12 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 		const vector<uint>& list = iAgents[v];
 		for (uint i = 1; i <= numI; ++i) {
 			const real delta = EXPTau_aa();
-			schedule.emplace(ag, now + delta, action::infectAg, list[i], snapshot[ag], snapshot[list[i]]);
+			schedule.emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]]);
 		}
 	}
-	if () {
-		const real delta = EXPTau_aa();
-		schedule.emplace(ag, now + delta, action::infectSite, list[i], snapshot[ag], snapshot[list[i]]);
+	if (isInfectedSite[v]) {
+		const real delta = EXPTau_la();
+		schedule.emplace(ag, now + delta, action::siteInfectAg, v, snapshot_a[ag], snapshot_l[v]);
 	}
 #ifdef PROTECTION_FX
 	if (numS == 1)
@@ -446,7 +448,7 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 #endif
 }
 void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
-	++snapshot[ag];
+	++snapshot_a[ag];
 	checkinAsInf(ag, v);
 	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
@@ -471,11 +473,11 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	const vector<uint>& list = sAgents[v];
 	for (uint i = 1; i <= numS; ++i) {
 		const real delta = EXPTau_aa();
-		schedule.emplace(list[i], now + delta, action::infectAg, ag, snapshot[list[i]], snapshot[ag]);
+		schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
 	}
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
-	++snapshot[ag];
+	++snapshot_a[ag];
 	checkoutAsInf(ag, v);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
@@ -489,7 +491,7 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 #endif
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
-	++snapshot[ag];
+	++snapshot_a[ag];
 	checkoutAsSus(ag, v);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
@@ -516,37 +518,36 @@ void sim::walk(const agent& ag, const real& now) {
 }
 void sim::recoverAg		 (const agent& ag, const real& now) {
 	isInfectedAg[ag] = false;
-	++stotal;
-	--itotal;
+	++saTotal;
+	--iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, 'R', itotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, 'R', iaTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
 }
-void sim::fate(const agent& ag, const real& now, const agent& infective, const uint& validity_S, const uint& validity_I) {
+void sim::fate(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 #ifdef ESTIMATE_PROBS
 	++stat::Stats::totalFate;
 	if (exposure[ag] > 0) 
 		stat::Stats::totalExposition += exposure[ag]; 
 #endif
-	if (validity_S != snapshot[ag] || validity_I != snapshot[infective]) {
+	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective]) {
 		return;	// ----> Event became obsolete.
 	}
-		isInfectedAg[ag] = true;
-		--stotal;
-		++itotal;
+	isInfectedAg[ag] = true;
+	--saTotal;
+	++iaTotal;
 #ifdef ESTIMATE_PROBS
-		++stat::Stats::totalInfections;
+	++stat::Stats::totalInfections;
 #endif
 #ifdef INFECTED_FRACTION
-		stat::Stats::bufferizeIFrac(ag, now, 'I', itotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, 'I', iaTotal, NUM_AGENTS, OVERLOOK);
 #endif
-		leaveNodeAsSus(ag, currentNode[ag], now);
-		enterNodeAsInf(ag, currentNode[ag], now);
-		schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
-	//} 
+	leaveNodeAsSus(ag, currentNode[ag], now);
+	enterNodeAsInf(ag, currentNode[ag], now);
+	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
@@ -602,12 +603,12 @@ void sim::readParams() {
 	//TODO
 }
 void sim::resetVariables() {
-	itotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
-	stotal = NUM_AGENTS - itotal;
+	iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
+	saTotal = NUM_AGENTS - iaTotal;
 	now = 0;
 	while (!schedule.empty()) schedule.pop();	// ----> Needed from the 2nd round on.
 	for (agent a = 0; a < isInfectedAg.size(); ++a) isInfectedAg[a] = false;
-	snapshot.resize(NUM_AGENTS, 0);
+	snapshot_a.resize(NUM_AGENTS, 0);
 	using graph::Graph; using graph::node;
 	for (node v = 0; v < Graph::n; ++v) iAgents[v][ELEMS] = 0;
 	for (node v = 0; v < Graph::n; ++v) sAgents[v][ELEMS] = 0;
@@ -659,7 +660,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif //CLIQUE
 		Stats::resetAvDur();
 		for (uint r = 0; r < ROUNDS; ++r) totalSimTime[r] = 0;
-		itotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
+		iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
 		
 		//Initializing the applicable stats:
 #ifdef INFECTED_FRACTION
@@ -674,7 +675,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 		Stats::initStream(stat::streamType::avDuration);
 		Reporter::startChronometer("\n\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
-		Reporter::simulationInfo(itotal);
+		Reporter::simulationInfo(iaTotal);
 #ifdef PROTECTION_FX
 		//long real s1 = 0, s2 = 0;
 		//stat::Stats::roots(C13, C14, C15, s1, s2);
@@ -697,7 +698,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 			//Now we must define which agents are infected from the start, and then schedule their 'recover' event.
 			//It is not a problem to always infect the first 'itotal' agents, since the starting node for each of them will be randomly set.
-			for (agent i = 0; i < itotal; ++i) {
+			for (agent i = 0; i < iaTotal; ++i) {
 				isInfectedAg[i] = true;
 				schedule.emplace(i, EXPGamma_a(), action::recoverAg);
 			}
@@ -708,7 +709,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = 0; i < itotal; ++i)
 				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
 #else
-			for (agent i = 0; i < itotal; ++i)
+			for (agent i = 0; i < iaTotal; ++i)
 				enterNodeAsInf(i, randomLCCNode(), TIME_ZERO);
 #endif
 
@@ -717,7 +718,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = itotal; i < _numAgents; ++i)
 				enterNodeAsSus(i, randomInt(Graph::n), TIME_ZERO);
 #else
-			for (agent i = itotal; i < _numAgents; ++i)
+			for (agent i = iaTotal; i < _numAgents; ++i)
 				enterNodeAsSus(i, randomLCCNode(), TIME_ZERO);
 #endif
 
@@ -734,10 +735,13 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					walk(j.target, now);
 					schedule.emplace(j.target, now + EXPLambda(), action::walk);
 					break;
-				case action::infectAg:
+				case action::agInfectAg:
 					fate(j.target, now, j.infective, j.validity_S, j.validity_I);
 					break;
-				case action::infectSite:
+				case action::agInfectSite:
+					;
+					break;
+				case action::siteInfectAg:
 					;
 					break;
 				case action::recoverSite:
@@ -745,7 +749,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					break;
 				default:
 					recoverAg(j.target, now);
-					if (itotal == 0) { 
+					if (iaTotal == 0) {
 						earlyStop = true; 
 						timeLimit = now; // ----> Exits the 'while'-loop by the next conditional test.
 					}

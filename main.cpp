@@ -293,11 +293,8 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #endif //i_t_FROM_MODEL
 
 void sim::setBeta2ndMmt() {
-	double _1stmmtSqrt = pow(graph::Graph::averageDegree, 2);
-	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / _1stmmtSqrt;
-	std::cout << "beta_a = " << std::to_string(beta_a);
-	// beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
-	beta_al = beta_a;
+	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
+	beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
 	beta_la = LAMBDA * N * SIGMA_la;
 }
 
@@ -313,10 +310,10 @@ void sim::setBeta2ndMmt() {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diadt(const real& ia, const real& il) {
-	return  beta_a * ia * (1 - ia) + beta_la * (1 - ia) * il - GAMMA_a * ia;
+	return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
 }
 real sim::dildt(const real& ia, const real& il) {
-	return  beta_al * (1 - il) * ia - GAMMA_l * il;
+	return  beta_al * (1.0 - il) * ia - GAMMA_l * il;
 }
 
 void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {

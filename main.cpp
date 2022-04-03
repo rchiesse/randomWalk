@@ -40,10 +40,10 @@ uint iaTotal;														// ----> Up-to-date number of INFECTED AGENTS during 
 uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
-real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
-real sim::beta_al;													// ----> Force of infection from an I-agent to a site
-real sim::beta_la;													// ----> Force of infection from a site to an I-agent
-std::string sim::baseName;
+//real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
+//real sim::beta_al;													// ----> Force of infection from an I-agent to a site
+//real sim::beta_la;													// ----> Force of infection from a site to an I-agent
+//std::string sim::baseName;
 //real beta2ndMmt_logistic;
 //real beta2ndMmt_naive;
 //long real C_2ndMmt;
@@ -293,8 +293,11 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #endif //i_t_FROM_MODEL
 
 void sim::setBeta2ndMmt() {
-	beta_a = (2 * LAMBDA * SIGMA_aa *NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-	beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
+	double _1stmmtSqrt = pow(graph::Graph::averageDegree, 2);
+	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / _1stmmtSqrt;
+	std::cout << "beta_a = " << std::to_string(beta_a);
+	// beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
+	beta_al = beta_a;
 	beta_la = LAMBDA * N * SIGMA_la;
 }
 
@@ -316,59 +319,77 @@ real sim::dildt(const real& ia, const real& il) {
 	return  beta_al * (1 - il) * ia - GAMMA_l * il;
 }
 
-void sim::rungeKutta4thOrder(const rates& funcName, const std::function<real(const real&, const real&)> rate, const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
-	saveToFile.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
 	constexpr real one_sixth = 1.0 / 6.0;
 	real k1, k2, k3, k4;
-	real i			= (funcName == rates::diadt) ? ia0 : il0;
-	real j			= (funcName == rates::diadt) ? il0 : ia0;
-	saveToFile[0]	= (funcName == rates::diadt) ? ia0 : il0;
+	real l1, l2, l3, l4;
+	real ia = ia0;
+	real il = il0;
+	saveToFile_diadt[0]	= ia0;
+	saveToFile_dildt[0]	= il0;
 	bool end = false;
 	++outputSize;
 
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		k1 = h * rate(i, j);
-		k2 = h * rate(i + 0.5 * k1, j + 0.5 * k1);
-		k3 = h * rate(i + 0.5 * k2, j + 0.5 * k2);
-		k4 = h * rate(i + k3, j + k3);
+		k1 = diadt(ia			, il			);
+		l1 = dildt(ia			, il			);
+		k2 = diadt(ia + 0.5 * k1, il + 0.5 * l1	);
+		l2 = dildt(ia + 0.5 * k1, il + 0.5 * l1	);
+		k3 = diadt(ia + 0.5 * k2, il + 0.5 * l2	);
+		l3 = dildt(ia + 0.5 * k2, il + 0.5 * l2	);
+		k4 = diadt(ia + k3		, il + l3		);
+		l4 = dildt(ia + k3		, il + l3		);
 
-		i = i + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
-		j = j + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
-		if (i < epsilon) {
-			saveToFile[s] = 0;
+
+		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		il = il + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		if (ia < epsilon) {
+			saveToFile_diadt[s] = 0;
 			end = true;
 			++outputSize;
 			break;
 		}
-		saveToFile[s] = i;
+		saveToFile_diadt[s] = ia;
+		saveToFile_dildt[s] = il;
 		++outputSize;
 	}
 	if (end) return;
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		k1 = h * rate(i,j);
-		k2 = h * rate(i + 0.5 * k1, j + 0.5 * k1);
-		k3 = h * rate(i + 0.5 * k2, j + 0.5 * k2);
-		k4 = h * rate(i + k3, j + k3);
+		k1 = diadt(ia, il);
+		l1 = dildt(ia, il);
+		k2 = diadt(ia + 0.5 * k1, il + 0.5 * l1);
+		l2 = dildt(ia + 0.5 * k1, il + 0.5 * l1);
+		k3 = diadt(ia + 0.5 * k2, il + 0.5 * l2);
+		l3 = dildt(ia + 0.5 * k2, il + 0.5 * l2);
+		k4 = diadt(ia + k3, il + l3);
+		l4 = dildt(ia + k3, il + l3);
+
+
+
 		// ***  IF _T IS REQUIRED, USE THE VERSION BELOW  ***
 		//k1 = h * didt(_t, i);
 		//k2 = h * didt(_t + 0.5 * h, i + 0.5 * k1);
 		//k3 = h * didt(_t + 0.5 * h, i + 0.5 * k2);
 		//k4 = h * didt(_t + h, i + k3);
 		//_t = t0 + h;
-		i = i + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
-		j = j + one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
-		if (i < epsilon) { 
-			saveToFile[outputSize] = 0;
+		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		il = il + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		if (ia < epsilon) { 
+			saveToFile_diadt[outputSize] = 0;
+			saveToFile_dildt[outputSize] = 0;
 			++outputSize;
 			break;
 		}
 		if (s % outputGranularity == 0) {
-			saveToFile[outputSize] = i;
+			saveToFile_diadt[outputSize] = ia;
+			saveToFile_dildt[outputSize] = il;
 			++outputSize;
 		}
 	}
@@ -820,8 +841,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	vector<real> saveToFile_dildt;
 	uint outputSize = 0;
 	Stats::setBasename();
-	rungeKutta4thOrder(rates::diadt, &diadt, 0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, outputSize, outputGranularity, largerDetailUntil);
-	rungeKutta4thOrder(rates::dildt, &dildt, 0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	rungeKutta4thOrder(0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 
 	//Saving to file:
 	std::ofstream RKdata;

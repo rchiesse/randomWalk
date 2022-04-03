@@ -84,7 +84,8 @@ void Stats::initStream(const streamType& s) {
 		infFracData.open(fileName);
 #ifdef i_t_FROM_MODEL
 		//Header
-		infFracData << "Agent\tAction\tTime\tInfFrac\ti_ag\ti_site\n";
+		// infFracData << "Agent\tAction\tTime\tInfFrac\ti_ag\ti_site\n";
+		infFracData << "Agent\tAction\tTime\tInfFrac\n";
 #else
 		//Header
 		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;

@@ -28,7 +28,6 @@
 #define real double
 //#define real float
 typedef uint32_t agent;
-typedef enum class rates {diadt, dildt};
 namespace graph {
 	typedef uint32_t node;
 }
@@ -39,9 +38,9 @@ namespace graph {
 #define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 namespace sim {
 	static std::string baseName;
-	static real beta_a;														// ----> Force of infection from an I-agent to an S-agent
-	static real beta_al;														// ----> Force of infection from an I-agent to a site
-	static real beta_la;														// ----> Force of infection from a site to an I-agent
+	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
+	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
+	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent
 }
 
 // ---------------------------//----------------------------- //
@@ -252,7 +251,7 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
-void rungeKutta4thOrder(const rates& funcName, const std::function<real(const real&, const real&)> rate, const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+void rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif
 
 } //namespace sim

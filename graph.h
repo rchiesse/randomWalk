@@ -37,6 +37,7 @@ public:
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real averageDegree;
 	static real _2ndMmt;
+	static real avExpressiveness;
 	static vector<double> frequency;								// ----> Degree blocks.
 	
 #ifdef PROTECTION_FX

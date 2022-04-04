@@ -295,7 +295,7 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 void sim::setBeta2ndMmt() {
 	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
 	beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
-	beta_la = LAMBDA * N * SIGMA_la;
+	beta_la = (LAMBDA * N * SIGMA_la * graph::Graph::avExpressiveness) / graph::Graph::averageDegree;
 }
 
 #ifdef SOLVE_NUMERICALLY
@@ -335,16 +335,16 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 	for (uint s = 1; s < largerDetailUntil; ++s) {
 		k1 = diadt(ia			, il			);
 		l1 = dildt(ia			, il			);
-		k2 = diadt(ia + 0.5 * k1, il + 0.5 * l1	);
-		l2 = dildt(ia + 0.5 * k1, il + 0.5 * l1	);
-		k3 = diadt(ia + 0.5 * k2, il + 0.5 * l2	);
-		l3 = dildt(ia + 0.5 * k2, il + 0.5 * l2	);
-		k4 = diadt(ia + k3		, il + l3		);
-		l4 = dildt(ia + k3		, il + l3		);
+		k2 = diadt(ia + 0.5 * h * k1, il + 0.5	* h * l1);
+		l2 = dildt(ia + 0.5 * h * k1, il + 0.5	* h * l1);
+		k3 = diadt(ia + 0.5 * h * k2, il + 0.5	* h * l2);
+		l3 = dildt(ia + 0.5 * h * k2, il + 0.5	* h * l2);
+		k4 = diadt(ia + k3	* h  	, il + k3	* h 	);
+		l4 = dildt(ia + l3	* h  	, il + l3	* h 	);
 
 
 		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-		il = il + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		il = il + one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
 		if (ia < epsilon) {
 			saveToFile_diadt[s] = 0;
 			end = true;
@@ -359,14 +359,15 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		k1 = diadt(ia, il);
-		l1 = dildt(ia, il);
-		k2 = diadt(ia + 0.5 * k1, il + 0.5 * l1);
-		l2 = dildt(ia + 0.5 * k1, il + 0.5 * l1);
-		k3 = diadt(ia + 0.5 * k2, il + 0.5 * l2);
-		l3 = dildt(ia + 0.5 * k2, il + 0.5 * l2);
-		k4 = diadt(ia + k3, il + l3);
-		l4 = dildt(ia + k3, il + l3);
+		k1 = h * diadt(ia, il);
+		l1 = h * dildt(ia, il);
+		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
+		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
+		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
+		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
+		k4 = diadt(ia + k3 * h, il + k3 * h);
+		l4 = dildt(ia + l3 * h, il + l3 * h);
+
 
 
 
@@ -377,7 +378,7 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 		//k4 = h * didt(_t + h, i + k3);
 		//_t = t0 + h;
 		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-		il = il + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		il = il + one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
 		if (ia < epsilon) { 
 			saveToFile_diadt[outputSize] = 0;
 			saveToFile_dildt[outputSize] = 0;

@@ -27,6 +27,7 @@ uint Graph::lccSize;											// ---> The size of the Largest Connected Compone
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::averageDegree;
 real Graph::_2ndMmt;
+real Graph::avExpressiveness;
 vector<double> Graph::frequency;
 #endif //CLIQUE
 
@@ -247,13 +248,18 @@ void Graph::set2ndMoment() {
 		++(frequency[g[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #endif
 	//Probabilities:
-	for (uint i = 0; i < frequency.size(); ++i)	// ----> Equivalent to "p_b" in [1].
-		frequency[i] /= n;
+	for (uint b = 0; b < frequency.size(); ++b)	// ----> Equivalent to "p_b" in [1].
+		frequency[b] /= n;
 
 	//2nd moment:
 	_2ndMmt = 0;
-	for (uint i = 0; i < frequency.size(); ++i)
-		_2ndMmt += pow(i, 2) * frequency[i];
+	for (uint b = 0; b < frequency.size(); ++b)
+		_2ndMmt += pow(b, 2) * frequency[b];
+
+	//Average expressiveness:
+	avExpressiveness = 0;
+	for (uint b = 0; b < frequency.size(); ++b)
+		avExpressiveness += b * pow(frequency[b], 2);
 }
 
 void Graph::readGraph(const string& fileName, const size_t& totalNodes) {

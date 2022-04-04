@@ -543,22 +543,21 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 	enterNodeAsSus(ag, v, now);
 }
 
-void sim::recoverSite(const uint& v, const real& now) {
+void sim::recoverSite	(const uint& v, const real& now) {
 	isInfectedSite[v] = false;
 	--ilTotal;
 #ifdef INFECTED_FRACTION
 	stat::Stats::bufferizeIFrac((-(int)(v)), now, 'R', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
-	
-	{
-		const vector<uint>& list = sAgents[v];
-		for (uint i = 1; i <= numS; ++i) {
-			const real delta = EXPTau_aa();
-			schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
-		}
-	}
-	leaveNodeAsInf(ag, v, now);
-	enterNodeAsSus(ag, v, now);
+	++snapshot_l[v];
+	//const vector<uint>& slist = sAgents[v];
+	//const vector<uint>& ilist = iAgents[v];
+	//for (uint i = slist[0]; i > 0; --i) {
+	//	++snapshot_a[slist[i]];
+	//}
+	//for (uint i = ilist[0]; i > 0; --i) {
+	//	++snapshot_a[ilist[i]];
+	//}
 }
 
 void sim::fate(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {

@@ -13,7 +13,8 @@ namespace sim {
 			static uint _bufferPos;
 
 			//Structures to measure the fraction of infected agents per time:
-			static std::vector<real> infectedFractionBuffer;
+			static std::vector<real> infectedAgFractionBuffer;
+			static std::vector<real> infectedSiteFractionBuffer;
 			static std::vector<real> timestampBuffer;
 			static std::vector<uint> agentBuffer;
 			static std::vector<char> actionBuffer;
@@ -21,7 +22,7 @@ namespace sim {
 
 			//File manipulation:
 			static void iFracToFile(const uint& overlook);
-			static void bufferizeIFrac(const uint& ag, const real& now, const char& action, const uint& itotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY);
+			static void bufferizeIFrac(const int& ag, const real& now, const char& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY);
 #endif
 
 #ifdef OCCUPANCY

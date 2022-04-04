@@ -4,7 +4,8 @@ std::ofstream Stats::infFracData;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
-std::vector<real> Stats::infectedFractionBuffer(BUFFER_SIZE);
+std::vector<real> Stats::infectedAgFractionBuffer(BUFFER_SIZE);
+std::vector<real> Stats::infectedSiteFractionBuffer(BUFFER_SIZE);
 std::vector<real> Stats::timestampBuffer(BUFFER_SIZE);
 std::vector<uint> Stats::agentBuffer(BUFFER_SIZE);
 std::vector<char> Stats::actionBuffer(BUFFER_SIZE);
@@ -154,8 +155,9 @@ void Stats::endStream(const streamType& s) {
 	}
 }
 #ifdef INFECTED_FRACTION
-void Stats::bufferizeIFrac(const uint& ag, const real& now, const char& action, const uint& itotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
-	infectedFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
+void Stats::bufferizeIFrac(const int& ag, const real& now, const char& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
+	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
+	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
 	actionBuffer[_bufferPos] = action;
@@ -163,7 +165,7 @@ void Stats::bufferizeIFrac(const uint& ag, const real& now, const char& action, 
 	if (_bufferPos == BUFFER_SIZE) {	// ----> Flush
 		for (uint i = 0; i < BUFFER_SIZE; ++i) {
 #ifdef i_t_FROM_MODEL
-			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
+			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
 #else
 			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #endif
@@ -176,9 +178,9 @@ void Stats::iFracToFile(const uint& overlook) {
 	for (uint i = 0; i < _bufferPos; ++i) {
 #ifdef i_t_FROM_MODEL
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
+		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 #else
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
+		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 #endif
 		i += overlook;
 	}

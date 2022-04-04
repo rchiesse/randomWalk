@@ -37,7 +37,7 @@ std::priority_queue<job, std::vector<job>, earlier> schedule;
 //Simulation variables:
 uint saTotal;														// ----> Up-to-date number of SUSCEPTIBLE AGENTS during the simulation.
 uint iaTotal;														// ----> Up-to-date number of INFECTED AGENTS during the simulation.
-uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
+uint ilTotal = 0;													// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
 //real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
@@ -333,15 +333,14 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		k1 = diadt(ia			, il			);
-		l1 = dildt(ia			, il			);
-		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
-		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
-		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
-		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
-		k4 = diadt(ia + 	  h * k3, il +		 h * l3);
-		l4 = dildt(ia + 	  h * k3, il +		 h * l3);
-
+		k1 = diadt(ia				, il				);
+		l1 = dildt(ia				, il				);
+		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1	);
+		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1	);
+		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2	);
+		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2	);
+		k4 = diadt(ia + 	  h * k3, il +		 h * l3	);
+		l4 = dildt(ia + 	  h * k3, il +		 h * l3	);
 
 		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
 		il = il + one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
@@ -359,17 +358,14 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		k1 = h * diadt(ia, il);
-		l1 = h * dildt(ia, il);
-		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
-		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
-		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
-		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
-		k4 = diadt(ia +		  h * k3, il +		 h * l3);
-		l4 = dildt(ia +		  h * k3, il +		 h * l3);
-
-
-
+		k1 = h * diadt(ia			, il				);
+		l1 = h * dildt(ia			, il				);
+		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1	);
+		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1	);
+		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2	);
+		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2	);
+		k4 = diadt(ia +		  h * k3, il +		 h * l3	);
+		l4 = dildt(ia +		  h * k3, il +		 h * l3	);
 
 		// ***  IF _T IS REQUIRED, USE THE VERSION BELOW  ***
 		//k1 = h * didt(_t, i);
@@ -540,12 +536,31 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 	++saTotal;
 	--iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, 'R', iaTotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, 'R', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
 }
+
+void sim::recoverSite(const uint& v, const real& now) {
+	isInfectedSite[v] = false;
+	--ilTotal;
+#ifdef INFECTED_FRACTION
+	stat::Stats::bufferizeIFrac((-(int)(v)), now, 'R', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+#endif
+	
+	{
+		const vector<uint>& list = sAgents[v];
+		for (uint i = 1; i <= numS; ++i) {
+			const real delta = EXPTau_aa();
+			schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
+		}
+	}
+	leaveNodeAsInf(ag, v, now);
+	enterNodeAsSus(ag, v, now);
+}
+
 void sim::fate(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 #ifdef ESTIMATE_PROBS
 	++stat::Stats::totalFate;
@@ -562,7 +577,7 @@ void sim::fate(const agent& ag, const real& now, const uint& infective, const ui
 	++stat::Stats::totalInfections;
 #endif
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, 'I', iaTotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, 'I', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);

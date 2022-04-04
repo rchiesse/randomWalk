@@ -335,12 +335,12 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 	for (uint s = 1; s < largerDetailUntil; ++s) {
 		k1 = diadt(ia			, il			);
 		l1 = dildt(ia			, il			);
-		k2 = diadt(ia + 0.5 * h * k1, il + 0.5	* h * l1);
-		l2 = dildt(ia + 0.5 * h * k1, il + 0.5	* h * l1);
-		k3 = diadt(ia + 0.5 * h * k2, il + 0.5	* h * l2);
-		l3 = dildt(ia + 0.5 * h * k2, il + 0.5	* h * l2);
-		k4 = diadt(ia + k3	* h  	, il + k3	* h 	);
-		l4 = dildt(ia + l3	* h  	, il + l3	* h 	);
+		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
+		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
+		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
+		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
+		k4 = diadt(ia + 	  h * k3, il +		 h * l3);
+		l4 = dildt(ia + 	  h * k3, il +		 h * l3);
 
 
 		ia = ia + one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
@@ -365,8 +365,8 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 		l2 = dildt(ia + 0.5 * h * k1, il + 0.5 * h * l1);
 		k3 = diadt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
 		l3 = dildt(ia + 0.5 * h * k2, il + 0.5 * h * l2);
-		k4 = diadt(ia + k3 * h, il + k3 * h);
-		l4 = dildt(ia + l3 * h, il + l3 * h);
+		k4 = diadt(ia +		  h * k3, il +		 h * l3);
+		l4 = dildt(ia +		  h * k3, il +		 h * l3);
 
 
 
@@ -832,7 +832,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 500;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.1;
+	constexpr real stepSize = 0.001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

@@ -9,7 +9,7 @@ namespace sim {
 			static std::ofstream infFracData;
 #ifdef INFECTED_FRACTION
 		private:
-			static const uint BUFFER_SIZE = (uint)10e6;
+			static const uint BUFFER_SIZE = (uint)10e5;
 			static uint _bufferPos;
 
 			//Structures to measure the fraction of infected agents per time:
@@ -17,12 +17,12 @@ namespace sim {
 			static std::vector<real> infectedSiteFractionBuffer;
 			static std::vector<real> timestampBuffer;
 			static std::vector<uint> agentBuffer;
-			static std::vector<char> actionBuffer;
+			//static std::vector<std::string> actionBuffer;
 		public:
 
 			//File manipulation:
 			static void iFracToFile(const uint& overlook);
-			static void bufferizeIFrac(const int& ag, const real& now, const char& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY);
+			static void bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY);
 #endif
 
 #ifdef OCCUPANCY

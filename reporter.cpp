@@ -73,10 +73,17 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 }
 void Reporter::simulationInfo(const uint& itotal) {
 	using std::endl;
+	const double _beta_a = sim::beta_a;
+	const double _beta_la = sim::beta_la;
+	const double gamma_a = GAMMA_a, gamma_l = GAMMA_l;
+	const double _R0 = (_beta_a + _beta_la) / gamma_a;
+	double diff = _beta_a + _beta_la;
+	diff = gamma_a / diff;
+	const double _infFrac = 1.0 - diff;
 	std::cout << endl
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
-		<< "\tNUM_AGENTS: "							<< NUM_AGENTS << '\n'
+		<< "\tNUM_AGENTS: "							<< NUM_AGENTS	<< '\n'
 		<< "\tInitially infected: "					<< itotal		<< '\n'
 		<< "\tN: "									<< N			<< '\n'
 		<< "\tTAU_aa (Infect): "					<< TAU_aa		<< '\n'
@@ -85,10 +92,10 @@ void Reporter::simulationInfo(const uint& itotal) {
 		<< "\tGAMMA_a (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tGAMMA_l (Recover): "					<< GAMMA_l		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-#ifdef i_t_FROM_MODEL
-		<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< (sim::beta_a + sim::beta_la)/GAMMA_a	<< '\n'
-		<< "\ti_inf (Estimated % infected by the end): "	<< 1.0 - GAMMA_a / (sim::beta_a + sim::beta_la) << '\n'
-#endif
+//#ifdef i_t_FROM_MODEL
+		<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< std::to_string(_R0)	<< '\n'
+		<< "\ti_inf (Estimated % infected by the end): "	<< _infFrac << '\n'
+//#endif
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

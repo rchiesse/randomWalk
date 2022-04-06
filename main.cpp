@@ -77,6 +77,10 @@ std::uniform_real_distribution<real> distribution(0, 1);
 inline static real U() { return distribution(generator); }
 //auto U = bind(distribution, generator);
 
+//std::string baseName;
+//real Sim::beta_a;														// ----> Force of infection from an I-agent to an S-agent
+//real Sim::beta_al;														// ----> Force of infection from an I-agent to a site
+//real Sim::beta_la;														// ----> Force of infection from a site to an I-agent
 
 /* PROTOTYPES */
 //Returns a random value uniformly drawn from the interval [0, openRange), i.e. a number between 0 and 'openRange - 1' (for ex., "randomInt(6)" will return an integer between 0 and 5). This is particularly useful when determining an agent's "next stop" during its random walk. In this case, "randomInt(<v's degree>)" provides a neighbor's index each time an agent walks out some node v.
@@ -100,7 +104,9 @@ void recoverAg	    (const agent& ag, const real& now);
 void recoverSite    (const uint& site, const real& now);
 
 using graph::node;
-void fate			(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
+void agFate_fromAg	(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
+void agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
+void siteFate		(const uint& v, const real& now, const uint& infective, const uint& validity_L, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
 void checkinAsSus   (const agent& ag, const node& v);
 void enterNodeAsInf (const agent& ag, const node& v, const real& now);
@@ -490,6 +496,10 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		const real delta = EXPTau_aa();
 		schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
 	}
+	if (!isInfectedSite[v]) {
+		const real delta = EXPTau_al();
+		schedule.emplace(v, now + delta, action::agInfectSite, ag, snapshot_l[v], snapshot_a[ag]);
+	}
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
@@ -536,7 +546,7 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 	++saTotal;
 	--iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, 'R', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, "Ra", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
@@ -547,7 +557,7 @@ void sim::recoverSite	(const uint& v, const real& now) {
 	isInfectedSite[v] = false;
 	--ilTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac((-(int)(v)), now, 'R', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(v, now, "Rl", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	++snapshot_l[v];
 	//const vector<uint>& slist = sAgents[v];
@@ -560,7 +570,7 @@ void sim::recoverSite	(const uint& v, const real& now) {
 	//}
 }
 
-void sim::fate(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
+void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 #ifdef ESTIMATE_PROBS
 	++stat::Stats::totalFate;
 	if (exposure[ag] > 0) 
@@ -576,11 +586,59 @@ void sim::fate(const agent& ag, const real& now, const uint& infective, const ui
 	++stat::Stats::totalInfections;
 #endif
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, 'I', iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	stat::Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
 	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+}
+void sim::agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
+#ifdef ESTIMATE_PROBS
+	++stat::Stats::totalFate;
+	if (exposure[ag] > 0)
+		stat::Stats::totalExposition += exposure[ag];
+#endif
+	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) {
+		return;	// ----> Event became obsolete.
+	}
+	isInfectedAg[ag] = true;
+	--saTotal;
+	++iaTotal;
+#ifdef ESTIMATE_PROBS
+	++stat::Stats::totalInfections;
+#endif
+#ifdef INFECTED_FRACTION
+	stat::Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+#endif
+	leaveNodeAsSus(ag, currentNode[ag], now);
+	enterNodeAsInf(ag, currentNode[ag], now);
+	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+}
+void sim::siteFate(const uint& v, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
+#ifdef ESTIMATE_PROBS
+	++stat::Stats::totalFate;
+	if (exposure[ag] > 0)
+		stat::Stats::totalExposition += exposure[ag];
+#endif
+	if (validity_S != snapshot_l[v] || validity_I != snapshot_a[infective]) {
+		return;	// ----> Event became obsolete.
+	}
+	isInfectedSite[v] = true;
+	++ilTotal;
+#ifdef ESTIMATE_PROBS
+	++stat::Stats::totalInfections;
+#endif
+#ifdef INFECTED_FRACTION
+	stat::Stats::bufferizeIFrac(v, now, "Il", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+#endif
+	schedule.emplace(v, now + EXPGamma_l(), action::recoverSite); // ----> 'Recover' event is scheduled.
+
+	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
+	const vector<uint>& list = sAgents[v];
+	for (uint i = numS; i > 0; --i) {
+		const real delta = EXPTau_la();
+		schedule.emplace(list[i], now + delta, action::siteInfectAg, v, snapshot_a[list[i]], snapshot_l[v]);
+	}
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
@@ -754,7 +812,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = iaTotal; i < _numAgents; ++i)
 				enterNodeAsSus(i, randomLCCNode(), TIME_ZERO);
 #endif
-
 			// * MAIN LOOP *
 			bool earlyStop = false;
 			real& roundDuration = totalSimTime[round]; 
@@ -769,16 +826,16 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					schedule.emplace(j.target, now + EXPLambda(), action::walk);
 					break;
 				case action::agInfectAg:
-					fate(j.target, now, j.infective, j.validity_S, j.validity_I);
-					break;
-				case action::agInfectSite:
-					;
+					agFate_fromAg(j.target, now, j.infective, j.validity_S, j.validity_I);
 					break;
 				case action::siteInfectAg:
-					;
+					agFate_fromSite(j.target, now, j.infective, j.validity_S, j.validity_I);
+					break;
+				case action::agInfectSite:
+					siteFate(j.target, now, j.infective, j.validity_S, j.validity_I);
 					break;
 				case action::recoverSite:
-					;
+					recoverSite(j.target, now);
 					break;
 				default:
 					recoverAg(j.target, now);
@@ -829,19 +886,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		++scenario;
 	} // ** while (scenario < numScenarios)
 
-	//TEMP:
-	//std::ofstream R0data;
-	//std::stringstream ss;
-	//ss.precision(4);
-	//std::string fileName;
-	//ss << EXE_DIR << "/stats/R0_" << NWTK_LABEL << "_N" << N << "_AG" << K << "_T" << TAU << "_G" << GAMMA << "_L" << LAMBDA << "_STime" << T << "_R" << ROUNDS << ".csv";
-	//fileName = ss.str();
-	//R0data.open(fileName, std::ios::app);
-	//if (Stats::isEmpty(R0data))
-	//	R0data << "Ws\tWi\tbeta\tbetaApprox\tR0\tR0approx\ti_inf\ti_inf_approx\n";
-	//R0data << Ws << '\t' << Wi << '\t' << BETA_pfx << '\t' << BETA_pfx_approx << '\t' << Ro_pfx << '\t' << Ro_pfx_approx << '\t' << std::max(i_inf_pfx, (long double)0.0) << '\t' << std::max(i_inf_pfx_approx, (long double)0.0) << '\n';
-	//R0data.close();
-
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 500;
@@ -852,7 +896,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	vector<real> saveToFile_diadt;
 	vector<real> saveToFile_dildt;
 	uint outputSize = 0;
-	Stats::setBasename();
+	//Stats::setBasename();
+	baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
 	rungeKutta4thOrder(0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 
 	//Saving to file:

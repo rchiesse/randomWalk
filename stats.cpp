@@ -8,7 +8,7 @@ std::vector<real> Stats::infectedAgFractionBuffer(BUFFER_SIZE);
 std::vector<real> Stats::infectedSiteFractionBuffer(BUFFER_SIZE);
 std::vector<real> Stats::timestampBuffer(BUFFER_SIZE);
 std::vector<uint> Stats::agentBuffer(BUFFER_SIZE);
-std::vector<char> Stats::actionBuffer(BUFFER_SIZE);
+//std::vector<std::string> Stats::actionBuffer(BUFFER_SIZE);
 #endif
 
 #ifdef ESTIMATE_PROBS
@@ -86,7 +86,8 @@ void Stats::initStream(const streamType& s) {
 #ifdef i_t_FROM_MODEL
 		//Header
 		// infFracData << "Agent\tAction\tTime\tInfFrac\ti_ag\ti_site\n";
-		infFracData << "Agent\tAction\tTime\tInfFrac\n";
+		//infFracData << "Agent\tAction\tTime\ti_ag\ti_site\n";
+		infFracData << "Agent\tTime\ti_ag\ti_site\n";
 #else
 		//Header
 		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
@@ -155,17 +156,18 @@ void Stats::endStream(const streamType& s) {
 	}
 }
 #ifdef INFECTED_FRACTION
-void Stats::bufferizeIFrac(const int& ag, const real& now, const char& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
+void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
 	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
 	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
-	actionBuffer[_bufferPos] = action;
+	//actionBuffer[_bufferPos] = action;
 	++_bufferPos;
 	if (_bufferPos == BUFFER_SIZE) {	// ----> Flush
 		for (uint i = 0; i < BUFFER_SIZE; ++i) {
 #ifdef i_t_FROM_MODEL
-			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
+			//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
+			infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
 #else
 			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
 #endif
@@ -178,7 +180,7 @@ void Stats::iFracToFile(const uint& overlook) {
 	for (uint i = 0; i < _bufferPos; ++i) {
 #ifdef i_t_FROM_MODEL
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
+		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 #else
 		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 #endif
@@ -203,26 +205,30 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
 
 		"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
-		"timeData = myData[:, 0]\n" <<
-		"infSimul = myData[:, 1]\n" <<
-		"ifModel2ndMmt = myData[:, 2]\n" <<
-		"cumSum = np.cumsum(infSimul)\n" <<
-		"cumMean = cumSum / np.arange(0, len(timeData))\n\n" <<
+		"timeData = myData[:, 1]\n" <<
+		"infAgSimul = myData[:, 2]\n" <<
+		"infSiteSimul = myData[:, 3]\n" <<
+		"cumSumAg = np.cumsum(infAgSimul)\n" <<
+		"cumMeanAg = cumSumAg / np.arange(0, len(timeData))\n\n" <<
+		"cumSumSites = np.cumsum(infSiteSimul)\n" <<
+		"cumMeanSites = cumSumSites / np.arange(0, len(timeData))\n\n" <<
 
 		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
-		"plt.title(\"Fraction of Infected Agents over Time\")\n" <<
+		"plt.title(\"Fraction of Infected Agents/Sites over Time\")\n" <<
 		"plt.xlabel(\"Time\")\n" <<
-		"plt.ylabel(\"Fraction of Infected Agents\")\n" <<
+		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << T << ")\n" <<
 		"plt.ylim(0, 1)\n" <<
-		"plt.plot(timeData, infSimul, label = \"InfFrac\")\n" <<
-		"plt.plot(timeData, ifModel2ndMmt, label = \"Model\")\n" <<
-		"plt.plot(timeData, [np.mean(infSimul) for i in range(len(timeData))], label = \"Av. #inf\")\n" <<
-		"plt.plot(timeData, cumMean, label = \"Cum. Av. #inf\")\n" <<
+		"plt.plot(timeData, infAgSimul, label = \"InfAg\")\n" <<
+		"plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
+		"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
+		"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n" <<
+		"plt.plot(timeData, cumMeanAg, label = \"Cum.Av.#infAg\")\n" <<
+		"plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
-		"#plt.xlabel(rawdata[0][0])\n" <<
+		"#plt.xlabel(rawdata[0][2])\n" <<
 		"#plt.ylabel(rawdata[0][1])\n" <<
 		"#plt.xscale(\"log\")\n" <<
 		"#plt.yscale(\"log\")\n\n" <<
@@ -293,7 +299,8 @@ bool Stats::isEmpty(std::ofstream& s) {
 	return s.tellp() == 0;
 }
 void Stats::setBasename() {
-	baseName = std::string(std::string(SHORT_LABEL) + "_Ws" + std::to_string(Ws) + "_Wi" + std::to_string(Wi) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
+	//baseName = std::string(std::string(SHORT_LABEL) + "_Ws" + std::to_string(Ws) + "_Wi" + std::to_string(Wi) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
+	baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
 }
 void Stats::resetStats() {
 #ifdef OCCUPANCY

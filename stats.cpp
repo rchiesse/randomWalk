@@ -300,7 +300,20 @@ bool Stats::isEmpty(std::ofstream& s) {
 }
 void Stats::setBasename() {
 	//baseName = std::string(std::string(SHORT_LABEL) + "_Ws" + std::to_string(Ws) + "_Wi" + std::to_string(Wi) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
-	baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
+	//baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
+	std::stringstream name;
+	name << SHORT_LABEL 
+		<< "_N"		<< N 
+		<< "_AG"	<< NUM_AGENTS 
+		<< "_Taa"	<< TAU_aa 
+		<< "_Tal"	<< TAU_al 
+		<< "_Tla"	<< TAU_la 
+		<< "_Ga"	<< GAMMA_a 
+		<< "_Gl"	<< GAMMA_l 
+		<< "_L"		<< LAMBDA 
+		<< "_STime" << T 
+		<< "_R"		<< ROUNDS;
+	baseName = name.str();
 }
 void Stats::resetStats() {
 #ifdef OCCUPANCY

@@ -300,7 +300,7 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 
 void sim::setBeta2ndMmt() {
 	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
-	beta_al = LAMBDA * NUM_AGENTS *  SIGMA_al;
+	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;
 	beta_la = (LAMBDA * N * SIGMA_la * graph::Graph::avExpressiveness) / graph::Graph::averageDegree;
 }
 
@@ -897,7 +897,19 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	vector<real> saveToFile_dildt;
 	uint outputSize = 0;
 	//Stats::setBasename();
-	baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
+	std::stringstream name;
+	name << SHORT_LABEL 
+		<< "_N"		<< N 
+		<< "_AG"	<< NUM_AGENTS 
+		<< "_Taa"	<< TAU_aa 
+		<< "_Tal"	<< TAU_al 
+		<< "_Tla"	<< TAU_la 
+		<< "_Ga"	<< GAMMA_a 
+		<< "_Gl"	<< GAMMA_l 
+		<< "_L"		<< LAMBDA 
+		<< "_STime" << T 
+		<< "_R"		<< ROUNDS;
+	baseName = name.str();
 	rungeKutta4thOrder(0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 
 	//Saving to file:

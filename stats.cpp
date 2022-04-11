@@ -158,7 +158,7 @@ void Stats::endStream(const streamType& s) {
 #ifdef INFECTED_FRACTION
 void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
 	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
-	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
+	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
 	//actionBuffer[_bufferPos] = action;
@@ -213,6 +213,14 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"cumSumSites = np.cumsum(infSiteSimul)\n" <<
 		"cumMeanSites = cumSumSites / np.arange(0, len(timeData))\n\n" <<
 
+		"with open(\"./stats/Runge-Kutta_" << baseName << ".csv\", \"r\") as j :\n" <<
+		"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<
+
+		"rkData = np.array(rawRK[1:], dtype = np.float64)\n" <<
+		"timeRK = rkData[:, 0]\n" <<
+		"infAgRK = rkData[:, 1]\n" <<
+		"infSiteRK = rkData[:, 2]\n" <<
+
 		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
 		"plt.title(\"Fraction of Infected Agents/Sites over Time\")\n" <<
@@ -222,6 +230,10 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"plt.ylim(0, 1)\n" <<
 		"plt.plot(timeData, infAgSimul, label = \"InfAg\")\n" <<
 		"plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
+
+		"plt.plot(timeRK, infAgRK, label = \"Model-Ag\")\n" <<
+		"plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
+
 		"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
 		"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n" <<
 		"plt.plot(timeData, cumMeanAg, label = \"Cum.Av.#infAg\")\n" <<

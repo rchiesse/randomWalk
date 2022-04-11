@@ -299,9 +299,9 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #endif //i_t_FROM_MODEL
 
 void sim::setBeta2ndMmt() {
-	beta_a = (double)((2.0 * (double)LAMBDA * SIGMA_aa * (double)NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
+	beta_a = (double)((2.0 * LAMBDA * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
 	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;
-	beta_la = (LAMBDA * N * SIGMA_la * graph::Graph::avExpressiveness) / graph::Graph::averageDegree;
+	beta_la = (LAMBDA * graph::Graph::_2ndMmt * N * SIGMA_la) / (N * pow(graph::Graph::averageDegree, 2));
 }
 
 #ifdef SOLVE_NUMERICALLY
@@ -888,7 +888,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
-	constexpr uint outputGranularity = 500;
+	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
 	constexpr real stepSize = 0.001;
 	constexpr real epsilon = 1.0 / N ;

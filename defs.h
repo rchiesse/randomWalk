@@ -87,10 +87,10 @@ static constexpr uint N = 12008;
 //#define NWTK_LABEL "HepPh"
 //#define SHORT_LABEL "hep"
 //
-//static constexpr uint N = 12008;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
-//#define NWTK_LABEL "BA"
-//#define SHORT_LABEL "BA"
+static constexpr uint N = 12008;										// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
+#define NWTK_LABEL "BA"
+#define SHORT_LABEL "BA"
 //
 //static constexpr uint N = 15233;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
@@ -177,7 +177,7 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 50000;						// ----> Simulation time.
+static constexpr uint T					= 100000;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 100;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
@@ -196,9 +196,20 @@ static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agent
 static constexpr uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
 static constexpr long real i_0 = (real)I_0 / NUM_AGENTS;
 static constexpr long real meetingRate = 2.0 * LAMBDA / N;
-static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa + GAMMA_a));
-static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al + GAMMA_a));
-static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_l));
+//static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa + GAMMA_a));
+//static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al + GAMMA_a));
+//static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_l));
+
+//MAIN MODEL:
+//static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+//static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
+//static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
+
+//ALT MODEL:
+static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
+static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
+
 //static constexpr long real BETA = meetingRate * SIGMA_aa * NUM_AGENTS;
 //static constexpr long real B_MINUS_G = BETA - GAMMA;
 //static constexpr long real G_OVER_B = GAMMA / BETA;

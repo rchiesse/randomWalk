@@ -158,7 +158,10 @@ void Stats::endStream(const streamType& s) {
 #ifdef INFECTED_FRACTION
 void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
 	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
-	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
+	//infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
+
+	//TESTE!!!
+	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
 	//actionBuffer[_bufferPos] = action;
@@ -209,9 +212,9 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"infAgSimul = myData[:, 2]\n" <<
 		"infSiteSimul = myData[:, 3]\n" <<
 		"cumSumAg = np.cumsum(infAgSimul)\n" <<
-		"cumMeanAg = cumSumAg / np.arange(0, len(timeData))\n\n" <<
+		"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
 		"cumSumSites = np.cumsum(infSiteSimul)\n" <<
-		"cumMeanSites = cumSumSites / np.arange(0, len(timeData))\n\n" <<
+		"cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n" <<
 
 		"with open(\"./stats/Runge-Kutta_" << baseName << ".csv\", \"r\") as j :\n" <<
 		"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<

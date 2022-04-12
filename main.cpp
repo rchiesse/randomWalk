@@ -357,7 +357,9 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 			break;
 		}
 		saveToFile_diadt[s] = ia;
-		saveToFile_dildt[s] = il;
+
+		//TESTE!!!
+		saveToFile_dildt[s] = il * (N / NUM_AGENTS);
 		++outputSize;
 	}
 	if (end) return;
@@ -383,13 +385,17 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 		il = il + one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
 		if (ia < epsilon) { 
 			saveToFile_diadt[outputSize] = 0;
-			saveToFile_dildt[outputSize] = 0;
+
+			//TESTE!!!
+			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
 			++outputSize;
 			break;
 		}
 		if (s % outputGranularity == 0) {
 			saveToFile_diadt[outputSize] = ia;
-			saveToFile_dildt[outputSize] = il;
+
+			//TESTE!!!
+			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
 			++outputSize;
 		}
 	}
@@ -890,7 +896,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.001;
+	constexpr real stepSize = 0.01;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

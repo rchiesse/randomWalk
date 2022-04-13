@@ -299,7 +299,11 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 #endif //i_t_FROM_MODEL
 
 void sim::setBeta2ndMmt() {
-	beta_a = (double)((2.0 * LAMBDA * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
+	//beta_a = (double)((2.0 * LAMBDA * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
+	//TESTE!!!
+	beta_a = (double)((TAU_aa - GAMMA_a) * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
+	//beta_a = (double)(SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
+
 	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;
 	beta_la = (LAMBDA * graph::Graph::_2ndMmt * N * SIGMA_la) / (N * pow(graph::Graph::averageDegree, 2));
 }
@@ -316,6 +320,12 @@ void sim::setBeta2ndMmt() {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diadt(const real& ia, const real& il) {
+	//return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
+	//for (size_t i = 0; i < graph::Graph::frequency.size(); ++i){
+	//	if()
+	//
+	//}
+	//TESTE!!!
 	return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
 }
 real sim::dildt(const real& ia, const real& il) {
@@ -903,7 +913,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.01;
+	constexpr real stepSize = 0.001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

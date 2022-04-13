@@ -48,8 +48,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -155,7 +155,7 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 //#define ESTIMATE_PROBS
 #define i_t_FROM_MODEL
 #define SOLVE_NUMERICALLY
-//#define NORM_SITE_PER_AG
+#define NORM_SITE_PER_AG
 
 // ---------------------------//----------------------------- //
 
@@ -184,10 +184,10 @@ static constexpr uint STARTING_NUM_AG	= 1000000;
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
 static constexpr real TAU_aa			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real TAU_al			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real TAU_la			= 2.5;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_a			= 0.2;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_l			= 0.0092;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_al			= 0.0001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_la			= 0.0001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_a			= 0.002;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_l			= 20.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 static constexpr real FRAC_ST_INFECTED	= 0.0;							// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
@@ -209,7 +209,7 @@ static constexpr long real meetingRate = 2.0 * LAMBDA / N;
 //ALT MODEL:
 static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa + GAMMA_a));
 static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al + GAMMA_a));
-static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_a));
+static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_l));
 
 //static constexpr long real BETA = meetingRate * SIGMA_aa * NUM_AGENTS;
 //static constexpr long real B_MINUS_G = BETA - GAMMA;

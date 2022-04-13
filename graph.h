@@ -36,9 +36,12 @@ public:
 	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real averageDegree;
+	static real originalAvDeg;
+	static real original2ndMmt;
 	static real _2ndMmt;
-	static real avExpressiveness;
 	static vector<double> frequency;								// ----> Degree blocks.
+	static vector<double> originalFreq;								// ----> Degree blocks.
+	static vector<double> k_b;										// ----> Expected number of agents in each block b.
 	
 #ifdef PROTECTION_FX
 	struct largerDegreeGS {

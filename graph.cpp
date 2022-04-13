@@ -26,9 +26,12 @@ uint Graph::largestDgNode;
 uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::averageDegree;
+real Graph::originalAvDeg;
+real Graph::original2ndMmt;
 real Graph::_2ndMmt;
-real Graph::avExpressiveness;
 vector<double> Graph::frequency;
+vector<double> Graph::originalFreq;
+vector<double> Graph::k_b;
 #endif //CLIQUE
 
 #ifdef PROTECTION_FX
@@ -239,27 +242,32 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 
 void Graph::set2ndMoment() {
 	frequency.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'frequency[5]' instead of 'frequency[4]'. Note that frequency[0] will always be 0 (since no 0-degree nodes exist in the LCC).
+	originalFreq.resize(largestDegree + 1, 0);
+	k_b.resize(largestDegree + 1, 0);
 
 	//Frequencies:
-	for (uint i = 0; i < lccSize; ++i)
+	for (uint i = 0; i < lccSize; ++i) {
 #ifdef PROTECTION_FX
 		++(frequency[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+		++(originalFreq[gs[lcc[i]].size()-1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #else
 		++(frequency[g[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+		++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #endif
+	}
 	//Probabilities:
-	for (uint b = 0; b < frequency.size(); ++b)	// ----> Equivalent to "p_b" in [1].
+	for (uint b = 0; b < frequency.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		frequency[b] /= n;
-
+		originalFreq[b] /= n;
+	}
 	//2nd moment:
 	_2ndMmt = 0;
-	for (uint b = 0; b < frequency.size(); ++b)
+	original2ndMmt = 0;
+	for (uint b = 1; b < frequency.size(); ++b) {
 		_2ndMmt += pow(b, 2) * frequency[b];
-
-	//Average expressiveness:
-	avExpressiveness = 0;
-	for (uint b = 0; b < frequency.size(); ++b)
-		avExpressiveness += b * pow(frequency[b], 2);
+		original2ndMmt += pow(b, 2) * originalFreq[b];
+	}
+	
 }
 
 void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
@@ -505,7 +513,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 		schema_s.resize(n);
 		schema_i.resize(n);
 #endif
-		averageDegree = 2 * (float)m / n;
+		originalAvDeg = averageDegree = 2 * (float)m / n;
 #ifdef SERIALIZE
 		//Serializa a rede:
 		startChronometer("Serializing the network (for future use)... ");

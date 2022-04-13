@@ -158,10 +158,12 @@ void Stats::endStream(const streamType& s) {
 #ifdef INFECTED_FRACTION
 void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
 	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
-	//infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
 
-	//TESTE!!!
+#ifdef NORM_SITE_PER_AG
 	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
+#else
+	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
+#endif
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
 	//actionBuffer[_bufferPos] = action;

@@ -358,8 +358,11 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 		}
 		saveToFile_diadt[s] = ia;
 
-		//TESTE!!!
+#ifdef NORM_SITE_PER_AG
 		saveToFile_dildt[s] = il * (N / NUM_AGENTS);
+#else
+		saveToFile_dildt[s] = il;
+#endif
 		++outputSize;
 	}
 	if (end) return;
@@ -385,17 +388,21 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 		il = il + one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
 		if (ia < epsilon) { 
 			saveToFile_diadt[outputSize] = 0;
-
-			//TESTE!!!
+#ifdef NORM_SITE_PER_AG
 			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
+#else
+			saveToFile_dildt[outputSize] = il;
+#endif
 			++outputSize;
 			break;
 		}
 		if (s % outputGranularity == 0) {
 			saveToFile_diadt[outputSize] = ia;
-
-			//TESTE!!!
+#ifdef NORM_SITE_PER_AG
 			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
+#else
+			saveToFile_dildt[outputSize] = il;
+#endif
 			++outputSize;
 		}
 	}

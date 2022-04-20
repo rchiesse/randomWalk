@@ -204,7 +204,6 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //	beta_b.resize(graph::Graph::frequency.size(), 0);
 //	double sigma = 0;
 //	double sigma_2 = 0;
-//	double psi = 0;
 //	uint validBlock = 0;
 //	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
 //	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
@@ -245,7 +244,6 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //			
 //			//sigma += (double)TAU / (LAMBDA + TAU + LAMBDA * (1.0 - (std::min(1.0,(_kb_/2.0)))));
 //
-//			psi += 1.0 - pow(1.0 - (1.0 / ((double)N * graph::Graph::frequency[_b])), _kb_);
 //
 //			//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
 //			sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : TAU / (LAMBDA + TAU);
@@ -254,7 +252,6 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //			sigma_2 += nTau / (2 * LAMBDA + nTau);
 //		}
 //	}
-//	//psi /= validBlock;
 //	sigma /= validBlock;
 //	sigma_2 /= validBlock;
 //	beta2ndMmt_logistic = 0;
@@ -280,16 +277,10 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //	//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
 //	//beta2ndMmt = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
 //	beta2ndMmt = (meetingRate * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	//beta2ndMmt_naive = (2*LAMBDA * NUM_AGENTS * psi * SIGMA_aa) / graph::Graph::averageDegree;
-//	
 //	
 //	
 //	//Bom resultado na BA:
 //	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	
-//	//Matheus (prosseguir implementação):
-//	//beta2ndMmt_naive = (2 * LAMBDA * NUM_AGENTS * psi * sigma) / pow(graph::Graph::averageDegree,2);
-//	
 //	//beta2ndMmt_naive = (LAMBDA * SIGMA_aa * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
 //
 //	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
@@ -301,7 +292,12 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 void sim::setBeta2ndMmt() {
 	//beta_a = (double)((2.0 * LAMBDA * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt)) / (N * pow(graph::Graph::averageDegree, 2));
 	//TESTE!!!
-	beta_a = (double)((TAU_aa - GAMMA_a) * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
+	//beta_a = (double)(TAU_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
+	
+	
+	//beta_a = (double)(TAU_aa * graph::Graph::sumKB) / (N * NUM_AGENTS);
+	beta_a = (double)(2 * LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
+
 	//beta_a = (double)(SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
 
 	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;

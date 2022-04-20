@@ -32,6 +32,9 @@ real Graph::_2ndMmt;
 vector<double> Graph::frequency;
 vector<double> Graph::originalFreq;
 vector<double> Graph::k_b;
+vector<double> Graph::rho_b;
+real Graph::sumKB;
+real Graph::psi;
 #endif //CLIQUE
 
 #ifdef PROTECTION_FX
@@ -244,6 +247,7 @@ void Graph::set2ndMoment() {
 	frequency.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'frequency[5]' instead of 'frequency[4]'. Note that frequency[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	originalFreq.resize(largestDegree + 1, 0);
 	k_b.resize(largestDegree + 1, 0);
+	rho_b.resize(largestDegree + 1, 0);
 
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i) {
@@ -260,6 +264,24 @@ void Graph::set2ndMoment() {
 		frequency[b] /= n;
 		originalFreq[b] /= n;
 	}
+
+	for (uint b = 1; b < frequency.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
+		k_b[b] = (sim::NUM_AGENTS * b * frequency[b]) / averageDegree;
+	}
+	sumKB = 0;
+	for (uint b = 1; b < frequency.size(); ++b) {
+		if (frequency[b] > 0)
+			sumKB += pow(k_b[b],2) / frequency[b];
+	}
+
+	for (uint b = 1; b < frequency.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
+		rho_b[b] = 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
+	}
+	psi = 0;
+	for (uint b = 1; b < frequency.size(); ++b) {
+		psi += b * frequency[b] * rho_b[b];
+	}
+
 	//2nd moment:
 	_2ndMmt = 0;
 	original2ndMmt = 0;

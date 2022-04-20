@@ -42,7 +42,10 @@ public:
 	static vector<double> frequency;								// ----> Degree blocks.
 	static vector<double> originalFreq;								// ----> Degree blocks.
 	static vector<double> k_b;										// ----> Expected number of agents in each block b.
-	
+	static vector<double> rho_b;									// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	static real sumKB;
+	static real psi;
+
 #ifdef PROTECTION_FX
 	struct largerDegreeGS {
 		bool operator()(const node& v1, const node& v2) {

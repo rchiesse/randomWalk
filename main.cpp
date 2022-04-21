@@ -120,8 +120,8 @@ const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
 void setBeta2ndMmt();
-//double getSigma_a(const double& ia);
-double getSigma_a();
+double getSigma_a(const double& ia);
+//double getSigma_a();
 #ifndef CLIQUE
 const node& randomLCCNode();
 #endif
@@ -296,7 +296,6 @@ void sim::setBeta2ndMmt() {
 	//TESTE!!!
 	//beta_a = (double)(TAU_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
 	
-	
 	//beta_a = (double)(TAU_aa * graph::Graph::sumKB) / (N * NUM_AGENTS);
 	
 	//MELHOR COM SIGMA FIXO:
@@ -310,23 +309,44 @@ void sim::setBeta2ndMmt() {
 	beta_la = (LAMBDA * graph::Graph::_2ndMmt * N * SIGMA_la) / (N * pow(graph::Graph::averageDegree, 2));
 }
 
-//double sim::getSigma_a(const double& ia) {
-double sim::getSigma_a() {
-	vector<double> H(graph::Graph::frequency.size(), 1.0);
-	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-		//uint avNumIAg = (uint)std::round(graph::Graph::k_b[b] * ia);	// ----> Average number of infected agents within block b.
-		uint avNumIAg = (uint)std::round(graph::Graph::k_b[b]);	// ----> Average number of infected agents within block b.
-		for (uint i = 2; i < avNumIAg; ++i){							// ----> Note that this approach is pointless if avNumIAg < 2 (in which case the harmonic number is trivially 1), hence the counter being initialized at 2.
-			H[b] += 1.0 / i;
-		}
-	}
+double sim::getSigma_a(const double& ia) {
+//double sim::getSigma_a() {
+	//vector<double> H(graph::Graph::frequency.size(), 1.0);
+	//for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+	//	//uint avNumIAg = (uint)std::round(graph::Graph::k_b[b] * ia);	// ----> Average number of infected agents within block b.
+	//	uint avNumIAg = (uint)std::round(graph::Graph::k_b[b]);	// ----> Average number of infected agents within block b.
+	//	for (uint i = 2; i < avNumIAg; ++i){							// ----> Note that this approach is pointless if avNumIAg < 2 (in which case the harmonic number is trivially 1), hence the counter being initialized at 2.
+	//		H[b] += 1.0 / i;
+	//	}
+	//}
 
 	double sigma_a = 0;
-	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
-		sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
+	double avKB = 0;
+	for (uint b = 1; b < graph::Graph::k_b.size(); ++b) {
+		avKB += graph::Graph::k_b[b];
 	}
+	avKB /= graph::Graph::validBlocks;
 
+	//for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+	//	const double extraInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia) - 1.0);
+	//	//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
+	//	//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
+	//	sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa));
+	//	
+	//	//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
+	//	//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
+	//	
+	//	//sigma_a += ((TAU_aa ) / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b];
+	//	
+	//	//const double rateAllIagsRecover = GAMMA_a + extraInfAg * GAMMA_a;
+	//	//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + TAU_aa + extraInfAg * TAU_aa + rateAllIagsRecover);
+	//	//const double prob_AllIagLeaveFirst = (LAMBDA + extraInfAg * LAMBDA + rateAllIagsRecover) / ((LAMBDA + extraInfAg * LAMBDA) + (TAU_aa + extraInfAg * TAU_aa) + rateAllIagsRecover);
+	//	//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * graph::Graph::frequency[b];
+	//
+	//	//sigma_a += ((TAU_aa + extraInfAg * TAU_aa) / (LAMBDA + LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * (graph::Graph::k_b[b] / NUM_AGENTS);
+	//}
+	sigma_a = (TAU_aa / (LAMBDA + (LAMBDA / avKB) + TAU_aa));
+	//sigma_a /= graph::Graph::frequency.size();
 	return sigma_a;
 }
 

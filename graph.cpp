@@ -35,6 +35,7 @@ vector<double> Graph::k_b;
 vector<double> Graph::rho_b;
 real Graph::sumKB;
 real Graph::psi;
+real Graph::validBlocks;
 #endif //CLIQUE
 
 #ifdef PROTECTION_FX
@@ -282,6 +283,10 @@ void Graph::set2ndMoment() {
 		psi += b * frequency[b] * rho_b[b];
 	}
 
+	validBlocks = 0;
+	for (uint b = 1; b < frequency.size(); ++b) {
+		if (frequency[b] > 0) ++validBlocks;
+	}
 	//2nd moment:
 	_2ndMmt = 0;
 	original2ndMmt = 0;

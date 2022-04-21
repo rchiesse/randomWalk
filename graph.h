@@ -46,6 +46,7 @@ public:
 	//static vector<double> H_b;										// ----> Harmonic number of the average number of infected individuals in an specific node v_b from block b. For example, if th
 	static real sumKB;
 	static real psi;
+	static real validBlocks;
 
 #ifdef PROTECTION_FX
 	struct largerDegreeGS {

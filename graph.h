@@ -43,6 +43,7 @@ public:
 	static vector<double> originalFreq;								// ----> Degree blocks.
 	static vector<double> k_b;										// ----> Expected number of agents in each block b.
 	static vector<double> rho_b;									// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	//static vector<double> H_b;										// ----> Harmonic number of the average number of infected individuals in an specific node v_b from block b. For example, if th
 	static real sumKB;
 	static real psi;
 

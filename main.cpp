@@ -120,6 +120,8 @@ const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
 void setBeta2ndMmt();
+//double getSigma_a(const double& ia);
+double getSigma_a();
 #ifndef CLIQUE
 const node& randomLCCNode();
 #endif
@@ -296,12 +298,36 @@ void sim::setBeta2ndMmt() {
 	
 	
 	//beta_a = (double)(TAU_aa * graph::Graph::sumKB) / (N * NUM_AGENTS);
+	
+	//MELHOR COM SIGMA FIXO:
 	beta_a = (double)(2 * LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
+	
+	//beta_a = (double)(2 * LAMBDA * getSigma_a() * graph::Graph::psi) / graph::Graph::averageDegree;
 
 	//beta_a = (double)(SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / (N * pow(graph::Graph::averageDegree, 2));
 
 	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;
 	beta_la = (LAMBDA * graph::Graph::_2ndMmt * N * SIGMA_la) / (N * pow(graph::Graph::averageDegree, 2));
+}
+
+//double sim::getSigma_a(const double& ia) {
+double sim::getSigma_a() {
+	vector<double> H(graph::Graph::frequency.size(), 1.0);
+	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+		//uint avNumIAg = (uint)std::round(graph::Graph::k_b[b] * ia);	// ----> Average number of infected agents within block b.
+		uint avNumIAg = (uint)std::round(graph::Graph::k_b[b]);	// ----> Average number of infected agents within block b.
+		for (uint i = 2; i < avNumIAg; ++i){							// ----> Note that this approach is pointless if avNumIAg < 2 (in which case the harmonic number is trivially 1), hence the counter being initialized at 2.
+			H[b] += 1.0 / i;
+		}
+	}
+
+	double sigma_a = 0;
+	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
+		sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
+	}
+
+	return sigma_a;
 }
 
 #ifdef SOLVE_NUMERICALLY
@@ -316,13 +342,9 @@ void sim::setBeta2ndMmt() {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diadt(const real& ia, const real& il) {
-	//return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
-	//for (size_t i = 0; i < graph::Graph::frequency.size(); ++i){
-	//	if()
-	//
-	//}
-	//TESTE!!!
 	return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
+	//double b_a = (double)(2 * LAMBDA * getSigma_a(ia) * graph::Graph::psi) / graph::Graph::averageDegree;
+	//return  b_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
 }
 real sim::dildt(const real& ia, const real& il) {
 	return  beta_al * (1.0 - il) * ia - GAMMA_l * il;

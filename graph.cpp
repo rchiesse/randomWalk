@@ -256,7 +256,7 @@ void Graph::set2ndMoment() {
 		++(frequency[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 		++(originalFreq[gs[lcc[i]].size()-1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #else
-		++(frequency[g[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+		++(frequency[g[lcc[i]].size()]);		
 		++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #endif
 	}
@@ -280,7 +280,8 @@ void Graph::set2ndMoment() {
 	}
 	psi = 0;
 	for (uint b = 1; b < frequency.size(); ++b) {
-		psi += b * frequency[b] * rho_b[b];
+		//psi += b * frequency[b] * rho_b[b];
+		psi += b * originalFreq[b] * rho_b[b];
 	}
 
 	validBlocks = 0;

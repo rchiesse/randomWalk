@@ -299,7 +299,9 @@ void sim::setBeta2ndMmt() {
 	//beta_a = (double)(TAU_aa * graph::Graph::sumKB) / (N * NUM_AGENTS);
 	
 	//MELHOR COM SIGMA FIXO:
-	beta_a = (double)(2 * LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
+	//beta_a = (double)(2 * LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
+	
+	beta_a = (double)(LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
 	
 	//beta_a = (double)(2 * LAMBDA * getSigma_a() * graph::Graph::psi) / graph::Graph::averageDegree;
 
@@ -320,32 +322,42 @@ double sim::getSigma_a(const double& ia) {
 	//	}
 	//}
 
-	double sigma_a = 0;
 	double avKB = 0;
 	for (uint b = 1; b < graph::Graph::k_b.size(); ++b) {
 		avKB += graph::Graph::k_b[b];
 	}
 	avKB /= graph::Graph::validBlocks;
 
-	//for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-	//	const double extraInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia) - 1.0);
-	//	//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
-	//	//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
-	//	sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa));
-	//	
-	//	//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
-	//	//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
-	//	
-	//	//sigma_a += ((TAU_aa ) / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b];
-	//	
-	//	//const double rateAllIagsRecover = GAMMA_a + extraInfAg * GAMMA_a;
-	//	//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + TAU_aa + extraInfAg * TAU_aa + rateAllIagsRecover);
-	//	//const double prob_AllIagLeaveFirst = (LAMBDA + extraInfAg * LAMBDA + rateAllIagsRecover) / ((LAMBDA + extraInfAg * LAMBDA) + (TAU_aa + extraInfAg * TAU_aa) + rateAllIagsRecover);
-	//	//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * graph::Graph::frequency[b];
-	//
-	//	//sigma_a += ((TAU_aa + extraInfAg * TAU_aa) / (LAMBDA + LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * (graph::Graph::k_b[b] / NUM_AGENTS);
-	//}
-	sigma_a = (TAU_aa / (LAMBDA + (LAMBDA / avKB) + TAU_aa));
+	double sigma_a = 0;
+	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+		//const double expNumInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia) - 1.0);
+		const double expNumInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia));
+		if (expNumInfAg == 0) 
+			continue;
+		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
+		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
+		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b] * ia)) + TAU_aa));
+		
+		//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
+		//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
+		
+		const double rateAllIagsRecover = expNumInfAg * GAMMA_a;
+		//sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover)) * (graph::Graph::k_b[b] / NUM_AGENTS);
+		//sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa )) * (graph::Graph::k_b[b] / NUM_AGENTS) * (1.0 - ia);
+		sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa )) * graph::Graph::frequency[b];
+		
+		//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + TAU_aa + extraInfAg * TAU_aa + rateAllIagsRecover);
+		//const double prob_AllIagLeaveFirst = (LAMBDA + extraInfAg * LAMBDA + rateAllIagsRecover) / ((LAMBDA + extraInfAg * LAMBDA) + (TAU_aa + extraInfAg * TAU_aa) + rateAllIagsRecover);
+		//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * graph::Graph::frequency[b];
+		
+		//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + expNumInfAg * TAU_aa);
+		//const double prob_AllIagLeaveFirst = (expNumInfAg * LAMBDA) / (LAMBDA + (expNumInfAg * LAMBDA) + (expNumInfAg * TAU_aa));
+		////sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * graph::Graph::frequency[b];
+		//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * (graph::Graph::k_b[b] / NUM_AGENTS);
+	
+		//sigma_a += ((TAU_aa + extraInfAg * TAU_aa) / (LAMBDA + LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * (graph::Graph::k_b[b] / NUM_AGENTS);
+	}
+	//sigma_a = (TAU_aa / (LAMBDA + (LAMBDA / avKB) + TAU_aa));
 	//sigma_a /= graph::Graph::frequency.size();
 	return sigma_a;
 }
@@ -362,9 +374,13 @@ double sim::getSigma_a(const double& ia) {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diadt(const real& ia, const real& il) {
-	return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
+	//return  beta_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
+		
 	//double b_a = (double)(2 * LAMBDA * getSigma_a(ia) * graph::Graph::psi) / graph::Graph::averageDegree;
 	//return  b_a * ia * (1.0 - ia) + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
+	
+	double b_a = (double)(LAMBDA * getSigma_a(ia) * graph::Graph::psi) / graph::Graph::averageDegree;
+	return  beta_a * ia * (1.0 - ia) + b_a * (1.0 - ia) * ia + beta_la * (1.0 - ia) * il - GAMMA_a * ia;
 }
 real sim::dildt(const real& ia, const real& il) {
 	return  beta_al * (1.0 - il) * ia - GAMMA_l * il;

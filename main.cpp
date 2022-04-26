@@ -322,21 +322,21 @@ void sim::getSigma_a(const double& ia, double& sigma_as, double& sigma_ai) {
 	//	}
 	//}
 
-	double avKB = 0;
-	for (uint b = 1; b < graph::Graph::k_b.size(); ++b) {
-		avKB += graph::Graph::k_b[b];
-	}
-	avKB /= graph::Graph::validBlocks;
+	//double avKB = 0;
+	//for (uint b = 1; b < graph::Graph::k_b.size(); ++b) {
+	//	avKB += graph::Graph::k_b[b];
+	//}
+	//avKB /= graph::Graph::validBlocks;
 
 	sigma_as = 0;
 	sigma_ai = 0;
 	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-		//const double expNumInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia) - 1.0);
-		const double expNumInfAg = std::max(0.0, (graph::Graph::k_b[b] * ia));
-		if (expNumInfAg == 0) 
+		if (graph::Graph::k_b[b] == 0)
 			continue;
-		
-		const double expNumSusAg = graph::Graph::k_b[b] * (1.0 - ia);
+		const double expNumAg = graph::Graph::k_b[b];
+		const double expNumInfAg = expNumAg * ia;			// ----> Talvez seja errado fazer dessa forma...
+		const double minInfAg = std::min(1.0, expNumInfAg);	// ----> REVER! Talvesz o mínimo unitário faça mais sentido (fora que evita erros de número muito pequeno em cenários extremamente esparsos, onde esse número seria mt próx de zero).
+		const double expNumSusAg = expNumAg * (1.0 - ia);
 
 		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
 		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
@@ -356,13 +356,59 @@ void sim::getSigma_a(const double& ia, double& sigma_as, double& sigma_ai) {
 		//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
 		//const double prob_AllIagVanish = (expNumInfAg * LAMBDA + rateAllIagsRecover) / (LAMBDA + (expNumInfAg * LAMBDA) + (expNumInfAg * TAU_aa) + rateAllIagsRecover);
 		
-		const double rateAllIagsRecover = expNumInfAg * GAMMA_a;
-		const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA + rateAllIagsRecover) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
-		sigma_as += (1.0 - prob_SIContactEnds) * graph::Graph::frequency[b];
+		//const double rateAllIagsRecover = expNumInfAg * GAMMA_a;
+		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA + rateAllIagsRecover) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
 		
-		const double prob_transmission_1to1 = TAU_aa / (2 * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
-		sigma_ai += expNumSusAg * prob_transmission_1to1 * graph::Graph::frequency[b];
+		
+		//const double prob_transmission_1to1 = TAU_aa / (2 * LAMBDA + expNumInfAg * TAU_aa + GAMMA_a);
+		//const double prob_transmission_1to1 = (TAU_aa) / (2* LAMBDA + TAU_aa);
+		//sigma_ai += expNumSusAg * prob_transmission_1to1 * graph::Graph::frequency[b];
+		//sigma_as += expNumInfAg * prob_transmission_1to1 * graph::Graph::frequency[b];
+		
+		//PADRAO:
+		//const double prob_transmission_1to1 = (TAU_aa) / (2* LAMBDA + TAU_aa);
+		//sigma_ai += prob_transmission_1to1 * graph::Graph::frequency[b];
+		
+		//sigma_as += prob_transmission_1to1 * graph::Graph::frequency[b];
+		//sigma_ai += expNumInfAg * prob_transmission_1to1 * graph::Graph::frequency[b];
 
+		//double H_expInf = 0;
+		//double aux = expNumInfAg;
+		//double div = 1;
+		//while (aux > 0) {
+		//	H_expInf += (1.0 / div);
+		//	--aux;
+		//	++div;
+		//}
+		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa);
+		constexpr double euler = 0.5772156649;
+		const double digamma_i = log(expNumInfAg) - 1.0 / (2 * expNumInfAg);
+		const double digamma_s = log(expNumSusAg) - 1.0 / (2 * expNumSusAg);
+		const double H_i = std::max(1.0, euler + digamma_i);
+		const double H_s = std::max(1.0, euler + digamma_s);
+		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa);
+		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa) + (LAMBDA + H * LAMBDA) / (LAMBDA + H * LAMBDA + expNumInfAg * TAU_aa);
+		//const double prob_SIContactEnds = (LAMBDA + H * LAMBDA) / (LAMBDA + H * LAMBDA + expNumInfAg * TAU_aa);
+		//const double prob_SIContactEnds = (LAMBDA / (LAMBDA + expNumInfAg * TAU_aa)) + (H * LAMBDA) / (H * LAMBDA + expNumInfAg * TAU_aa);
+		const double prob_NoAcq = (H_i * LAMBDA + H_i * GAMMA_a + LAMBDA) / (H_i * LAMBDA + LAMBDA + H_i * GAMMA_a + expNumInfAg * TAU_aa);
+		
+		//const double prob_acqNGo = ((expNumInfAg * TAU_aa) / (LAMBDA + (1.0 + H_i) * LAMBDA + expNumInfAg * TAU_aa)) * (1.0 - ((TAU_aa) / (LAMBDA + expNumInfAg * TAU_aa)));
+		//const double prob_acqNPass = (expNumInfAg * TAU_aa) / (LAMBDA + (1.0 + H_i) * LAMBDA + expNumInfAg * TAU_aa) * ();
+		
+		const double prob_acq = (std::max(expNumInfAg, 1.0) * TAU_aa) / ((1.0 + H_i) * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
+		//const double prob_inf = (TAU_aa) / ((H_s + 1) * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
+		const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
+		//const double prob_inf_echo = (TAU_aa) / (((1.0 - prob_acq)*H_s + 1) * LAMBDA + std::max(expNumInfAg + prob_acq * expNumSusAg, 1.0) * TAU_aa);
+		//const double echo = (expNumSusAg - (expNumSusAg * (1.0 - prob_acq))) * prob_inf_echo;
+		const double prob_NoTransmission = (H_s * LAMBDA + LAMBDA + GAMMA_a) / (H_s * LAMBDA + LAMBDA + GAMMA_a + TAU_aa);
+		//const double prob_inf = (TAU_aa) / (2* LAMBDA + H * (LAMBDA + GAMMA_a) + expNumInfAg * TAU_aa);
+		//sigma_as += (1.0 - prob_SIContactEnds) * graph::Graph::frequency[b];
+		
+		//TAva bonito:
+		//sigma_as += prob_inf * graph::Graph::frequency[b];
+
+		sigma_as += prob_acq * graph::Graph::frequency[b];
+		sigma_ai += prob_inf * graph::Graph::frequency[b];
 
 		//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * (graph::Graph::k_b[b] / NUM_AGENTS);
 	

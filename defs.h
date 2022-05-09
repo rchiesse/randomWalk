@@ -257,7 +257,7 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
-void rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+void rungeKutta4thOrder(const real& t0, const std::vector<real>& v_ia0, const std::vector<real>& v_il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif
 
 } //namespace sim

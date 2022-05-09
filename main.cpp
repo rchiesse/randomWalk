@@ -1,6 +1,7 @@
 #include "graph.h"
 #include "reporter.h"
 #include "stats.h"
+#include <numeric>		//std::accumulate()
 
 namespace sim { // Simulator's namespace.
 
@@ -448,7 +449,7 @@ real sim::dildt(const real& ia, const real& il) {
 	return  beta_al * (1.0 - il) * ia - GAMMA_l * il;
 }
 
-void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void sim::rungeKutta4thOrder(const real& t0, const std::vector<real>& v_ia0, const std::vector<real>& v_il0, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
@@ -456,15 +457,19 @@ void sim::rungeKutta4thOrder(const real& t0, const real& ia0, const real& il0, c
 	constexpr real one_sixth = 1.0 / 6.0;
 	real k1, k2, k3, k4;
 	real l1, l2, l3, l4;
-	real ia = ia0;
-	real il = il0;
-	saveToFile_diadt[0]	= ia0;
-	saveToFile_dildt[0]	= il0;
+	real ia = std::accumulate(v_ia0.begin(), v_ia0.end(), 0);
+	real il = std::accumulate(v_il0.begin(), v_il0.end(), 0);
+
+	saveToFile_diadt[0]	= ia;
+	saveToFile_dildt[0]	= il;
 	bool end = false;
 	++outputSize;
 
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
+
+		//for(bloco)
+
 		k1 = diadt(ia				, il				);
 		l1 = dildt(ia				, il				);
 		k2 = diadt(ia + 0.5 * h * k1, il + 0.5 * h * l1	);
@@ -873,6 +878,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	uint numScenarios = (span / step) + 1 * (span % step);
 	uint scenario = 0;
 	uint _numAgents;
+
+	//v_ia0 & v_il0:
+	vector<real> v_ia0(Graph::frequency.size(), 0.0), v_il0(Graph::frequency.size(), 0.0);
+	//for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
+	//	if (graph::Graph::frequency[b] > 0) {
+	//
+	//	}
+	//}
+
 	while (scenario < numScenarios){
 		_numAgents = _startingNumAg + (scenario * step);
 		
@@ -939,8 +953,14 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = 0; i < itotal; ++i)
 				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
 #else
-			for (agent i = 0; i < iaTotal; ++i)
-				enterNodeAsInf(i, randomLCCNode(), TIME_ZERO);
+			for (agent i = 0; i < iaTotal; ++i) {
+				const node randomNode = randomLCCNode();
+				enterNodeAsInf(i, randomNode, TIME_ZERO);
+				++v_ia0[Graph::g[randomNode].size()];
+			}
+			for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
+				v_ia0[b] /= NUM_AGENTS;
+			}
 #endif
 
 			//Random distribution of the SUSCEPTIBLE agents:
@@ -1049,7 +1069,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		<< "_STime" << T 
 		<< "_R"		<< ROUNDS;
 	baseName = name.str();
-	rungeKutta4thOrder(0, FRAC_AG_INFECTED, FRAC_ST_INFECTED, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+
+	rungeKutta4thOrder(0, v_ia0, v_il0, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 
 	//Saving to file:
 	std::ofstream RKdata;

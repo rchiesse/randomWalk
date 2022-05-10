@@ -178,8 +178,8 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 1000;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 100;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 5000;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
@@ -257,7 +257,10 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
-void rungeKutta4thOrder(const real& t0, const std::vector<real>& v_ia0, const std::vector<real>& v_il0, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+real diabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& block);
+real dsabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& block);
+real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
+void rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vector<real>& v_sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif
 
 } //namespace sim

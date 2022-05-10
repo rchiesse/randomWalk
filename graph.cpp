@@ -279,13 +279,13 @@ void Graph::set2ndMoment() {
 			sumKB += pow(k_b[b],2) / frequency[b];
 	}
 
-	for (uint b = 1; b < frequency.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
+	for (uint b = 1; b < frequency.size(); ++b) {
 		rho_b[b] = 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
 	}
 	psi = 0;
 	for (uint b = 1; b < frequency.size(); ++b) {
-		//psi += b * frequency[b] * rho_b[b];
-		psi += b * originalFreq[b] * rho_b[b];
+		psi += b * frequency[b] * rho_b[b];
+		//psi += b * originalFreq[b] * rho_b[b];
 	}
 
 	validBlocks = 0;

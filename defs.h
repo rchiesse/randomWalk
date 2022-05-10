@@ -259,6 +259,7 @@ real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
 real diabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& block);
 real dsabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& block);
+void takeStep(const real& h, real& ia, real& il, std::vector<real>& v_iab, std::vector<real>& v_sab);
 real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
 void rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vector<real>& v_sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif

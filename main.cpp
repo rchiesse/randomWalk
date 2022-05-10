@@ -433,11 +433,51 @@ void sim::getSigma_a(const double& ia, double& sigma_as, double& sigma_ai) {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& b) {
-	return LAMBDA * (ia * graph::Graph::q_b[b] - iab) + ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) - GAMMA_a * iab;
+	//DON (division by n_b -- goes to zero):
+	//return LAMBDA * (ia * graph::Graph::q_b[b] - iab) + ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) - GAMMA_a * iab;
+	
+	//RONALD 1 (NO division by n_b -- overestimates):
+	//return LAMBDA * (ia * graph::Graph::q_b[b] - iab) + (NUM_AGENTS * TAU_aa * sab * iab) - GAMMA_a * iab;
+	
+	//RONALD 2 (reviewed) - Equation 11:
+	const double& qb = graph::Graph::q_b[b];
+	const double& rho = graph::Graph::rho_b[b];
+	return LAMBDA * (ia * qb - iab) + LAMBDA * qb * rho * (TAU_aa / (2*LAMBDA + TAU_aa)) * (((ia * sab) + ((1.0 - ia) * iab))/(sab + iab)) - GAMMA_a * iab;
 }
 
 real sim::dsabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& b) {
-	return LAMBDA * ((1.0 - ia) * graph::Graph::q_b[b] - sab) - ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) + GAMMA_a * iab;
+	//return LAMBDA * ((1.0 - ia) * graph::Graph::q_b[b] - sab) - ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) + GAMMA_a * iab;
+	//return LAMBDA * ((1.0 - ia) * graph::Graph::q_b[b] - sab) - (NUM_AGENTS * TAU_aa * sab * iab) + GAMMA_a * iab;
+
+	const double& qb = graph::Graph::q_b[b];
+	const double& rho = graph::Graph::rho_b[b];
+	return LAMBDA * ((1.0 - ia) * qb - sab) - LAMBDA * qb * rho * (TAU_aa / (2 * LAMBDA + TAU_aa)) * (((ia * sab) + ((1.0 - ia) * iab)) / (sab + iab)) + GAMMA_a * iab;
+}
+
+void sim::takeStep(const real& h, real& ia, real& il, std::vector<real>& v_iab, std::vector<real>& v_sab) {
+	constexpr real one_sixth = 1.0 / 6.0;
+	real k1, k2, k3, k4;
+	real l1, l2, l3, l4;
+	for (uint b = (uint)graph::Graph::frequency.size() - 1; b > 0; --b) {
+		if (graph::Graph::frequency[b] == 0)
+			continue;
+
+		real& iab = v_iab[b];
+		real& sab = v_sab[b];
+		k1 = diabdt(ia, il, iab, sab, 0.0, b);
+		l1 = dsabdt(ia, il, iab, sab, 0.0, b);
+		k2 = diabdt(ia, il, iab + 0.5 * h * k1, sab + 0.5 * h * l1, 0.0, b);
+		l2 = dsabdt(ia, il, iab + 0.5 * h * k1, sab + 0.5 * h * l1, 0.0, b);
+		k3 = diabdt(ia, il, iab + 0.5 * h * k2, sab + 0.5 * h * l2, 0.0, b);
+		l3 = dsabdt(ia, il, iab + 0.5 * h * k2, sab + 0.5 * h * l2, 0.0, b);
+		k4 = diabdt(ia, il, iab + h * k3, sab + h * l3, 0.0, b);
+		l4 = dsabdt(ia, il, iab + h * k3, sab + h * l3, 0.0, b);
+		iab += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		sab += one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
+	}
+	ia = 0;
+	for (uint b = (uint)v_iab.size() - 1; b > 0; --b)
+		ia += v_iab[b];
 }
 
 real sim::dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& b) {
@@ -466,9 +506,6 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vect
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
-	constexpr real one_sixth = 1.0 / 6.0;
-	real k1, k2, k3, k4;
-	real l1 = 0.0, l2 = 0.0, l3 = 0.0, l4 = 0.0;
 	double ia = 0;
 	for (size_t i = 1; i < v_iab.size(); ++i)
 		ia += v_iab[i];
@@ -484,32 +521,29 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vect
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		for (uint b = 1; b < graph::Graph::frequency.size(); ++b)	{
-			if (graph::Graph::frequency[b] == 0)
-				continue;
-
-			const real iab = v_iab[b];
-			const real sab = v_sab[b];
-
-			//k1 = diabdt(ia, il, v_iab[b], v_ilb[b], b);
-			//We take a step for the fraction of INFECTED agents
-			k1 = diabdt(ia, il, iab					, sab, 0.0, b);
-			k2 = diabdt(ia, il, iab + 0.5 * h * k1	, sab, 0.0, b);
-			k3 = diabdt(ia, il, iab + 0.5 * h * k2	, sab, 0.0, b);
-			k4 = diabdt(ia, il, iab + h * k3		, sab, 0.0, b);
-			v_iab[b] += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-
-			//Now we take a step for the fraction of SUSCEPTIBLE agents
-			k1 = dsabdt(ia, il, iab					, sab, 0.0, b);
-			k2 = dsabdt(ia, il, iab + 0.5 * h * k1	, sab, 0.0, b);
-			k3 = dsabdt(ia, il, iab + 0.5 * h * k2	, sab, 0.0, b);
-			k4 = dsabdt(ia, il, iab + h * k3		, sab, 0.0, b);
-			v_sab[b] += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-		}
-		ia = 0; 
-		for (uint b = 1; b < v_iab.size(); ++b) 
-			ia += v_iab[b];
-
+		takeStep(h, ia, il, v_iab, v_sab);
+		//for (uint b = graph::Graph::frequency.size() - 1; b > 0; --b)	{
+		//	if (graph::Graph::frequency[b] == 0)
+		//		continue;
+		//
+		//	real& iab = v_iab[b];
+		//	real& sab = v_sab[b];
+		//
+		//	k1 = diabdt(ia, il, iab					, sab, 0.0, b);
+		//	l1 = dsabdt(ia, il, iab					, sab, 0.0, b);
+		//	k2 = diabdt(ia, il, iab + 0.5 * h * k1	, sab + 0.5 * h * l1, 0.0, b);
+		//	l2 = dsabdt(ia, il, iab + 0.5 * h * k1	, sab + 0.5 * h * l1, 0.0, b);
+		//	k3 = diabdt(ia, il, iab + 0.5 * h * k2	, sab + 0.5 * h * l2, 0.0, b);
+		//	l3 = dsabdt(ia, il, iab + 0.5 * h * k2	, sab + 0.5 * h * l2, 0.0, b);
+		//	k4 = diabdt(ia, il, iab + h * k3		, sab + h * l3, 0.0, b);
+		//	l4 = dsabdt(ia, il, iab + h * k3		, sab + h * l3, 0.0, b);
+		//	iab += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
+		//	sab += one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
+		//}
+		//ia = 0; 
+		//for (uint b = v_iab.size() - 1; b > 0; --b)
+		//	ia += v_iab[b];
+		//
 		//ia = std::accumulate(v_iab.begin(), v_iab.end(), 0.0);
 		//il = std::accumulate(v_ilb.begin(), v_ilb.end(), 0.0);
 		
@@ -532,36 +566,7 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vect
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-
-		for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-			if (graph::Graph::frequency[b] == 0)
-				continue;
-
-			const real iab = v_iab[b];
-			const real sab = v_sab[b];
-
-			//We take a step for the fraction of INFECTED agents
-			k1 = diabdt(ia, il, iab					, sab, 0.0, b);
-			k2 = diabdt(ia, il, iab + 0.5 * h * k1	, sab, 0.0, b);
-			k3 = diabdt(ia, il, iab + 0.5 * h * k2	, sab, 0.0, b);
-			k4 = diabdt(ia, il, iab + h * k3		, sab, 0.0, b);
-			v_iab[b] += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-
-			//Now we take a step for the fraction of SUSCEPTIBLE agents
-			k1 = dsabdt(ia, il, iab					, sab, 0.0, b);
-			k2 = dsabdt(ia, il, iab + 0.5 * h * k1	, sab, 0.0, b);
-			k3 = dsabdt(ia, il, iab + 0.5 * h * k2	, sab, 0.0, b);
-			k4 = dsabdt(ia, il, iab + h * k3		, sab, 0.0, b);
-			v_sab[b] += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-		}
-
-		ia = 0;
-		for (size_t i = 1; i < v_iab.size(); ++i)
-			ia += v_iab[i];
-
-		//ia = std::accumulate(v_iab.begin(), v_iab.end(), 0);
-		//il = std::accumulate(v_ilb.begin(), v_ilb.end(), 0);
-
+		takeStep(h, ia, il, v_iab, v_sab);
 		if (ia < epsilon) { 
 			saveToFile_diadt[outputSize] = 0;
 #ifdef NORM_SITE_PER_AG

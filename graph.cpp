@@ -29,11 +29,13 @@ real Graph::averageDegree;
 real Graph::originalAvDeg;
 real Graph::original2ndMmt;
 real Graph::_2ndMmt;
-vector<double> Graph::frequency;
+vector<double> Graph::block_prob;
 vector<double> Graph::q_b;
 vector<double> Graph::originalFreq;
 vector<double> Graph::k_b;
 vector<double> Graph::rho_b;
+//vector<double> Graph::rho_bs;
+//vector<double> Graph::rho_bi;
 real Graph::sumKB;
 real Graph::psi;
 real Graph::validBlocks;
@@ -246,7 +248,7 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #ifndef CLIQUE
 
 void Graph::set2ndMoment() {
-	frequency.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'frequency[5]' instead of 'frequency[4]'. Note that frequency[0] will always be 0 (since no 0-degree nodes exist in the LCC).
+	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	q_b.resize(largestDegree + 1, 0);
 	originalFreq.resize(largestDegree + 1, 0);
 	k_b.resize(largestDegree + 1, 0);
@@ -255,48 +257,48 @@ void Graph::set2ndMoment() {
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i) {
 #ifdef PROTECTION_FX
-		++(frequency[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+		++(block_prob[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 		++(originalFreq[gs[lcc[i]].size()-1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #else
-		++(frequency[g[lcc[i]].size()]);		
+		++(block_prob[g[lcc[i]].size()]);		
 		++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #endif
 	}
 	//Probabilities:
-	for (uint b = 0; b < frequency.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
-		frequency[b] /= n;
+	for (uint b = 0; b < block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
+		block_prob[b] /= n;
 		originalFreq[b] /= n;
 	}
-	for (uint b = 1; b < frequency.size(); ++b) {	
-		q_b[b] = (b * frequency[b]) / averageDegree;
+	for (uint b = 1; b < block_prob.size(); ++b) {	
+		q_b[b] = (b * block_prob[b]) / averageDegree;
 	}
-	for (uint b = 1; b < frequency.size(); ++b) {	
+	for (uint b = 1; b < block_prob.size(); ++b) {	
 		k_b[b] = sim::NUM_AGENTS * q_b[b];
 	}
 	sumKB = 0;
-	for (uint b = 1; b < frequency.size(); ++b) {
-		if (frequency[b] > 0)
-			sumKB += pow(k_b[b],2) / frequency[b];
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		if (block_prob[b] > 0)
+			sumKB += pow(k_b[b],2) / block_prob[b];
 	}
 
-	for (uint b = 1; b < frequency.size(); ++b) {
-		rho_b[b] = 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		rho_b[b]	= 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
 	}
 	psi = 0;
-	for (uint b = 1; b < frequency.size(); ++b) {
-		psi += b * frequency[b] * rho_b[b];
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		psi += b * block_prob[b] * rho_b[b];
 		//psi += b * originalFreq[b] * rho_b[b];
 	}
 
 	validBlocks = 0;
-	for (uint b = 1; b < frequency.size(); ++b) {
-		if (frequency[b] > 0) ++validBlocks;
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		if (block_prob[b] > 0) ++validBlocks;
 	}
 	//2nd moment:
 	_2ndMmt = 0;
 	original2ndMmt = 0;
-	for (uint b = 1; b < frequency.size(); ++b) {
-		_2ndMmt += pow(b, 2) * frequency[b];
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		_2ndMmt += pow(b, 2) * block_prob[b];
 		original2ndMmt += pow(b, 2) * originalFreq[b];
 	}
 	

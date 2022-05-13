@@ -109,13 +109,15 @@ void agFate_fromAg	(const agent& ag, const real& now, const uint& infective, con
 void agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void siteFate		(const uint& v, const real& now, const uint& infective, const uint& validity_L, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
-void checkinAsSus   (const agent& ag, const node& v);
+//void checkinAsSus   (const agent& ag, const node& v);
+//void checkoutAsSus  (const agent& ag, const node& v);
+//void checkinAsInf   (const agent& ag, const node& v);
+//void checkoutAsInf  (const agent& ag, const node& v);
+void check_in		(const agent& ag, const node& v, vector<vector<agent>>& _where);
+void check_out		(const agent& ag, const node& v, vector<vector<agent>>& _where);
 void enterNodeAsInf (const agent& ag, const node& v, const real& now);
-void checkinAsInf   (const agent& ag, const node& v);
 void leaveNodeAsSus (const agent& ag, const node& v, const real& now);
-void checkoutAsSus  (const agent& ag, const node& v);
 void leaveNodeAsInf (const agent& ag, const node& v, const real& now);
-void checkoutAsInf  (const agent& ag, const node& v);
 //Defines the next node an agent is going to visit.
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
@@ -173,7 +175,7 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
 //}
 //real sim::i_t_2ndMmt_sys(const real& t) {
-//	for (size_t i = 0; i < sim::frequency.size(); i++) {
+//	for (size_t i = 0; i < sim::block_prob.size(); i++) {
 //
 //		long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
 //		return std::max((1.0 - (GAMMA / beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
@@ -186,42 +188,42 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //void sim::setBeta2ndMmt() {
 //	
 //	//1st approach: 
-//	vector<double> beta_b(graph::Graph::frequency.size(), 0);
-//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b){
-//		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::frequency[_b]) / (2 * graph::Graph::m);
-//		//if (_kb_ < N * graph::Graph::frequency[_b]) {
-//		if (_kb_ < N * graph::Graph::frequency[_b]) {
+//	vector<double> beta_b(graph::Graph::block_prob.size(), 0);
+//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b){
+//		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::block_prob[_b]) / (2 * graph::Graph::m);
+//		//if (_kb_ < N * graph::Graph::block_prob[_b]) {
+//		if (_kb_ < N * graph::Graph::block_prob[_b]) {
 //			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
 //		}
 //		else {
-//			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::frequency[_b]) / graph::Graph::m;
+//			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::block_prob[_b]) / graph::Graph::m;
 //		}
 //	}
 //	beta2ndMmt = 0;
-//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
 //		beta2ndMmt += beta_b[_b];
 //	}
 //
 //	//2nd approach:
 //	beta_b.resize(0);
-//	beta_b.resize(graph::Graph::frequency.size(), 0);
+//	beta_b.resize(graph::Graph::block_prob.size(), 0);
 //	double sigma = 0;
 //	double sigma_2 = 0;
 //	uint validBlock = 0;
 //	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
-//	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::frequency.size() - 1) * (double)N * graph::Graph::frequency[graph::Graph::frequency.size() - 1]) / (2.0 * graph::Graph::m);
+//	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::block_prob.size() - 1) * (double)N * graph::Graph::block_prob[graph::Graph::block_prob.size() - 1]) / (2.0 * graph::Graph::m);
 //	double variance = abs(graph::Graph::_2ndMmt - pow(graph::Graph::averageDegree, 2));
 //	double _diff = abs(graph::Graph::averageDegree - graph::Graph::_2ndMmt);
 //	double std_dev = abs(sqrt(variance));
 //	const double& avDg = graph::Graph::averageDegree;
-//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
-//		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::frequency[_b]) / (2.0 * graph::Graph::m);
-//		//double kbnb = _kb_ / N * graph::Graph::frequency[_b];
+//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
+//		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::block_prob[_b]) / (2.0 * graph::Graph::m);
+//		//double kbnb = _kb_ / N * graph::Graph::block_prob[_b];
 //		double norm_kb = (_kb_/N)/ ((_kb_/N)+ std::exp(-(_kb_/N)));
 //		//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU + (LAMBDA * (1- norm_kbnb)) )) * (_kb_ * (1 - norm_kbnb))) / graph::Graph::m;
 //		beta_b[_b] = (LAMBDA * _b * (TAU / (2*LAMBDA + TAU) * norm_kb * N )) / graph::Graph::m;
 //		
-//		if (graph::Graph::frequency[_b] > 0) {
+//		if (graph::Graph::block_prob[_b] > 0) {
 //			++validBlock;
 //			//double dimmer = 1.0 - ((_kb_/(4.0 + _kb_)) / ((_kb_/ (4.0 + _kb_)) + exp(-(_kb_/ (4.0 + _kb_)))));
 //			//double dimmer = 1.0 - ((_kb_/(expBlock)) / ((_kb_/ (expBlock)) + exp(-(_kb_/ (expBlock)))));
@@ -258,7 +260,7 @@ static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 //	sigma /= validBlock;
 //	sigma_2 /= validBlock;
 //	beta2ndMmt_logistic = 0;
-//	for (size_t _b = 1; _b < graph::Graph::frequency.size(); ++_b) {
+//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
 //		beta2ndMmt_logistic += beta_b[_b];
 //	}
 //
@@ -313,112 +315,28 @@ void sim::setBeta2ndMmt() {
 }
 
 void sim::getSigma_a(const double& ia, double& sigma_as, double& sigma_ai) {
-//double sim::getSigma_a() {
-	//vector<double> H(graph::Graph::frequency.size(), 1.0);
-	//for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
-	//	//uint avNumIAg = (uint)std::round(graph::Graph::k_b[b] * ia);	// ----> Average number of infected agents within block b.
-	//	uint avNumIAg = (uint)std::round(graph::Graph::k_b[b]);	// ----> Average number of infected agents within block b.
-	//	for (uint i = 2; i < avNumIAg; ++i){							// ----> Note that this approach is pointless if avNumIAg < 2 (in which case the harmonic number is trivially 1), hence the counter being initialized at 2.
-	//		H[b] += 1.0 / i;
-	//	}
-	//}
-
-	//double avKB = 0;
-	//for (uint b = 1; b < graph::Graph::k_b.size(); ++b) {
-	//	avKB += graph::Graph::k_b[b];
-	//}
-	//avKB /= graph::Graph::validBlocks;
-
 	sigma_as = 0;
 	sigma_ai = 0;
-	for (uint b = 1; b < graph::Graph::frequency.size(); ++b) {
+	for (uint b = 1; b < graph::Graph::block_prob.size(); ++b) {
 		if (graph::Graph::k_b[b] == 0)
 			continue;
 		const double expNumAg = graph::Graph::k_b[b];
 		const double expNumInfAg = expNumAg * ia;			// ----> Talvez seja errado fazer dessa forma...
 		const double minInfAg = std::min(1.0, expNumInfAg);	// ----> REVER! Talvesz o mínimo unitário faça mais sentido (fora que evita erros de número muito pequeno em cenários extremamente esparsos, onde esse número seria mt próx de zero).
 		const double expNumSusAg = expNumAg * (1.0 - ia);
-
-		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / H[b]) + TAU_aa)) * graph::Graph::frequency[b];
-		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b])) + TAU_aa)) * graph::Graph::frequency[b];
-		//sigma_a += (TAU_aa / (LAMBDA + (LAMBDA / std::min(1.0, graph::Graph::k_b[b] * ia)) + TAU_aa));
-		
-		//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
-		//sigma_a += (TAU_aa / (2 * LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * graph::Graph::frequency[b] * (1 + extraInfAg);
-		
-		//sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover)) * (graph::Graph::k_b[b] / NUM_AGENTS);
-		//sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa )) * (graph::Graph::k_b[b] / NUM_AGENTS) * (1.0 - ia);
-		//sigma_a += ((expNumInfAg * TAU_aa) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa )) * graph::Graph::frequency[b];
-		
-		//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + TAU_aa + extraInfAg * TAU_aa + rateAllIagsRecover);
-		//const double prob_AllIagLeaveFirst = (LAMBDA + extraInfAg * LAMBDA + rateAllIagsRecover) / ((LAMBDA + extraInfAg * LAMBDA) + (TAU_aa + extraInfAg * TAU_aa) + rateAllIagsRecover);
-		//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * graph::Graph::frequency[b];
-		
-		//const double prob_SAgLeavesFirst = (LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
-		//const double prob_AllIagVanish = (expNumInfAg * LAMBDA + rateAllIagsRecover) / (LAMBDA + (expNumInfAg * LAMBDA) + (expNumInfAg * TAU_aa) + rateAllIagsRecover);
-		
-		//const double rateAllIagsRecover = expNumInfAg * GAMMA_a;
-		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA + rateAllIagsRecover) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa + rateAllIagsRecover);
-		
-		
-		//const double prob_transmission_1to1 = TAU_aa / (2 * LAMBDA + expNumInfAg * TAU_aa + GAMMA_a);
-		//const double prob_transmission_1to1 = (TAU_aa) / (2* LAMBDA + TAU_aa);
-		//sigma_ai += expNumSusAg * prob_transmission_1to1 * graph::Graph::frequency[b];
-		//sigma_as += expNumInfAg * prob_transmission_1to1 * graph::Graph::frequency[b];
-		
-		//PADRAO:
-		//const double prob_transmission_1to1 = (TAU_aa) / (2* LAMBDA + TAU_aa);
-		//sigma_ai += prob_transmission_1to1 * graph::Graph::frequency[b];
-		
-		//sigma_as += prob_transmission_1to1 * graph::Graph::frequency[b];
-		//sigma_ai += expNumInfAg * prob_transmission_1to1 * graph::Graph::frequency[b];
-
-		//double H_expInf = 0;
-		//double aux = expNumInfAg;
-		//double div = 1;
-		//while (aux > 0) {
-		//	H_expInf += (1.0 / div);
-		//	--aux;
-		//	++div;
-		//}
-		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa);
 		constexpr double euler = 0.5772156649;
 		const double digamma_i = log(expNumInfAg) - 1.0 / (2 * expNumInfAg);
 		const double digamma_s = log(expNumSusAg) - 1.0 / (2 * expNumSusAg);
 		const double H_i = std::max(1.0, euler + digamma_i);
 		const double H_s = std::max(1.0, euler + digamma_s);
-		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa);
-		//const double prob_SIContactEnds = (LAMBDA + expNumInfAg * LAMBDA) / (LAMBDA + expNumInfAg * LAMBDA + expNumInfAg * TAU_aa) + (LAMBDA + H * LAMBDA) / (LAMBDA + H * LAMBDA + expNumInfAg * TAU_aa);
-		//const double prob_SIContactEnds = (LAMBDA + H * LAMBDA) / (LAMBDA + H * LAMBDA + expNumInfAg * TAU_aa);
-		//const double prob_SIContactEnds = (LAMBDA / (LAMBDA + expNumInfAg * TAU_aa)) + (H * LAMBDA) / (H * LAMBDA + expNumInfAg * TAU_aa);
 		const double prob_NoAcq = (H_i * LAMBDA + H_i * GAMMA_a + LAMBDA) / (H_i * LAMBDA + LAMBDA + H_i * GAMMA_a + expNumInfAg * TAU_aa);
-		
-		//const double prob_acqNGo = ((expNumInfAg * TAU_aa) / (LAMBDA + (1.0 + H_i) * LAMBDA + expNumInfAg * TAU_aa)) * (1.0 - ((TAU_aa) / (LAMBDA + expNumInfAg * TAU_aa)));
-		//const double prob_acqNPass = (expNumInfAg * TAU_aa) / (LAMBDA + (1.0 + H_i) * LAMBDA + expNumInfAg * TAU_aa) * ();
-		
 		const double prob_acq = (std::max(expNumInfAg, 1.0) * TAU_aa) / ((1.0 + H_i) * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
-		//const double prob_inf = (TAU_aa) / ((H_s + 1) * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
 		const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
-		//const double prob_inf_echo = (TAU_aa) / (((1.0 - prob_acq)*H_s + 1) * LAMBDA + std::max(expNumInfAg + prob_acq * expNumSusAg, 1.0) * TAU_aa);
-		//const double echo = (expNumSusAg - (expNumSusAg * (1.0 - prob_acq))) * prob_inf_echo;
 		const double prob_NoTransmission = (H_s * LAMBDA + LAMBDA + GAMMA_a) / (H_s * LAMBDA + LAMBDA + GAMMA_a + TAU_aa);
-		//const double prob_inf = (TAU_aa) / (2* LAMBDA + H * (LAMBDA + GAMMA_a) + expNumInfAg * TAU_aa);
-		//sigma_as += (1.0 - prob_SIContactEnds) * graph::Graph::frequency[b];
-		
-		//TAva bonito:
-		//sigma_as += prob_inf * graph::Graph::frequency[b];
-
-		sigma_as += prob_acq * graph::Graph::frequency[b];
-		sigma_ai += prob_inf * graph::Graph::frequency[b];
-
-		//sigma_a += (1.0 - prob_SAgLeavesFirst) * (1.0 - prob_AllIagLeaveFirst) * (graph::Graph::k_b[b] / NUM_AGENTS);
-	
-		//sigma_a += ((TAU_aa + extraInfAg * TAU_aa) / (LAMBDA + LAMBDA + TAU_aa + extraInfAg * TAU_aa)) * (graph::Graph::k_b[b] / NUM_AGENTS);
+		sigma_as += prob_acq * graph::Graph::block_prob[b];
+		sigma_ai += prob_inf * graph::Graph::block_prob[b];
 	}
-	//sigma_a = (TAU_aa / (LAMBDA + (LAMBDA / avKB) + TAU_aa));
-	//sigma_a /= graph::Graph::frequency.size();
 
-	//return sigma_a;
 }
 
 #ifdef SOLVE_NUMERICALLY
@@ -433,33 +351,109 @@ void sim::getSigma_a(const double& ia, double& sigma_as, double& sigma_ai) {
 //real sim::didt(const real& i) { return  beta2ndMmt * i * (1 - i) - (GAMMA * i); }
 
 real sim::diabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& b) {
+	const double& qb = graph::Graph::q_b[b];
+	if (sab + iab == 0)
+		return LAMBDA * ia * qb;
+
+
+	const double& rho = graph::Graph::rho_b[b];
+	const double nb = graph::Graph::n * graph::Graph::block_prob[b];
+
+	//const double Ib = NUM_AGENTS * iab;
+	//const double Sb = NUM_AGENTS * sab;
+	////const double kb = Ib + Sb;
+	//const double Sbnb = Sb / nb;
+	//const double Ibnb = Ib / nb;
+	//const double sspan = std::min(Sb, nb);
+	//const double ispan = std::min(Ib, nb);
+	//const double SIspan = std::min(sspan, ispan);
+	//const double esab = sab / nb;
+	////const double eiab = iab / nb;
+	//const double eiab = (Ibnb < 1.0) ?
+	//	(ispan > 0.0) ? iab / ispan : 0
+	//	: iab / nb;
+	//const double esab = (sab > 0) ? sab * (eSb / Sb) : sab;
+	//const double eiab = (iab > 0) ? iab * (eIb / Ib) : iab;
+
+	//const double _k = (Ibnb < Sbnb) ?
+	//	(Ibnb < 1.0) ? (1.0 - Ibnb) * Sb : 0
+	//	:
+	//	((Sbnb < 1.0) ? (1.0 - Sbnb) * Ib : 0);
+	//
+	//const double dimmer = 1.0 - (0.25 - sab * iab);
+	
+	//const double norm_sb = (sab * NUM_AGENTS) / kb;
+	//const double norm_ib = (iab * NUM_AGENTS) / kb;
+	
+
+	//const double sigma = (TAU_aa / (2 * LAMBDA + TAU_aa));
+	//const double I = NUM_AGENTS * ia;
+	//const double S = NUM_AGENTS - I;
+	//double rho_bs = 1.0 - pow(1.0 - (((double)b) / (2 * graph::Graph::m)), S);
+	//double rho_bi = 1.0 - pow(1.0 - (((double)b) / (2 * graph::Graph::m)), I);
+	
+
 	//DON (division by n_b -- goes to zero):
-	//return LAMBDA * (ia * graph::Graph::q_b[b] - iab) + ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) - GAMMA_a * iab;
+	return LAMBDA * (ia * qb - iab) + ((NUM_AGENTS * TAU_aa * sab * iab) / nb) - GAMMA_a * iab;
 	
 	//RONALD 1 (NO division by n_b -- overestimates):
-	//return LAMBDA * (ia * graph::Graph::q_b[b] - iab) + (NUM_AGENTS * TAU_aa * sab * iab) - GAMMA_a * iab;
+	//return LAMBDA * (ia * qb - iab) + (LAMBDA * qb * sigma)(I*rho_bs + S*rho_bi) - GAMMA_a * iab;
 	
+	//double siProb = rho * (1.0 - ia) * ia * rho * nb;
+
+	//return LAMBDA * (ia * qb - iab) + (NUM_AGENTS * TAU_aa * sab * iab * siProb) - GAMMA_a * iab;
+	// 
 	//RONALD 2 (reviewed) - Equation 11:
-	const double& qb = graph::Graph::q_b[b];
-	const double& rho = graph::Graph::rho_b[b];
-	return LAMBDA * (ia * qb - iab) + LAMBDA * qb * rho * (TAU_aa / (2*LAMBDA + TAU_aa)) * (((ia * sab) + ((1.0 - ia) * iab))/(sab + iab)) - GAMMA_a * iab;
+	//return LAMBDA * (ia * qb - iab) + LAMBDA * qb * rho * (TAU_aa / (2 * LAMBDA + TAU_aa)) * (((ia * sab) + ((1.0 - ia) * iab)) / (sab + iab)) - GAMMA_a * iab;
 }
 
 real sim::dsabdt(const real& ia, const real& il, const real& iab, const real& sab, const real& ilb, const uint& b) {
-	//return LAMBDA * ((1.0 - ia) * graph::Graph::q_b[b] - sab) - ((NUM_AGENTS * TAU_aa * sab * iab) / (graph::Graph::n * graph::Graph::frequency[b])) + GAMMA_a * iab;
-	//return LAMBDA * ((1.0 - ia) * graph::Graph::q_b[b] - sab) - (NUM_AGENTS * TAU_aa * sab * iab) + GAMMA_a * iab;
-
 	const double& qb = graph::Graph::q_b[b];
+	if (sab + iab == 0)
+		return LAMBDA * (1.0 - ia) * qb;
+
 	const double& rho = graph::Graph::rho_b[b];
-	return LAMBDA * ((1.0 - ia) * qb - sab) - LAMBDA * qb * rho * (TAU_aa / (2 * LAMBDA + TAU_aa)) * (((ia * sab) + ((1.0 - ia) * iab)) / (sab + iab)) + GAMMA_a * iab;
+	const double nb = graph::Graph::n * graph::Graph::block_prob[b];
+
+	//const double Ib = NUM_AGENTS * iab;
+	//const double Sb = NUM_AGENTS * sab;
+	////const double kb = Ib + Sb;
+	//const double Sbnb = Sb / nb;
+	//const double Ibnb = Ib / nb;
+	//const double sspan = std::min(Sb, nb);
+	//const double ispan = std::min(Ib, nb);
+	//const double SIspan = std::min(sspan, ispan);
+	//const double esab = sab / nb;
+	////const double eiab = iab / nb;
+	//const double eiab = (Ibnb < 1.0) ? 
+	//						(ispan > 0.0) ? iab / ispan : 0 
+	//					:	iab / nb;
+	//
+	//const double dimmer = 1.0 - (0.25 - sab * iab);
+	//const double dimmer = (sab * iab) / 0.25;
+
+
+	//const double norm_sb = (sab * NUM_AGENTS) / kb;
+	//const double norm_ib = (iab * NUM_AGENTS) / kb;
+
+	//const double I = NUM_AGENTS * ia;
+	//const double S = NUM_AGENTS - I;
+	//double rho_bs = 1.0 - pow(1.0 - (((double)b) / (2 * graph::Graph::m)), S);
+	//double rho_bi = 1.0 - pow(1.0 - (((double)b) / (2 * graph::Graph::m)), I);
+
+	return LAMBDA * ((1.0 - ia) * qb - sab) - ((NUM_AGENTS * TAU_aa * sab * iab) / nb) + GAMMA_a * iab;
+
+	//double siProb = rho * ia * rho * (1.0 - ia) * nb;
+	//return LAMBDA * ((1.0 - ia) * qb - sab) - (NUM_AGENTS * TAU_aa * sab * iab * siProb) + GAMMA_a * iab;
+	//return LAMBDA * ((1.0 - ia) * qb - sab) - (NUM_AGENTS * TAU_aa * sab * iab * siProb) + GAMMA_a * iab;
 }
 
 void sim::takeStep(const real& h, real& ia, real& il, std::vector<real>& v_iab, std::vector<real>& v_sab) {
 	constexpr real one_sixth = 1.0 / 6.0;
 	real k1, k2, k3, k4;
 	real l1, l2, l3, l4;
-	for (uint b = (uint)graph::Graph::frequency.size() - 1; b > 0; --b) {
-		if (graph::Graph::frequency[b] == 0)
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
 		real& iab = v_iab[b];
@@ -522,8 +516,8 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vect
 
 	for (uint s = 1; s < largerDetailUntil; ++s) {
 		takeStep(h, ia, il, v_iab, v_sab);
-		//for (uint b = graph::Graph::frequency.size() - 1; b > 0; --b)	{
-		//	if (graph::Graph::frequency[b] == 0)
+		//for (uint b = graph::Graph::block_prob.size() - 1; b > 0; --b)	{
+		//	if (graph::Graph::block_prob[b] == 0)
 		//		continue;
 		//
 		//	real& iab = v_iab[b];
@@ -590,9 +584,11 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_iab, std::vect
 }
 #endif
 
-void sim::checkinAsInf   (const agent& ag, const node& v) {
+//void sim::checkinAsInf   (const agent& ag, const node& v) {
+void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _where) {
 	currentNode[ag] = v;
-	vector<agent>& list = iAgents[v];
+	//vector<agent>& list = iAgents[v];
+	vector<agent>& list = _where[v];
 	if (list[ELEMS] == (list.size() - 1))
 		list.resize(2 * (list.size()));
 	uint& lastPos = list[ELEMS];
@@ -600,18 +596,20 @@ void sim::checkinAsInf   (const agent& ag, const node& v) {
 	indexWithinNode[ag] = lastPos;
 	list[lastPos] = ag;
 }
-void sim::checkinAsSus   (const agent& ag, const node& v) {
-	currentNode[ag] = v;
-	vector<agent>& list = sAgents[v];
-	if (list[ELEMS]  == (list.size() - 1))
-		list.resize(2 * (list.size()));
-	uint& lastPos = list[ELEMS];
-	++lastPos;
-	indexWithinNode[ag] = lastPos;
-	list[lastPos] = ag;
-}
-void sim::checkoutAsSus  (const agent& ag, const node& v) {
-	vector<agent>& list = sAgents[v];
+//void sim::checkinAsSus   (const agent& ag, const node& v) {
+//	currentNode[ag] = v;
+//	vector<agent>& list = sAgents[v];
+//	if (list[ELEMS]  == (list.size() - 1))
+//		list.resize(2 * (list.size()));
+//	uint& lastPos = list[ELEMS];
+//	++lastPos;
+//	indexWithinNode[ag] = lastPos;
+//	list[lastPos] = ag;
+//}
+//void sim::checkoutAsSus  (const agent& ag, const node& v) {
+void sim::check_out  (const agent& ag, const node& v, vector<vector<agent>>& _where) {
+	//vector<agent>& list = sAgents[v];
+	vector<agent>& list = _where[v];
 	uint& lastPos = list[ELEMS];
 	if (lastPos > 1) {	// ----> "Is it still going to remain any susceptible agent at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
 		list[indexWithinNode[ag]] = list[lastPos];
@@ -619,18 +617,19 @@ void sim::checkoutAsSus  (const agent& ag, const node& v) {
 	}
 	--lastPos;
 }
-void sim::checkoutAsInf  (const agent& ag, const node& v) {
-	vector<agent>& list = iAgents[v];
-	uint& lastPos = list[ELEMS];
-	if (lastPos > 1) {	// ----> "Is it still going to remain any infected agent at 'v' once 'ag' has been removed?".  If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
-		list[indexWithinNode[ag]] = list[lastPos];
-		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
-	}
-	--lastPos;
-}
+//void sim::checkoutAsInf  (const agent& ag, const node& v) {
+//	vector<agent>& list = iAgents[v];
+//	uint& lastPos = list[ELEMS];
+//	if (lastPos > 1) {	// ----> "Is it still going to remain any infected agent at 'v' once 'ag' has been removed?".  If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
+//		list[indexWithinNode[ag]] = list[lastPos];
+//		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
+//	}
+//	--lastPos;
+//}
 void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	checkinAsSus(ag, v);
+	//checkinAsSus(ag, v);
+	check_in(ag, v, sAgents);
 	const uint& numI = iInNode[v];					// ----> Number of infected agents currently hosted in v.
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
@@ -664,7 +663,8 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 }
 void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	checkinAsInf(ag, v);
+	//checkinAsInf(ag, v);
+	check_in(ag, v, iAgents);
 	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
@@ -697,7 +697,8 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	checkoutAsInf(ag, v);
+	//checkoutAsInf(ag, v);
+	check_out(ag, v, iAgents);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 #ifdef OCCUPANCY
@@ -711,7 +712,8 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	checkoutAsSus(ag, v);
+	//checkoutAsSus(ag, v);
+	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
 #ifdef OCCUPANCY
@@ -770,9 +772,9 @@ void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective,
 	if (exposure[ag] > 0) 
 		stat::Stats::totalExposition += exposure[ag]; 
 #endif
-	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective]) {
+	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective]) 
 		return;	// ----> Event became obsolete.
-	}
+	
 	isInfectedAg[ag] = true;
 	--saTotal;
 	++iaTotal;
@@ -792,9 +794,9 @@ void sim::agFate_fromSite(const agent& ag, const real& now, const uint& infectiv
 	if (exposure[ag] > 0)
 		stat::Stats::totalExposition += exposure[ag];
 #endif
-	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) {
+	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) 
 		return;	// ----> Event became obsolete.
-	}
+	
 	isInfectedAg[ag] = true;
 	--saTotal;
 	++iaTotal;
@@ -814,9 +816,9 @@ void sim::siteFate(const uint& v, const real& now, const uint& infective, const 
 	if (exposure[ag] > 0)
 		stat::Stats::totalExposition += exposure[ag];
 #endif
-	if (validity_S != snapshot_l[v] || validity_I != snapshot_a[infective]) {
+	if (validity_S != snapshot_l[v] || validity_I != snapshot_a[infective]) 
 		return;	// ----> Event became obsolete.
-	}
+	
 	isInfectedSite[v] = true;
 	++ilTotal;
 #ifdef ESTIMATE_PROBS
@@ -930,7 +932,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	uint _numAgents;
 
 	//v_iab, v_ilb e v_sab:
-	vector<real> v_iab(Graph::frequency.size(), 0.0), v_ilb(Graph::frequency.size(), 0.0), v_sab(Graph::frequency.size(), 0.0);
+	vector<real> v_iab(Graph::block_prob.size(), 0.0), v_ilb(Graph::block_prob.size(), 0.0), v_sab(Graph::block_prob.size(), 0.0);
 
 	while (scenario < numScenarios){
 		_numAgents = _startingNumAg + (scenario * step);
@@ -999,11 +1001,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
 #else
 			for (agent i = 0; i < iaTotal; ++i) {
-				const node randomNode = randomLCCNode();
-				enterNodeAsInf(i, randomNode, TIME_ZERO);
-				++v_iab[Graph::g[randomNode].size()];
+				const node v = randomLCCNode();
+				enterNodeAsInf(i, v, TIME_ZERO);
+				++v_iab[Graph::g[v].size()];
 			}
-			for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
+			for (size_t b = 1; b < graph::Graph::block_prob.size(); ++b) {
 				v_iab[b] /= NUM_AGENTS;
 			}
 #endif
@@ -1014,11 +1016,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				enterNodeAsSus(i, randomInt(Graph::n), TIME_ZERO);
 #else
 			for (agent i = iaTotal; i < _numAgents; ++i) {
-				const node randomNode = randomLCCNode();
-				enterNodeAsSus(i, randomNode, TIME_ZERO);
-				++v_sab[Graph::g[randomNode].size()];
+				const node v = randomLCCNode();
+				enterNodeAsSus(i, v, TIME_ZERO);
+				++v_sab[Graph::g[v].size()];
 			}
-			for (size_t b = 1; b < graph::Graph::frequency.size(); ++b) {
+			for (size_t b = 1; b < graph::Graph::block_prob.size(); ++b) {
 				v_sab[b] /= NUM_AGENTS;
 			}
 #endif

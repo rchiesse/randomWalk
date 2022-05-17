@@ -32,11 +32,11 @@ real Graph::_2ndMmt;
 vector<double> Graph::block_prob;
 vector<double> Graph::q_b;
 vector<double> Graph::originalFreq;
-vector<double> Graph::k_b;
+vector<double> Graph::kb;
 vector<double> Graph::rho_b;
 //vector<double> Graph::rho_bs;
 //vector<double> Graph::rho_bi;
-real Graph::sumKB;
+//real Graph::sumKB;
 real Graph::psi;
 real Graph::validBlocks;
 #endif //CLIQUE
@@ -251,7 +251,7 @@ void Graph::set2ndMoment() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	q_b.resize(largestDegree + 1, 0);
 	originalFreq.resize(largestDegree + 1, 0);
-	k_b.resize(largestDegree + 1, 0);
+	kb.resize(largestDegree + 1, 0);
 	rho_b.resize(largestDegree + 1, 0);
 
 	//Frequencies:
@@ -272,14 +272,14 @@ void Graph::set2ndMoment() {
 	for (uint b = 1; b < block_prob.size(); ++b) {	
 		q_b[b] = (b * block_prob[b]) / averageDegree;
 	}
-	for (uint b = 1; b < block_prob.size(); ++b) {	
-		k_b[b] = sim::NUM_AGENTS * q_b[b];
-	}
-	sumKB = 0;
-	for (uint b = 1; b < block_prob.size(); ++b) {
-		if (block_prob[b] > 0)
-			sumKB += pow(k_b[b],2) / block_prob[b];
-	}
+	//for (uint b = 1; b < block_prob.size(); ++b) {	
+	//	kb[b] = sim::NUM_AGENTS * q_b[b];
+	//}
+	//sumKB = 0;
+	//for (uint b = 1; b < block_prob.size(); ++b) {
+	//	if (block_prob[b] > 0)
+	//		sumKB += pow(kb[b],2) / block_prob[b];
+	//}
 
 	for (uint b = 1; b < block_prob.size(); ++b) {
 		rho_b[b]	= 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);

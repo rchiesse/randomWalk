@@ -42,11 +42,11 @@ public:
 	static vector<real> block_prob;								
 	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
 	static vector<real> originalFreq;								
-	static vector<real> k_b;										// ----> Expected number of agents in each block b.
+	static vector<real> kb;										// ----> Expected number of agents in each block b.
 	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
 	//static vector<real> rho_bs;										// ----> Prob. that some node v_b from block b contains at least one S-ag, i.e. the probability that v_b hosts at least one S-agent.
 	//static vector<real> rho_bi;										// ----> Prob. that some node v_b from block b contains at least one I-ag, i.e. the probability that v_b hosts at least one I-agent.
-	static real sumKB;
+	//static real sumKB;
 	static real psi;
 	static real validBlocks;
 

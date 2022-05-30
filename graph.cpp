@@ -286,7 +286,10 @@ void Graph::set2ndMoment() {
 	}
 	psi = 0;
 	for (uint b = 1; b < block_prob.size(); ++b) {
-		psi += b * block_prob[b] * rho_b[b];
+		if (block_prob[b] == 0)
+			continue;
+		psi += 1.0 / (n * block_prob[b]);
+		//psi += b * block_prob[b] * rho_b[b];
 		//psi += b * originalFreq[b] * rho_b[b];
 	}
 

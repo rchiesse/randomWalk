@@ -364,8 +364,10 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//DON:
 	if (Sab + Iab == 0)
 		return LAMBDA * Ia * qb;
+	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
+	//return Ia * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
 	//return (LAMBDA * (Ia * qb - Iab)) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
-	return (LAMBDA * (Ia * qb - Iab)) - (GAMMA_a * Iab);
+	//return (LAMBDA * (Ia * qb - Iab)) - (GAMMA_a * Iab);
 	 
 	////const double _kb = (Sab + Iab);
 	////const double saturation = 1.0 - (0.25 - (Sab / _kb) * (Iab / _kb));
@@ -408,9 +410,11 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 	//DON:
 	if (Sab + Iab == 0)
-		return LAMBDA * (NUM_AGENTS - Ia) * qb;
-	//return (LAMBDA * ((NUM_AGENTS - Ia) * qb - Sab)) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
-	return (LAMBDA * ((NUM_AGENTS - Ia) * qb - Sab)) + (GAMMA_a * Iab);
+		return LAMBDA * ((double)NUM_AGENTS - Ia) * qb;
+	return (((double)NUM_AGENTS - Ia) - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
+	//return ((double)NUM_AGENTS - Ia)  * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
+	//return (LAMBDA * (((double)NUM_AGENTS - Ia) * qb - Sab)) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
+	//return (LAMBDA * (((double)NUM_AGENTS - Ia) * qb - Sab)) + (GAMMA_a * Iab);
 
 	////const double _kb = (Sab + Iab);
 	////const double saturation = 1.0 - (0.25 - (Sab / _kb) * (Iab / _kb));
@@ -441,46 +445,67 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 void sim::takeStep(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {
 	constexpr real one_sixth = 1.0 / 6.0;
-	real k1, k2, k3, k4;
-	real l1, l2, l3, l4;
+	vector<real> k1(3, 0), k2(3, 0), k3(3, 0), k4(3, 0);
+	
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
-		real& Iab = v_Iab[b];
-		real& Sab = v_Sab[b];
-		k1 = diabdt(Ia, Iab, Sab, b);
-		l1 = dsabdt(Ia, Iab, Sab, b);
-		k2 = diabdt(Ia, Iab + 0.5 * h * k1, Sab + 0.5 * h * l1, b);
-		l2 = dsabdt(Ia, Iab + 0.5 * h * k1, Sab + 0.5 * h * l1, b);
-		k3 = diabdt(Ia, Iab + 0.5 * h * k2, Sab + 0.5 * h * l2, b);
-		l3 = dsabdt(Ia, Iab + 0.5 * h * k2, Sab + 0.5 * h * l2, b);
-		k4 = diabdt(Ia, Iab + h * k3, Sab + h * l3, b);
-		l4 = dsabdt(Ia, Iab + h * k3, Sab + h * l3, b);
-		Iab += one_sixth * h * (k1 + 2 * k2 + 2 * k3 + k4);
-		Sab += one_sixth * h * (l1 + 2 * l2 + 2 * l3 + l4);
-		Ia = 0;
-		for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
-			Ia += v_Iab[b];
+		real Iab = v_Iab[b];
+		real Sab = v_Sab[b];
+		k1[0] = h * diabdt(Ia, Iab, Sab, b);
+		k1[1] = h * dsabdt(Ia, Iab, Sab, b);
+
+		k2[0] = h * diabdt(Ia + 0.5 * k1[2], Iab + 0.5 * k1[0], Sab + 0.5 * k1[1], b);
+		k2[1] = h * dsabdt(Ia + 0.5 * k1[2], Iab + 0.5 * k1[0], Sab + 0.5 * k1[1], b);
+
+		k3[0] = h * diabdt(Ia + 0.5 * k2[2], Iab + 0.5 * k2[0], Sab + 0.5 * k2[1], b);
+		k3[1] = h * dsabdt(Ia + 0.5 * k2[2], Iab + 0.5 * k2[0], Sab + 0.5 * k2[1], b);
+		
+		k4[0] = h * diabdt(Ia + k3[2], Iab + k3[0], Sab + k3[1], b);
+		k4[1] = h * dsabdt(Ia + k3[2], Iab + k3[0], Sab + k3[1], b);
+
+		v_Iab[b]	+= one_sixth * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+		v_Sab[b]	+= one_sixth * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+		//Ia += v_Iab[b] - Iab;
 	}
+	
+	//double sbib = 0;
+	//for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+	//	sbib += v_Sab[b] * v_Iab[b];
+	//}
+	//
+	//k1[2] = h * diadt(Ia, sbib);
+	//k2[2] = h * diadt(Ia + 0.5 * k1[2], sbib);
+	//k3[2] = h * diadt(Ia + 0.5 * k2[2], sbib);
+	//k4[2] = h * diadt(Ia + k3[2], sbib);
+	//Ia += one_sixth * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+
+	Ia = 0;
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) 
+		Ia += v_Iab[b];
 }
 
 real sim::dilbdt(const real& Ia, const real& il, const real& Iab, const real& ilb, const uint& b) {
 	return 0;
 }
 
-real sim::diadt(const real& Ia, const real& il) {
+//real sim::diadt(const real& Ia, const real& il) {
+real sim::diadt(const real& Ia, const double& sumSbIb) {
 	//return  beta_a * Ia * (1.0 - Ia) + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
 		
 	//double b_a = (double)(2 * LAMBDA * getSigma_a(Ia) * graph::Graph::psi) / graph::Graph::averageDegree;
 	//return  b_a * Ia * (1.0 - Ia) + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
 	
-	double b_as, b_ai, sigma_as, sigma_ai;
-	getSigma_a(Ia, sigma_as, sigma_ai);
-	b_as = (double)(LAMBDA * sigma_as * graph::Graph::psi) / graph::Graph::averageDegree;
-	b_ai = (double)(LAMBDA * sigma_ai * graph::Graph::psi) / graph::Graph::averageDegree;
-	return  b_ai * Ia * (1.0 - Ia) + b_as * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
-	//return  beta_a * Ia * (1.0 - Ia) + b_a * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
+	//double b_as, b_ai, sigma_as, sigma_ai;
+	//getSigma_a(Ia, sigma_as, sigma_ai);
+	//b_as = (double)(LAMBDA * sigma_as * graph::Graph::psi) / graph::Graph::averageDegree;
+	//b_ai = (double)(LAMBDA * sigma_ai * graph::Graph::psi) / graph::Graph::averageDegree;
+	//return  b_ai * Ia * (1.0 - Ia) + b_as * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
+	////return  beta_a * Ia * (1.0 - Ia) + b_a * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
+
+	return graph::Graph::psi * TAU_aa * sumSbIb - GAMMA_a * Ia;
+	//return - GAMMA_a * Ia;
 }
 real sim::dildt(const real& Ia, const real& il) {
 	return  beta_al * (1.0 - il) * Ia - GAMMA_l * il;

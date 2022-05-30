@@ -183,7 +183,7 @@ static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents i
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_aa			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_al			= 10.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_la			= 10.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real GAMMA_a			= 0.001;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
@@ -255,7 +255,8 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 
 #ifdef SOLVE_NUMERICALLY
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
-real diadt(const real& ia, const real& il);
+real diadt(const real& ia, const double& sumSbIb);
+//real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
 real diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
 real dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);

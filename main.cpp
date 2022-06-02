@@ -150,9 +150,9 @@ int main() {
 /* IMPLEMENTATION */
 static const uint sim::randomInt(const uint& openRange) { return (uint)(floor(openRange * U())); }
 static const real sim::EXP(const real& param) { return -(1.0 / param) * log(U()); }
-static const real sim::EXPTau_aa()		{ return NEG_RECIPR_TAU_aa	* log(U()); }
-static const real sim::EXPTau_al()		{ return NEG_RECIPR_TAU_al	* log(U()); }
-static const real sim::EXPTau_la()		{ return NEG_RECIPR_TAU_la	* log(U()); }
+static const real sim::EXPTau_aa()	{ return NEG_RECIPR_TAU_aa	* log(U()); }
+static const real sim::EXPTau_al()	{ return NEG_RECIPR_TAU_al	* log(U()); }
+static const real sim::EXPTau_la()	{ return NEG_RECIPR_TAU_la	* log(U()); }
 static const real sim::EXPGamma_a()	{ return NEG_RECIPR_GAMMA_a	* log(U()); }
 static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
@@ -514,17 +514,6 @@ real sim::dilbdt(const real& Ia, const real& il, const real& Iab, const real& il
 
 //real sim::diadt(const real& Ia, const real& il) {
 real sim::diadt(const real& Ia, const double& sumSbIb) {
-	//return  beta_a * Ia * (1.0 - Ia) + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
-		
-	//double b_a = (double)(2 * LAMBDA * getSigma_a(Ia) * graph::Graph::psi) / graph::Graph::averageDegree;
-	//return  b_a * Ia * (1.0 - Ia) + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
-	
-	//double b_as, b_ai, sigma_as, sigma_ai;
-	//getSigma_a(Ia, sigma_as, sigma_ai);
-	//b_as = (double)(LAMBDA * sigma_as * graph::Graph::psi) / graph::Graph::averageDegree;
-	//b_ai = (double)(LAMBDA * sigma_ai * graph::Graph::psi) / graph::Graph::averageDegree;
-	//return  b_ai * Ia * (1.0 - Ia) + b_as * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
-	////return  beta_a * Ia * (1.0 - Ia) + b_a * (1.0 - Ia) * Ia + beta_la * (1.0 - Ia) * il - GAMMA_a * Ia;
 
 	return graph::Graph::psi * TAU_aa * sumSbIb - GAMMA_a * Ia;
 	//return - GAMMA_a * Ia;

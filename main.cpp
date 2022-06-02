@@ -360,7 +360,7 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
-	
+
 	//DON:
 	if (Sab + Iab == 0)
 		return LAMBDA * Ia * qb;
@@ -445,45 +445,67 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 void sim::takeStep(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {
 	constexpr real one_sixth = 1.0 / 6.0;
-	vector<real> k1(3, 0), k2(3, 0), k3(3, 0), k4(3, 0);
+	const real blocks = graph::Graph::block_prob.size();
+	vector<real> k1(2 * blocks, 0), k2(2 * blocks, 0), k3(2 * blocks, 0), k4(2 * blocks, 0);
 	
+	real Ia = 0;
+	uint i;
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		Ia += v_Iab[b];
+	}
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
-		real Iab = v_Iab[b];
-		real Sab = v_Sab[b];
-		k1[0] = h * diabdt(Ia, Iab, Sab, b);
-		k1[1] = h * dsabdt(Ia, Iab, Sab, b);
-
-		k2[0] = h * diabdt(Ia + 0.5 * k1[2], Iab + 0.5 * k1[0], Sab + 0.5 * k1[1], b);
-		k2[1] = h * dsabdt(Ia + 0.5 * k1[2], Iab + 0.5 * k1[0], Sab + 0.5 * k1[1], b);
-
-		k3[0] = h * diabdt(Ia + 0.5 * k2[2], Iab + 0.5 * k2[0], Sab + 0.5 * k2[1], b);
-		k3[1] = h * dsabdt(Ia + 0.5 * k2[2], Iab + 0.5 * k2[0], Sab + 0.5 * k2[1], b);
-		
-		k4[0] = h * diabdt(Ia + k3[2], Iab + k3[0], Sab + k3[1], b);
-		k4[1] = h * dsabdt(Ia + k3[2], Iab + k3[0], Sab + k3[1], b);
-
-		v_Iab[b]	+= one_sixth * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
-		v_Sab[b]	+= one_sixth * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
-		//Ia += v_Iab[b] - Iab;
+		i = 2.0 * b;
+		k1[i]		= h * diabdt(Ia, v_Iab[i], v_Sab[i + 1.0], b);
+		k1[i + 1.0]	= h * dsabdt(Ia, v_Iab[i], v_Sab[i + 1.0], b);
 	}
-	
-	//double sbib = 0;
-	//for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-	//	sbib += v_Sab[b] * v_Iab[b];
-	//}
-	//
-	//k1[2] = h * diadt(Ia, sbib);
-	//k2[2] = h * diadt(Ia + 0.5 * k1[2], sbib);
-	//k3[2] = h * diadt(Ia + 0.5 * k2[2], sbib);
-	//k4[2] = h * diadt(Ia + k3[2], sbib);
-	//Ia += one_sixth * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
 
 	Ia = 0;
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) 
-		Ia += v_Iab[b];
+		Ia += v_Iab[b] + 0.5 * k1[2.0 * b];
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		if (graph::Graph::block_prob[b] == 0)
+			continue;
+
+		i = 2.0 * b;
+		k2[i]		= h * diabdt(Ia, v_Iab[b] + 0.5 * k1[i], v_Sab[b] + 0.5 * k1[i + 1.0], b);
+		k2[i + 1.0] = h * dsabdt(Ia, v_Iab[b] + 0.5 * k1[i], v_Sab[b] + 0.5 * k1[i + 1.0], b);
+	}
+
+	Ia = 0;
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
+		Ia += v_Iab[b] + 0.5 * k2[2.0 * b];
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		if (graph::Graph::block_prob[b] == 0)
+			continue;
+
+		i = 2.0 * b;
+		k3[i]		= h * diabdt(Ia, v_Iab[b] + 0.5 * k2[i], v_Sab[b] + 0.5 * k2[i + 1.0], b);
+		k3[i + 1.0] = h * dsabdt(Ia, v_Iab[b] + 0.5 * k2[i], v_Sab[b] + 0.5 * k2[i + 1.0], b);
+	}
+
+	Ia = 0;
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
+		Ia += v_Iab[b] + k3[2.0 * b];
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		if (graph::Graph::block_prob[b] == 0)
+			continue;
+
+		i = 2.0 * b;
+		k4[i]		= h * diabdt(Ia, v_Iab[b] + k3[i], v_Sab[b] + k3[i + 1.0], b);
+		k4[i + 1.0] = h * dsabdt(Ia, v_Iab[b] + k3[i], v_Sab[b] + k3[i + 1.0], b);
+	}
+
+	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+		if (graph::Graph::block_prob[b] == 0)
+			continue;
+
+		i = 2.0 * b;
+		v_Iab[b] += one_sixth * (k1[i]			+ 2 * k2[i]			+ 2 * k3[i]			+ k4[i]);
+		v_Sab[b] += one_sixth * (k1[i + 1.0]	+ 2 * k2[i + 1.0]	+ 2 * k3[i + 1.0]	+ k4[i + 1.0]);
+	}
 }
 
 real sim::dilbdt(const real& Ia, const real& il, const real& Iab, const real& ilb, const uint& b) {

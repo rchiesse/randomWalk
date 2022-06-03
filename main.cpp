@@ -361,9 +361,10 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
 	//const double out = ((double)(b - 1) / b) * (1.0 - pb);
-	const double out = 1.0 - (((double)b * nb) / (2.0 * graph::Graph::m));	// ----> bem legal perto de 50%. Subestima saturação
+	//const double out = 1.0 - (((double)b * nb) / (2.0 * graph::Graph::m));	// ----> bem legal perto de 50%. Subestima saturação
 	//const double out = 1.0 - (((double)(b-1) * nb) / (2.0 * (graph::Graph::m - graph::Graph::n)));	// --> bom perto da saturação. Superrestima regime intermediário.
 	//const double out = 1.0 - pb; // ----> superestima um pouco...
+	const double out = ((double)graph::Graph::m - (graph::Graph::n - nb) - (b * nb)) / ((double)graph::Graph::m - (graph::Graph::n - nb));
 
 	//DON:
 	if (Sab + Iab == 0)
@@ -413,7 +414,7 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
-	const double out = 1.0 - (((double)b * nb) / (2.0 * graph::Graph::m));
+	const double out = ((double)graph::Graph::m - (graph::Graph::n - nb) - (b * nb)) / ((double)graph::Graph::m - (graph::Graph::n - nb));
 
 	//DON:
 	if (Sab + Iab == 0)

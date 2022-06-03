@@ -273,8 +273,9 @@ void Graph::set2ndMoment() {
 		//q_b[b] = (b * block_prob[b]) / averageDegree;
 
 		//TESTE!!!
-		q_b[b] = ((b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
-		//q_b[b] = ((b-1) * block_prob[b]) / averageDegree;
+		//q_b[b] = ((double)(b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
+		//q_b[b] = ((double)(b-1) * block_prob[b]) / averageDegree;
+		q_b[b] = ((double)(b - 1) * n * block_prob[b]) / (2.0 * (m - n * block_prob[b]));
 	}
 	//for (uint b = 1; b < block_prob.size(); ++b) {	
 	//	kb[b] = sim::NUM_AGENTS * q_b[b];

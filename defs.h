@@ -178,15 +178,15 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 2000;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 500;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 5000;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
 static constexpr real TAU_aa			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_al			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_la			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_a			= 0.018;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_a			= 0.01;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real GAMMA_l			= 2000.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
@@ -236,7 +236,7 @@ static constexpr uint K = NUM_AGENTS;
 //static constexpr long real i_inf_pfx_approx = 1 - (GAMMA / BETA_pfx_approx);
 
 #ifdef INFECTED_FRACTION
-static constexpr real OVERLOOK_RATE = 1;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+static constexpr real OVERLOOK_RATE = 1.0;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);	// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 #endif
 
@@ -260,8 +260,13 @@ real diadt(const real& ia, const double& sumSbIb);
 real dildt(const real& ia, const real& il);
 real diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
 real dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
-void takeStep(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab);
+void step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab);
+
+//Returns 'true' if all the range of steps is performed; returns 'false' if the value for a new step happens to be 0, which means that the numerical solution has been completed prior to taking all the steps predicted at the input. Important: the function considers the interval [from, to[ i.e. 'from' is included but 'to' is excluded. The first index is "from" and the last is "to - 1".
+//bool takeSteps(const uint& from, const uint& to);
+
 real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
+void update_Ia(real& Ia, const std::vector<real>& v_Iab, const double& fraction, const std::vector<real>& increment);
 void rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif
 

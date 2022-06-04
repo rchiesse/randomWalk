@@ -266,17 +266,10 @@ void Graph::set2ndMoment() {
 	}
 	//Probabilities:
 	for (uint b = 0; b < block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
-		block_prob[b] /= n;
-		originalFreq[b] /= n;
+		block_prob[b] /= lccSize;
+		originalFreq[b] /= lccSize;
 	}
-	for (uint b = 1; b < block_prob.size(); ++b) {	
-		//q_b[b] = (b * block_prob[b]) / averageDegree;
-
-		//TESTE!!!
-		//q_b[b] = ((double)(b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
-		//q_b[b] = ((double)(b-1) * block_prob[b]) / averageDegree;
-		q_b[b] = ((double)(b - 1) * n * block_prob[b]) / (2.0 * (m - n * block_prob[b]));
-	}
+	
 	//for (uint b = 1; b < block_prob.size(); ++b) {	
 	//	kb[b] = sim::NUM_AGENTS * q_b[b];
 	//}
@@ -310,6 +303,27 @@ void Graph::set2ndMoment() {
 		original2ndMmt += pow(b, 2) * originalFreq[b];
 	}
 	
+	const double _bk_ = _2ndMmt / averageDegree;
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		//q_b[b] = ((double)b * block_prob[b]) / averageDegree;
+
+		//TESTE!!!
+		//q_b[b] = ((double)(b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
+		//q_b[b] = ((double)(b-1) * block_prob[b]) / averageDegree;
+		//q_b[b] = ((double)(b - 1) * n * block_prob[b]) / (2.0 * (m - n * block_prob[b]));	// ----> mt bom em baixa endemia
+		q_b[b] = ((double)(b-1) * n * block_prob[b]) / (2*(m-n));
+	}
+	
+#ifdef DEBUG
+	constexpr double epsilon = 1.0 / 10e7;
+	double sumQB = 0, sumBP = 0;
+	for (uint b = 1; b < block_prob.size(); ++b) {
+		sumQB += q_b[b];
+		sumBP += block_prob[b];
+	}
+	assertm(abs(sumQB - 1.0) < epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
+	assertm(abs(sumBP - 1.0) < epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");
+#endif
 }
 
 void Graph::readGraph(const string& fileName, const size_t& totalNodes) {

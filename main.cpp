@@ -353,14 +353,16 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(Iab/nb, 1.0) * TAU_aa);
 	const double prob_acq = std::max(Iab / nb, 1.0) * prob_inf;
 
+	const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab+Sab)/nb, 1.0) * TAU_aa);
 
 	//DON:
 	if (Sab + Iab == 0)
 		return LAMBDA * Ia * qb;
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
-	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) 
+	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
 		+ Iab * LAMBDA * (Sab / nb) * prob_inf
 		+ Sab * LAMBDA * (Iab / nb) * prob_acq
+		+ Sab						* prob_acq * prob_inf_2nd
 		- (GAMMA_a * Iab);
 	
 	//TESTE!!!
@@ -422,6 +424,7 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(Iab / nb, 1.0) * TAU_aa);
 	const double prob_acq = std::max(Iab / nb, 1.0) * prob_inf;
 
+	const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab + Sab) / nb, 1.0) * TAU_aa);
 
 	//DON:
 	if (Sab + Iab == 0)
@@ -430,6 +433,7 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
 		- Iab * LAMBDA * (Sab / nb) * prob_inf
 		- Sab * LAMBDA * (Iab / nb) * prob_acq
+		- Sab						* prob_acq * prob_inf_2nd
 		+ (GAMMA_a * Iab);
 	
 	//TESTE!!!

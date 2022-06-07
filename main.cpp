@@ -332,39 +332,42 @@ void sim::getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai) {
 
 #ifdef SOLVE_NUMERICALLY
 real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	//constexpr double euler = 0.5772156649;
-	//const double digamma_i = log(Iab) - 1.0 / (2 * Iab);
-	//const double digamma_s = log(Sab) - 1.0 / (2 * Sab);
-	//const double H_i = std::max(1.0, euler + digamma_i);
-	//const double H_s = std::max(1.0, euler + digamma_s);
-	////const double prob_NoAcq = (H_i * LAMBDA + H_i * GAMMA_a + LAMBDA) / (H_i * LAMBDA + LAMBDA + H_i * GAMMA_a + Iab * TAU_aa);
-	////const double prob_NoTransmission = (H_s * LAMBDA + LAMBDA + GAMMA_a) / (H_s * LAMBDA + LAMBDA + GAMMA_a + TAU_aa);
-
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
-	//const double& rho_b = graph::Graph::rho_b[b];
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double pOut = 1.0 - (double)b / (2.0 * graph::Graph::m);
-	//const double rho_s = (1.0 - pow(pOut, Sab)) / pb;
-	//const double rho_i = (1.0 - pow(pOut, Iab)) / pb;
-	const double rho_s = std::min(1.0, Sab / nb);
-	const double rho_i = std::min(1.0, Iab / nb);
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + (Iab/nb) * TAU_aa);
-	const double prob_acq = (Iab / nb) * prob_inf;
-
-	const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab+Sab)/nb, 1.0) * TAU_aa);
-
+	//const double Sa = (double)NUM_AGENTS - Ia;
+	const double ibnb = Iab / nb;
+	//const double sbnb = Sab / nb;
+	//const double mi = std::max(ibnb, 1.0);	
+	const double prob_inf = TAU_aa / (2 * LAMBDA + TAU_aa);
+	//const double prob_acq = ibnb * prob_inf;
+	const double prob_acq = ibnb * (TAU_aa / (LAMBDA + ((1.0 / ibnb) * LAMBDA) + ibnb * TAU_aa));
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab+Sab)/nb) * TAU_aa);
+	
 	//DON:
 	if (Sab + Iab == 0)
 		return LAMBDA * Ia * qb;
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
-	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-		+ Iab * LAMBDA * (Sab / nb) * prob_inf
-		+ Sab * LAMBDA * (Iab / nb) * prob_acq
-		+ Sab						* prob_acq * prob_inf_2nd
-		- (GAMMA_a * Iab);
 	
+	//RONALD:
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ Iab * LAMBDA * sbnb * prob_inf
+	//	+ Sab * LAMBDA * ibnb * prob_acq
+	//	+ Sab				  * prob_acq * prob_inf_2nd
+	//	- (GAMMA_a * Iab);
+	
+	//RONALD v2 (ótimo em regime esparso):
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
+	//	- (GAMMA_a * Iab);
+
+	//RONALD v3:
+	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+		+ ((Sab * Iab) / nb) * LAMBDA * prob_inf
+		+ ((Sab * Iab) / nb) * LAMBDA * prob_acq
+		//+ ((Sab * Iab) / (nb)) * (TAU_aa/LAMBDA)
+		- (GAMMA_a * Iab);
+
 	//TESTE!!!
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * out + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb);
@@ -401,39 +404,31 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 }
 
 real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	//constexpr double euler = 0.5772156649;
-	//const double digamma_i = log(Iab) - 1.0 / (2 * Iab);
-	//const double digamma_s = log(Sab) - 1.0 / (2 * Sab);
-	//const double H_i = std::max(1.0, euler + digamma_i);
-	//const double H_s = std::max(1.0, euler + digamma_s);
-	////const double prob_NoAcq = (H_i * LAMBDA + H_i * GAMMA_a + LAMBDA) / (H_i * LAMBDA + LAMBDA + H_i * GAMMA_a + Iab * TAU_aa);
-	////const double prob_NoTransmission = (H_s * LAMBDA + LAMBDA + GAMMA_a) / (H_s * LAMBDA + LAMBDA + GAMMA_a + TAU_aa);
-	//const double prob_acq = (std::max(Iab, 1.0) * TAU_aa) / ((1.0 + H_i) * LAMBDA + std::max(Iab, 1.0) * TAU_aa);
-	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(Iab, 1.0) * TAU_aa);
-
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
-	//const double& rho_b = graph::Graph::rho_b[b];
 	const double Sa = (double)NUM_AGENTS - Ia;
-	const double pOut = 1.0 - (double)b / (2.0 * graph::Graph::m);
-	//const double rho_s = (1.0 - pow(pOut, Sab)) / pb;
-	//const double rho_i = (1.0 - pow(pOut, Iab)) / pb;
-	//const double rho_s = std::min(1.0, Sab / nb);
-	//const double rho_i = std::min(1.0, Iab / nb);
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + (Iab / nb) * TAU_aa);
-	const double prob_acq = (Iab / nb) * prob_inf;
-
-	const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab + Sab) / nb, 1.0) * TAU_aa);
-
+	const double ibnb = Iab / nb;
+	//const double sbnb = Sab / nb;
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	//const double prob_acq = std::max(ibnb, 1.0) * prob_inf;
+	//const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab + Sab) / nb, 1.0) * TAU_aa);
+	//const double mi = std::max(ibnb, 1.0);
+	const double prob_inf = TAU_aa / (2 * LAMBDA + TAU_aa);
+	const double prob_acq = ibnb * (TAU_aa / (LAMBDA + ((1.0/ibnb) * LAMBDA) + ibnb * TAU_aa));
+	//const double prob_acq = ibnb * prob_inf;
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	
 	//DON:
 	if (Sab + Iab == 0)
 		return LAMBDA * Sa * qb;
 	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
+
+	//RONALD:
 	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-		- Iab * LAMBDA * (Sab / nb) * prob_inf
-		- Sab * LAMBDA * (Iab / nb) * prob_acq
-		- Sab						* prob_acq * prob_inf_2nd
+		- ((Sab * Iab) / nb) * LAMBDA * prob_inf
+		- ((Sab * Iab) / nb) * LAMBDA * prob_acq
+		//- ((Sab * Iab) / (nb)) * (TAU_aa/LAMBDA)
 		+ (GAMMA_a * Iab);
 	
 	//TESTE!!!

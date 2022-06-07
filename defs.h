@@ -178,17 +178,17 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 10000;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 200;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 20;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 50000;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 1.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_aa			= 3.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_al			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_la			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_a			= 0.01;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_a			= 4.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real GAMMA_l			= 2000.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real LAMBDA			= 2.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 static constexpr real FRAC_ST_INFECTED	= 0.0;							// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
@@ -236,7 +236,7 @@ static constexpr uint K = NUM_AGENTS;
 //static constexpr long real i_inf_pfx_approx = 1 - (GAMMA / BETA_pfx_approx);
 
 #ifdef INFECTED_FRACTION
-static constexpr real OVERLOOK_RATE = 0.1;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+static constexpr real OVERLOOK_RATE = 1.0;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);	// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 #endif
 

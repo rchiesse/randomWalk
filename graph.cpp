@@ -311,7 +311,7 @@ void Graph::set2ndMoment() {
 		//q_b[b] = ((double)(b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
 		//q_b[b] = ((double)(b-1) * block_prob[b]) / averageDegree;
 		//q_b[b] = ((double)(b - 1) * n * block_prob[b]) / (2.0 * (m - n * block_prob[b]));	// ----> mt bom em baixa endemia
-		q_b[b] = ((double)(b-1) * n * block_prob[b]) / (2*(m-n));
+		q_b[b] = ((double)b * n * block_prob[b]) / ((2*m)-n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 	}
 	
 #ifdef DEBUG
@@ -683,7 +683,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 #else
 	for (node v = 0; v < n; ++v) g[v].emplace_back(v);
 	m += n;
-	averageDegree = (2.0 * m) / n;
+	averageDegree = ((2.0 * m) - n) / n;	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 	++largestDegree;
 #endif //PROTECTION_FX
 	cout << "\t ---> AUTORELATION active. Self-loop added for each node. Updated stats: \n";

@@ -37,11 +37,11 @@ public:
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real averageDegree;
 	static real originalAvDeg;
-	static real original2ndMmt;
+	//static real original2ndMmt;
 	static real _2ndMmt;
 	static vector<real> block_prob;								
 	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
-	static vector<real> originalFreq;								
+	//static vector<real> originalFreq;								
 	static vector<real> kb;										// ----> Expected number of agents in each block b.
 	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
 	//static vector<real> rho_bs;										// ----> Prob. that some node v_b from block b contains at least one S-ag, i.e. the probability that v_b hosts at least one S-agent.

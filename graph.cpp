@@ -27,11 +27,11 @@ uint Graph::lccSize;											// ---> The size of the Largest Connected Compone
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::averageDegree;
 real Graph::originalAvDeg;
-real Graph::original2ndMmt;
+//real Graph::original2ndMmt;
 real Graph::_2ndMmt;
 vector<double> Graph::block_prob;
 vector<double> Graph::q_b;
-vector<double> Graph::originalFreq;
+//vector<double> Graph::originalFreq;
 vector<double> Graph::kb;
 vector<double> Graph::rho_b;
 //vector<double> Graph::rho_bs;
@@ -250,7 +250,7 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 void Graph::set2ndMoment() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	q_b.resize(largestDegree + 1, 0);
-	originalFreq.resize(largestDegree + 1, 0);
+	//originalFreq.resize(largestDegree + 1, 0);
 	kb.resize(largestDegree + 1, 0);
 	rho_b.resize(largestDegree + 1, 0);
 
@@ -261,29 +261,20 @@ void Graph::set2ndMoment() {
 		++(originalFreq[gs[lcc[i]].size()-1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #else
 		++(block_prob[g[lcc[i]].size()]);		
-		++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
+		//++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
 #endif
 	}
 	//Probabilities:
-	for (uint b = 0; b < block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
+	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
-		originalFreq[b] /= lccSize;
+		//originalFreq[b] /= lccSize;
 	}
 	
-	//for (uint b = 1; b < block_prob.size(); ++b) {	
-	//	kb[b] = sim::NUM_AGENTS * q_b[b];
-	//}
-	//sumKB = 0;
-	//for (uint b = 1; b < block_prob.size(); ++b) {
-	//	if (block_prob[b] > 0)
-	//		sumKB += pow(kb[b],2) / block_prob[b];
-	//}
-
-	for (uint b = 1; b < block_prob.size(); ++b) {
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		rho_b[b]	= 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
 	}
 	psi = 0;
-	for (uint b = 1; b < block_prob.size(); ++b) {
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		if (block_prob[b] == 0)
 			continue;
 		psi += 1.0 / (n * block_prob[b]);
@@ -292,37 +283,38 @@ void Graph::set2ndMoment() {
 	}
 
 	validBlocks = 0;
-	for (uint b = 1; b < block_prob.size(); ++b) {
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		if (block_prob[b] > 0) ++validBlocks;
 	}
 	//2nd moment:
 	_2ndMmt = 0;
-	original2ndMmt = 0;
-	for (uint b = 1; b < block_prob.size(); ++b) {
+	//original2ndMmt = 0;
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		_2ndMmt += pow(b, 2) * block_prob[b];
-		original2ndMmt += pow(b, 2) * originalFreq[b];
+		//original2ndMmt += pow(b, 2) * originalFreq[b];
 	}
 	
 	const double _bk_ = _2ndMmt / averageDegree;
-	for (uint b = 1; b < block_prob.size(); ++b) {
-		//q_b[b] = ((double)b * block_prob[b]) / averageDegree;
-
-		//TESTE!!!
-		//q_b[b] = ((double)(b-1) * block_prob[b]) / originalAvDeg;	// ----> interessante para grandes endemias.
-		//q_b[b] = ((double)(b-1) * block_prob[b]) / averageDegree;
-		//q_b[b] = ((double)(b - 1) * n * block_prob[b]) / (2.0 * (m - n * block_prob[b]));	// ----> mt bom em baixa endemia
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		q_b[b] = ((double)b * n * block_prob[b]) / ((2*m)-n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
+	}
+
+	//kb:
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+		const uint& k = sim::NUM_AGENTS;
+		kb[b] = k * q_b[b];
 	}
 	
 #ifdef DEBUG
-	constexpr double epsilon = 1.0 / 10e7;
-	double sumQB = 0, sumBP = 0;
-	for (uint b = 1; b < block_prob.size(); ++b) {
+	double sumQB = 0, sumBP = 0, sumKB = 0.0;
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		sumQB += q_b[b];
 		sumBP += block_prob[b];
+		sumKB += kb[b];
 	}
-	assertm(abs(sumQB - 1.0) < epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
-	assertm(abs(sumBP - 1.0) < epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");
+	assertm(abs(sumQB - 1.0)			 < sim::epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
+	assertm(abs(sumBP - 1.0)			 < sim::epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");
+	assertm(abs(sumKB - sim::NUM_AGENTS) < sim::epsilon, "The sum over the expected number of agents within each block does not match the total number of agents.");
 #endif
 }
 

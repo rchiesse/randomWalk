@@ -377,14 +377,16 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 	
 	//RONALD:
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	const double l = ((double)b - 1) / ((double)b);
+	const double prob_inf = (TAU_aa) / (2 * LAMBDA * l + ibnb * TAU_aa + GAMMA_a);
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
 	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
 	const double prob_acq = (ibnb * prob_inf);
 	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-		+ Iab * std::max(0.0, LAMBDA - TAU_aa) * sbnb * prob_inf
-		+ Sab * std::max(0.0, LAMBDA - TAU_aa) * ibnb * prob_acq
-		+ ((Sab * Iab) / nb) * std::max(0.0, TAU_aa - LAMBDA)
+		+ Iab * LAMBDA * sbnb * prob_inf
+		+ Sab * LAMBDA * ibnb * prob_inf
+		+ ((Sab * Iab) / nb) * TAU_aa * (TAU_aa / (TAU_aa + LAMBDA))
 		- (GAMMA_a * Iab);
 	
 	//RONALD v2 (ótimo em regime esparso):
@@ -458,14 +460,16 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	+ GAMMA_a * ibnb
 	//	);
 
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	const double l = ((double)b - 1) / ((double)b);
+	const double prob_inf = (TAU_aa) / (2 * LAMBDA * l + ibnb * TAU_aa + GAMMA_a);
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
 	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
 	const double prob_acq = (ibnb * prob_inf);
 	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-		- Iab * std::max(0.0, LAMBDA - TAU_aa) * sbnb * prob_inf
-		- Sab * std::max(0.0, LAMBDA - TAU_aa) * ibnb * prob_acq
-		- ((Sab * Iab) / nb) * std::max(0.0, TAU_aa - LAMBDA)
+		- Iab * LAMBDA * sbnb * prob_inf
+		- Sab * LAMBDA * ibnb * prob_inf
+		- ((Sab * Iab) / nb) * TAU_aa * (TAU_aa / (TAU_aa + LAMBDA))
 		+ (GAMMA_a * Iab);
 
 	//Ronald (sparse):

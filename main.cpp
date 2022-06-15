@@ -339,21 +339,26 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double sbnb = Sab / nb;
 	const double Sa = (double)NUM_AGENTS - Ia;
 	//const double mi = std::max(ibnb, 1.0);
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	const double prob_acq = ibnb * prob_inf;
-	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab+Sab)/nb) * TAU_aa);
+	
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa);
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + TAU_aa);
+	
+	//const double prob_acq = ibnb * prob_inf;
+	//const double prob_acq = ibnb * SIGMA_aa;
 	
 	//DON:
 	//if (Sab + Iab == 0)
 	//	return LAMBDA * Ia * qb;
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb) + ((Sab * Iab * TAU_aa) / nb) - (GAMMA_a * Iab);
-	return nb * (
-		(LAMBDA / nb) * (Ia * qb - Iab)
-		//+ (2 * LAMBDA * sbnb * ibnb * SIGMA_aa)
-		+ LAMBDA * sbnb * ibnb * prob_inf
-		+ LAMBDA * sbnb * ibnb * prob_acq
-		- GAMMA_a * ibnb
-		);
+	
+	//DON v2:
+	//return nb * (
+	//	(LAMBDA / nb) * (Ia * qb - Iab)
+	//	//+ (2 * LAMBDA * sbnb * ibnb * SIGMA_aa)
+	//	+ LAMBDA * sbnb * ibnb * prob_inf
+	//	+ LAMBDA * sbnb * ibnb * prob_acq
+	//	- GAMMA_a * ibnb
+	//	);
 
 
 	//v3)
@@ -372,11 +377,15 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 	
 	//RONALD:
-	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-	//	+ Iab * LAMBDA * sbnb * prob_inf
-	//	+ Sab * LAMBDA * ibnb * prob_acq
-	//	+ Sab				  * prob_acq * prob_inf_2nd
-	//	- (GAMMA_a * Iab);
+	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
+	const double prob_acq = (ibnb * prob_inf);
+	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+		+ Iab * std::max(0.0, LAMBDA - TAU_aa) * sbnb * prob_inf
+		+ Sab * std::max(0.0, LAMBDA - TAU_aa) * ibnb * prob_acq
+		+ ((Sab * Iab) / nb) * std::max(0.0, TAU_aa - LAMBDA)
+		- (GAMMA_a * Iab);
 	
 	//RONALD v2 (ótimo em regime esparso):
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
@@ -427,12 +436,14 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double Sa = (double)NUM_AGENTS - Ia;
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	const double prob_acq = ibnb * prob_inf;
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + TAU_aa);
+	
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa);
+	//const double prob_acq = ibnb * prob_inf;
+	//const double prob_acq = ibnb * SIGMA_aa;
 	//const double prob_acq = std::max(ibnb, 1.0) * prob_inf;
 	//const double prob_inf_2nd = (TAU_aa) / (2 * LAMBDA + std::max((Iab + Sab) / nb, 1.0) * TAU_aa);
 	//const double mi = std::max(ibnb, 1.0);
-	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
 	
 	//DON:
 	//if (Sab + Iab == 0)
@@ -440,17 +451,35 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
 
 	//DON 2:
-	return nb * (
-		(LAMBDA/nb) * (Sa * qb - Sab) 
-		- LAMBDA * sbnb * ibnb * prob_inf
-		- LAMBDA * sbnb * ibnb * prob_acq
-		//- LAMBDA * sbnb * ibnb * prob_acq
-		+ GAMMA_a * ibnb
-		);
+	//return nb * (
+	//	(LAMBDA/nb) * (Sa * qb - Sab) 
+	//	- LAMBDA * sbnb * ibnb * prob_inf
+	//	- LAMBDA * sbnb * ibnb * prob_acq
+	//	+ GAMMA_a * ibnb
+	//	);
+
+	const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
+	const double prob_acq = (ibnb * prob_inf);
+	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+		- Iab * std::max(0.0, LAMBDA - TAU_aa) * sbnb * prob_inf
+		- Sab * std::max(0.0, LAMBDA - TAU_aa) * ibnb * prob_acq
+		- ((Sab * Iab) / nb) * std::max(0.0, TAU_aa - LAMBDA)
+		+ (GAMMA_a * Iab);
 
 	//Ronald (sparse):
 	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
 	//	- 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
+	//	+ (GAMMA_a * Iab);
+
+	//RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
+	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+	//	- Iab * LAMBDA * sbnb * prob_inf
+	//	- Sab * LAMBDA * ibnb * prob_acq
 	//	+ (GAMMA_a * Iab);
 
 	//Bons resultados, mas a semântica é pobre:
@@ -466,38 +495,8 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	//- ((Sab * Iab) / (nb)) * (TAU_aa/LAMBDA)
 	//	+ (GAMMA_a * Iab);
 	
-	//TESTE!!!
-	//return (((double)NUM_AGENTS - Ia) - Sab) * LAMBDA * qb - Sab * LAMBDA * out - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
-	//return (((double)NUM_AGENTS - Ia) - Sab)* LAMBDA * qb - Sab * LAMBDA * (1.0 - qb);
-	//return ((double)NUM_AGENTS - Ia)  * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
-	//return (LAMBDA * (((double)NUM_AGENTS - Ia) * qb - Sab)) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
-	//return (LAMBDA * (((double)NUM_AGENTS - Ia) * qb - Sab)) + (GAMMA_a * Iab);
 
-	////const double _kb = (Sab + Iab);
-	////const double saturation = 1.0 - (0.25 - (Sab / _kb) * (Iab / _kb));
-	////return LAMBDA * ((NUM_AGENTS - Ia) * qb - Sab) - (Sab * Iab * (saturation * TAU_aa)) / nb + GAMMA_a * Iab;
-
-	//const double Ib = NUM_AGENTS * Iab;
-	//const double Sb = NUM_AGENTS * Sab;
-	////const double rateAllIagsRecover = Ib * GAMMA_a;
-	////const double sigma_ai = TAU_aa / (2 * LAMBDA + Ib * TAU_aa + rateAllIagsRecover);
 	
-	//double _1to1 = (TAU_aa / (2 * LAMBDA + Iab * TAU_aa));
-	//double noTransmission = pow(1.0 - _1to1, Sab);
-	//const double sigma_ai = 1.0 - noTransmission;
-	//if (Iab == 0) {
-	//	if (Sab == 0)
-	//		return;
-	//	return -(Ia * LAMBDA * qb * (Sab / nb) * sigma_ai);
-	//}
-	//
-	//const double probNoInf = pow(1.0 - _1to1, Iab);
-	//const double sigma_as = 1.0 - probNoInf;
-	//
-	////return LAMBDA * ((NUM_AGENTS - Ia) * qb - Sab) - (Ia * LAMBDA * qb * (Sab / nb) * TAU_aa) - ((NUM_AGENTS - Ia) * LAMBDA * qb * (Iab / nb) * TAU_aa) + GAMMA_a * Iab;
-	//
-	//return -(Ia * LAMBDA * qb * (Sab / nb) * sigma_ai) - ((NUM_AGENTS - Ia) * LAMBDA * qb * (Iab / nb) * sigma_as) + GAMMA_a * Iab;
-
 }
 
 void sim::step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {

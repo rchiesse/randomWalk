@@ -375,19 +375,39 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	//+ ((Sab * Iab) / (nb)) * (TAU_aa/LAMBDA)
 	//	- (GAMMA_a * Iab);
 
+
 	
-	//RONALD:
-	const double l = ((double)b - 1) / ((double)b);
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA * l + ibnb * TAU_aa + GAMMA_a);
-	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
-	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
-	const double prob_acq = (ibnb * prob_inf);
-	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-		+ Iab * LAMBDA * sbnb * prob_inf
-		+ Sab * LAMBDA * ibnb * prob_inf
-		+ ((Sab * Iab) / nb) * TAU_aa * (TAU_aa / (TAU_aa + LAMBDA))
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa + GAMMA_a);
+	//const double prob_esc = LAMBDA / (LAMBDA + ibnb * TAU_aa);
+	//const double prob_acq = ibnb * prob_inf;
+	//const double prob_inf = (TAU_aa) / (2 * l * LAMBDA + TAU_aa);
+	//const double l = ((double)b - 1) / ((double)b);
+	//const double prob_inf = (TAU_aa) / (l * LAMBDA + TAU_aa);
+	//const double L = graph::Graph::avSelfLoop;
+	//const double siContact = (Sab * sat) / nb;
+	//const double siContact = (Sab * Iab) / nb;
+	const double base = std::min(Iab, Sab);
+	double delta = Iab - base;
+	const double marginalGain = (TAU_aa / LAMBDA) * (2.0 * Sab * (1.0 / (1.0 + exp(-delta / 2.0))) - Sab);	// ----> logistic
+	const double Ib_ = base + marginalGain;
+	const double siContact = (Sab * Ib_) / nb;
+	return Ia * LAMBDA * qb - Iab * LAMBDA
+		//+ siContact * TAU_aa * (TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a))	// ---> INTERESSANTE QND TAU É O MAIOR DE TODOS
+		+ siContact * TAU_aa
 		- (GAMMA_a * Iab);
+
+	//RONALD:
+	//const double l = ((double)b - 1) / ((double)b);
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa + GAMMA_a);
+	////const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	////const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	////const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
+	//const double prob_acq = (ibnb * prob_inf);
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ Iab * LAMBDA * l * sbnb * prob_inf
+	//	+ Sab * LAMBDA * l * ibnb * prob_inf
+	//	+ ((Sab * Iab) / nb) * TAU_aa * (TAU_aa) / ((TAU_aa)+(abs(GAMMA_a - LAMBDA)))
+	//	- (GAMMA_a * Iab);
 	
 	//RONALD v2 (ótimo em regime esparso):
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
@@ -460,17 +480,24 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	+ GAMMA_a * ibnb
 	//	);
 
-	const double l = ((double)b - 1) / ((double)b);
-	const double prob_inf = (TAU_aa) / (2 * LAMBDA * l + ibnb * TAU_aa + GAMMA_a);
-	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
-	//const double prob_acq = (ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd);
-	const double prob_acq = (ibnb * prob_inf);
-	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-		- Iab * LAMBDA * sbnb * prob_inf
-		- Sab * LAMBDA * ibnb * prob_inf
-		- ((Sab * Iab) / nb) * TAU_aa * (TAU_aa / (TAU_aa + LAMBDA))
+	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa + GAMMA_a);
+	//const double prob_esc = LAMBDA / (LAMBDA + ibnb * TAU_aa);
+	//const double prob_acq = ibnb * prob_inf;
+	//const double prob_inf = (TAU_aa) / (2 * l * LAMBDA + TAU_aa);
+	//const double L = graph::Graph::avSelfLoop;
+	//const double l = ((double)b - 1) / ((double)b);
+	//const double prob_inf = (TAU_aa) / (l * LAMBDA + TAU_aa);
+	//const double siContact = (Sab * sat) / nb;
+	//const double siContact = (Sab * Iab) / nb;
+	const double base = std::min(Iab, Sab);
+	double delta = Iab - base;
+	const double marginalGain = (TAU_aa / LAMBDA) * (2.0 * Sab * (1.0 / (1.0 + exp(-delta / 2.0))) - Sab);	// ----> logistic
+	const double Ib_ = base + marginalGain;
+	const double siContact = (Sab * Ib_) / nb;
+	return Sa * LAMBDA * qb - Sab * LAMBDA 
+		- siContact * TAU_aa
 		+ (GAMMA_a * Iab);
+
 
 	//Ronald (sparse):
 	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
@@ -668,7 +695,6 @@ void sim::check_out  (const agent& ag, const node& v, vector<vector<agent>>& _wh
 }
 void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	//checkinAsSus(ag, v);
 	check_in(ag, v, sAgents);
 	const uint& numI = iInNode[v];					// ----> Number of infected agents currently hosted in v.
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
@@ -703,7 +729,6 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 }
 void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	//checkinAsInf(ag, v);
 	check_in(ag, v, iAgents);
 	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
@@ -737,7 +762,6 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	//checkoutAsInf(ag, v);
 	check_out(ag, v, iAgents);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
@@ -752,7 +776,6 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	//checkoutAsSus(ag, v);
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;

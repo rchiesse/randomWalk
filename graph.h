@@ -43,6 +43,7 @@ public:
 	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
 	//static vector<real> originalFreq;								
 	static vector<real> kb;										// ----> Expected number of agents in each block b.
+	static real avSelfLoop;											// ----> Average over all blocks of the probability ((b-1)/b) that a randomly chosen link from a node v from block b leads the agent to somewhere else, instead of remaining at v.
 	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
 	//static vector<real> rho_bs;										// ----> Prob. that some node v_b from block b contains at least one S-ag, i.e. the probability that v_b hosts at least one S-agent.
 	//static vector<real> rho_bi;										// ----> Prob. that some node v_b from block b contains at least one I-ag, i.e. the probability that v_b hosts at least one I-agent.

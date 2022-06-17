@@ -29,11 +29,12 @@ real Graph::averageDegree;
 real Graph::originalAvDeg;
 //real Graph::original2ndMmt;
 real Graph::_2ndMmt;
-vector<double> Graph::block_prob;
-vector<double> Graph::q_b;
+vector<real> Graph::block_prob;
+vector<real> Graph::q_b;
 //vector<double> Graph::originalFreq;
-vector<double> Graph::kb;
-vector<double> Graph::rho_b;
+vector<real> Graph::kb;
+real Graph::avSelfLoop;
+vector<real> Graph::rho_b;
 //vector<double> Graph::rho_bs;
 //vector<double> Graph::rho_bi;
 //real Graph::sumKB;
@@ -304,6 +305,16 @@ void Graph::set2ndMoment() {
 		const uint& k = sim::NUM_AGENTS;
 		kb[b] = k * q_b[b];
 	}
+
+	//avSelfLoop:
+	avSelfLoop = 0;
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+		if (block_prob[b] == 0)
+			continue;
+		avSelfLoop += (((double)b - 1.0) / b) * n * block_prob[b];
+	}
+	//avSelfLoop /= validBlocks;
+	avSelfLoop /= n;
 	
 #ifdef DEBUG
 	double sumQB = 0, sumBP = 0, sumKB = 0.0;

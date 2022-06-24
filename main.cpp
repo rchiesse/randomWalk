@@ -338,6 +338,7 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
 	const double Sa = (double)NUM_AGENTS - Ia;
+	const double l = ((double)b - 1) / ((double)b);
 	//const double mi = std::max(ibnb, 1.0);
 	
 	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa);
@@ -346,6 +347,18 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//const double prob_acq = ibnb * prob_inf;
 	//const double prob_acq = ibnb * SIGMA_aa;
 	
+	////const double prob_inf = (eTAU) / ((1.0 / (l * LAMBDA)) + eTAU);
+	//const double eTAU = TAU_aa / (2.0 * LAMBDA + TAU_aa);
+	//const double prob_2nd = TAU_aa / (2.0 * LAMBDA + (std::max(1.0, sbnb)) * TAU_aa);
+	////const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
+	//const double delta = 1.0 / ((1.0 / TAU_aa) + (1.0 / (2.0 * LAMBDA)));
+	//double C = 2.222222;
+	//return Ia * LAMBDA * qb - Iab * LAMBDA
+	//	+ Iab * LAMBDA * sbnb * eTAU * C
+	//	+ Sab * LAMBDA * ibnb * eTAU * C
+	//	+ Sab * LAMBDA * ibnb * eTAU * prob_2nd * C
+	//	- (GAMMA_a * Iab);
+
 	//DON:
 	//if (Sab + Iab == 0)
 	//	return LAMBDA * Ia * qb;
@@ -378,7 +391,6 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 
 	
 	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa + GAMMA_a);
-	const double l = ((double)b - 1) / ((double)b);
 	//const double prob_inf = (TAU_aa) / (2 * l * LAMBDA + ibnb * TAU_aa);
 	//const double prob_esc = LAMBDA / (LAMBDA + ibnb * TAU_aa);
 	//const double prob_inf = (TAU_aa) / (2 * l * LAMBDA + TAU_aa);
@@ -413,7 +425,7 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
 	//const double C = TAU_aa - LAMBDA + 1.0;
 	double C = 1.0 / (1.0/TAU_aa + 1.0/(2.0 * LAMBDA));
-	C = 3.5555;
+	C = 2.222222;
 	//C -= TAU_aa/((2.0 * LAMBDA) / TAU_aa);
 	const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
 	const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
@@ -494,8 +506,21 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double Sa = (double)NUM_AGENTS - Ia;
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
+	const double l = ((double)b - 1) / ((double)b);
 	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + TAU_aa);
 	
+	//const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
+	//const double prob_inf = (eTAU) / ((1.0 / (l * LAMBDA)) + eTAU);
+	//const double eTAU = TAU_aa / (TAU_aa + 2.0 * l * LAMBDA);		// ----> Effective TAU.
+	//const double prob_2nd = TAU_aa / (2.0 * l * LAMBDA + (std::max(1.0, sbnb)) * TAU_aa);
+	//const double delta = 1.0 / ((1.0 / TAU_aa) + (1.0 / (2.0 * l * LAMBDA)));
+	//double C = 2.222222;
+	//return Sa * LAMBDA * qb - Sab * LAMBDA
+	//	- Iab * LAMBDA * sbnb * eTAU * C
+	//	- Sab * LAMBDA * ibnb * eTAU * C
+	//	- Sab * LAMBDA * ibnb * eTAU * prob_2nd * C
+	//	+ (GAMMA_a * Iab);
+
 	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa);
 	//const double prob_acq = ibnb * prob_inf;
 	//const double prob_acq = ibnb * SIGMA_aa;
@@ -517,7 +542,6 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	);
 
 	//const double prob_inf = (TAU_aa) / (2 * LAMBDA + ibnb * TAU_aa + GAMMA_a);
-	const double l = ((double)b - 1) / ((double)b);
 	//const double prob_esc = LAMBDA / (LAMBDA + ibnb * TAU_aa);
 	//const double prob_acq = ibnb * prob_inf;
 	//const double prob_inf = (TAU_aa) / (2 * l * LAMBDA + TAU_aa);
@@ -553,7 +577,7 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
 	//const double C = TAU_aa - LAMBDA + 1.0;
 	double C = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
-	C = 3.5555;
+	C = 2.222222;
 	//C -= TAU_aa / ((2.0 * LAMBDA) / TAU_aa);
 	const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
 	const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));

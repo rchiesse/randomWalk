@@ -337,18 +337,37 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double sbnb = Sab / nb;
 	const double Sa = (double)NUM_AGENTS - Ia;
 	const double l = ((double)b - 1) / ((double)b);
+
+	//RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
+	////const double C = TAU_aa - LAMBDA + 1.0;
+	//double C = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//C = 2;
+	////C -= TAU_aa/((2.0 * LAMBDA) / TAU_aa);
+	//const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
+	//const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
+	//const double prob_acq = ((ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd));
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ Iab * LAMBDA * sbnb * prob_inf * C
+	//	+ Sab * LAMBDA * ibnb * prob_acq * C
+	//	- (GAMMA_a * Iab);
+
+
 	//const double prob_inf = (TAU_aa) / (l * LAMBDA + l * (1.0 / ibnb) * LAMBDA + ibnb * TAU_aa);
 	//const double prob_inf = 1.0 / ((1.0 / TAU_aa) - 1.0 / (2 * l * LAMBDA));
 	//const double prob_inf = (TAU_aa) / (l * LAMBDA + l * (1.0 / ibnb) * LAMBDA + ibnb * TAU_aa );
 	//const double prob_inf = ((TAU_aa) / (2 * l * LAMBDA + ibnb * TAU_aa + sbnb * TAU_aa));
-	const double prob_presence = std::min(ibnb, 1.0) * std::min(sbnb, 1.0);
+	//const double prob_presence = std::min(ibnb, 1.0) * std::min(sbnb, 1.0);
+	//const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
 	const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
-	const double prob_inf = eTAU / (l * LAMBDA);
+	const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
 		
-	//RONALD v2 (ótimo em regime esparso):
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
+	//	- (GAMMA_a * Iab);
+
 	return Ia * LAMBDA * qb - Iab * LAMBDA
-		+ Ia * LAMBDA * qb * sbnb * prob_inf
-		+ Sa * LAMBDA * qb * ibnb * prob_inf
+		+ Ia * LAMBDA * qb * sbnb * eTAU 
+		+ Sa * LAMBDA * qb * ibnb * eTAU 
 		- (GAMMA_a * Iab);
 }
 
@@ -360,15 +379,32 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
 	const double l = ((double)b - 1) / ((double)b);
-	const double prob_presence = std::min(ibnb, 1.0) * std::min(sbnb, 1.0);
+
+	//RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
+	////const double C = TAU_aa - LAMBDA + 1.0;
+	//double C = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//C = 2;
+	////C -= TAU_aa/((2.0 * LAMBDA) / TAU_aa);
+	//const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
+	//const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
+	//const double prob_acq = ((ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd));
+	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+	//	- Iab * LAMBDA * sbnb * prob_inf * C
+	//	- Sab * LAMBDA * ibnb * prob_acq * C
+	//	+ (GAMMA_a * Iab);
+
 	const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
-	const double prob_inf = eTAU / (l * LAMBDA);
-	
-	//Ronald (sparse):
+	//const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
+	const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
 	return Sa * LAMBDA * qb - Sab * LAMBDA
-		- Ia * LAMBDA * qb * sbnb * prob_inf 
-		- Sa * LAMBDA * qb * ibnb * prob_inf 
+		- Ia * LAMBDA * qb * sbnb * eTAU 
+		- Sa * LAMBDA * qb * ibnb * eTAU 
 		+ (GAMMA_a * Iab);
+
+	//RONALD v2 (ótimo em regime esparso):
+	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+	//	- 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
+	//	+ (GAMMA_a * Iab);
 
 	//DON:
 	//if (Sab + Iab == 0)

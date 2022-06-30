@@ -297,7 +297,11 @@ void Graph::set2ndMoment() {
 	
 	const double _bk_ = _2ndMmt / averageDegree;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		q_b[b] = ((double)b * n * block_prob[b]) / ((2*m)-n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
+#ifdef AUTO_RELATION
+		q_b[b] = ((double)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
+#else
+		q_b[b] = ((double)b * n * block_prob[b]) / (2.0 * m);
+#endif
 	}
 
 	//kb:

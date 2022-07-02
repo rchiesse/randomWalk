@@ -355,7 +355,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 		std::mt19937_64 _gen(_rd());										// ----> Generator.
 		std::uniform_real_distribution<real> _U(0, 1);
 
-		constexpr real _avDegree = 19.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
+		constexpr real _avDegree = 10.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
 		constexpr uint _n = N;
 		constexpr real _p = _avDegree / (_n - 1);
 		const real log_q = log(1 - _p);

@@ -333,6 +333,7 @@ void sim::getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai) {
 }
 
 #ifdef SOLVE_NUMERICALLY
+#ifdef PER_BLOCK
 real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
@@ -403,7 +404,7 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	
 	double Iagents = ibnb;
 	//double prob_escape = 1.0;
-	double prob_inf = 0.0;
+	//double prob_inf = 0.0;
 	double trial = 0;
 	//double sumTrials = 0;
 	//double accum = 1.0;
@@ -419,20 +420,31 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//const double prob_inf = 1.0 - prob_escape;
 	//const double recInf = GAMMA_a / (GAMMA_a + LAMBDA);  // ----> Prob. of recovering and then getting infected at the same node.
 	//const double p = std::min(1.0, sbnb) * std::min(1.0, ibnb);
+	//const double invTAU = 1.0 / TAU_aa;
+	//const double inv2L = 1.0 / (2.0 * LAMBDA);
+	//const double delta = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//const double tauDelta = invTAU / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//const double invTauDelta = 1.0 / tauDelta;
+	//const double l2l = (TAU_aa + LAMBDA) / (TAU_aa + (2.0 * LAMBDA));
+	//double C = (invTauDelta - inv2L) * l2l;
+	//C = (1.0/TAU_aa) / (1.0 / TAU_aa + (1.0 / (2 * LAMBDA))) * (TAU_aa * 2.0 * LAMBDA);
+	//C = 1.0;
 	//const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-
-	const double C = (1.0/TAU_aa) / (1.0 / TAU_aa + (1.0 / (2 * LAMBDA))) * (TAU_aa * 2.0 * LAMBDA);
-	return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-		//PER BLOCK:
-		Ia * LAMBDA * qb - Iab * LAMBDA 
-		+ 2.0 * Sab * LAMBDA * ibnb * ((TAU_aa) / (2.0 * LAMBDA + TAU_aa)) * C
-		- (GAMMA_a * Iab);
+	//double C = ((TAU_aa) + (2.0 * (2.0 * LAMBDA))) / 3.0 - 1.0 / (TAU_aa + 2L);
+	////double diff = log10(std::max(1.0, GAMMA_a - TAU_aa));
+	////if (diff > 1.0)
+	////	C -= diff / (10.0/3.0);
+	//return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	//PER BLOCK:
+	//	Ia * LAMBDA * qb - Iab * LAMBDA 
+	//	+ 2.0 * Sab * LAMBDA * ibnb * prob_inf * C
+	//	- (GAMMA_a * Iab);
 		
 		//PER NODE:
 		//nb * (
-		//	Ia * LAMBDA * (qb / nb) - (Iab / nb) * LAMBDA
-		//	+ sbnb * ibnb * p * prob_inf
-		//	+ ibnb * sbnb * p * prob_inf
+		//	Ia * LAMBDA * (qb / nb) - (Iab / nb) * LAMBDA * (1.0 - (qb / nb))
+		//	+ sbnb * ibnb * prob_inf
+		//	+ ibnb * sbnb * prob_inf
 		//	- (GAMMA_a * ibnb)
 		//);
 
@@ -471,18 +483,21 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	//- siContact * TAU_aa
 
 	////RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
-	////const double C = TAU_aa - LAMBDA + 1.0;
-	//double C = 1.0 / (1.0/TAU_aa + 1.0/(2.0 * LAMBDA));
-	//C = 2.5;
-	////C -= TAU_aa/((2.0 * LAMBDA) / TAU_aa);
-	//const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
+	//const double C = TAU_aa - LAMBDA + 1.0;
+	//C -= TAU_aa/((2.0 * LAMBDA) / TAU_aa);
 	//const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
-	//const double prob_acq = ((ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd));
-	//return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-	//	Ia * LAMBDA * qb - Iab * LAMBDA
-	//	+ Iab * LAMBDA * sbnb * prob_inf * C
-	//	+ Sab * LAMBDA * ibnb * prob_acq * C
-	//	- (GAMMA_a * Iab);
+	//const double prob_acq = ((ibnb * prob_inf) - (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd));
+	double C = TAU_aa / LAMBDA;
+	const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
+	double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
+	prob_inf_2nd *= std::max(0.0, sbnb - ibnb) * prob_inf;
+	prob_inf_2nd *= (Ia > Sa) ? 1.0 : -1.0;
+	const double prob_acq = (ibnb * prob_inf) + prob_inf_2nd;
+	return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+		Ia * LAMBDA * qb - Iab * LAMBDA
+		+ Iab * LAMBDA * sbnb * prob_inf * C
+		+ Sab * LAMBDA * ibnb * prob_acq * C
+		- (GAMMA_a * Iab);
 
 	//RONALD:
 	//const double l = ((double)b - 1) / ((double)b);
@@ -625,20 +640,21 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	+ (GAMMA_a * Iab);
 
 	////RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
-	////const double C = TAU_aa - LAMBDA + 1.0;
-	//double C = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
-	//C = 2.5;
-	////C -= TAU_aa / ((2.0 * LAMBDA) / TAU_aa);
-	//const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
-	//const double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
-	////const double prob_inf = TAU_aa / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	////const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
-	//const double prob_acq =  ((ibnb * prob_inf) + (std::max(0.0, sbnb - ibnb) * prob_inf * prob_inf_2nd));
-	//return //(Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-	//	Sa * LAMBDA * qb - Sab * LAMBDA
-	//	- Iab * LAMBDA * sbnb * prob_inf * C
-	//	- Sab * LAMBDA * ibnb * prob_acq * C
-	//	+ (GAMMA_a * Iab);
+	//const double C = TAU_aa - LAMBDA + 1.0;
+	//C -= TAU_aa / ((2.0 * LAMBDA) / TAU_aa);
+	//const double prob_inf = TAU_aa / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
+	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
+	double C = TAU_aa / LAMBDA;
+	const double prob_inf = 1.0 / (2.0 + std::max(ibnb, 1.0));
+	double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
+	prob_inf_2nd *= std::max(0.0, sbnb - ibnb) * prob_inf;
+	prob_inf_2nd *= (Ia > Sa) ? 1.0 : -1.0;
+	const double prob_acq =  (ibnb * prob_inf) + prob_inf_2nd;
+	return //(Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+		Sa * LAMBDA * qb - Sab * LAMBDA
+		- Iab * LAMBDA * sbnb * prob_inf * C
+		- Sab * LAMBDA * ibnb * prob_acq * C
+		+ (GAMMA_a * Iab);
 
 	//Bons resultados, mas a semântica é pobre:
 	//const double prob_inf = TAU_aa / (LAMBDA + TAU_aa);
@@ -677,10 +693,10 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//const double recInf = GAMMA_a / (GAMMA_a + LAMBDA);  // ----> Prob. of recovering and then getting infected at the same node. Mote that this rate cannot be larger than TAU, since the number of agents that recover cannot be 
 	
 	double Iagents = ibnb;
-	double prob_inf = 0.0;
-	double trial = 0;
+	//double prob_inf = 0.0;
+	//double trial = 0;
 	//double sumTrials = 0;
-	double accum = 1.0;
+	//double accum = 1.0;
 	//while (Iagents > 0) {
 	//	//Iagents = std::max(1.0, Iagents);
 	//	trial = ((TAU_aa) / (2.0 * LAMBDA + Iagents * TAU_aa));
@@ -691,20 +707,31 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//}
 	//prob_inf = std::min(1.0, prob_inf);
 	//const double p = std::min(1.0, sbnb) * std::min(1.0, ibnb);
+	//const double invTAU = 1.0 / TAU_aa;
+	//const double inv2L = 1.0 / (2.0 * LAMBDA);
+	//const double delta = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//const double tauDelta = invTAU / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
+	//const double invTauDelta = 1.0 / tauDelta;
+	//const double l2l = (TAU_aa + LAMBDA) / (TAU_aa + (2.0 * LAMBDA));
+	//double C = (invTauDelta - inv2L) * l2l;
+	//C = (1.0 / TAU_aa) / (1.0 / TAU_aa + (1.0 / (2 * LAMBDA))) * (TAU_aa * 2.0 * LAMBDA);
+	//C = 1.0;
 	//const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	const double C = (1.0 / TAU_aa) / (1.0 / TAU_aa + (1.0 / (2 * LAMBDA))) * (TAU_aa * 2.0 * LAMBDA);
-	return //(Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-		//PER BLOCK:
-		Sa * LAMBDA * qb - Sab * LAMBDA 
-		- 2.0 * Sab * LAMBDA * ibnb * ((TAU_aa) / (2.0 * LAMBDA + TAU_aa)) * C
-		+ (GAMMA_a * Iab);
+	//double C = ((TAU_aa) + (2.0 * (2 * LAMBDA))) / 3.0 - 1.0 / (TAU_aa + 2L);
+	////double diff = log10(std::max(1.0, GAMMA_a - TAU_aa));
+	////if (diff > 1.0)
+	////	C -= diff / (10.0 / 3.0);
+	//return //(Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+	//	//PER BLOCK:
+	//	Sa * LAMBDA * qb - Sab * LAMBDA 
+	//	- 2.0 * Sab * LAMBDA * ibnb * prob_inf * C
+	//	+ (GAMMA_a * Iab);
 
 		//PER NODE:
 		//nb * (
-		//	Sa * LAMBDA * (qb/nb) - (Sab/nb) * LAMBDA
-		//	- sbnb * ibnb * p * prob_inf
-		//	- ibnb * sbnb * p * prob_inf
-		//	//- ibnb * recInf * ibnb * p * prob_inf
+		//	Sa * LAMBDA * (qb/nb) - (Sab/nb) * LAMBDA * (1.0 - (qb / nb))
+		//	- sbnb * ibnb * prob_inf
+		//	- ibnb * sbnb * prob_inf
 		//	+ (GAMMA_a * ibnb)
 		//);
 }
@@ -763,6 +790,74 @@ void sim::update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
 		Ia += v_Iab[b] + (fraction * base[2 * b]);
 }
+#else
+real sim::divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
+	const double& pb = graph::Graph::block_prob[b];
+	const double nb = graph::Graph::n * pb;
+	const double& qb = graph::Graph::q_b[b];
+	const double qbnb = qb / nb;
+	const double Sa = (double)NUM_AGENTS - Ia;
+	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+	return ((Ia - Iv) * LAMBDA * qbnb - Iv * LAMBDA * (1.0 - qbnb))
+		+ (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
+		+ (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
+		- (GAMMA_a * Iv);
+}
+real sim::dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
+	const double& pb = graph::Graph::block_prob[b];
+	const double nb = graph::Graph::n * pb;
+	const double& qb = graph::Graph::q_b[b]; const double qbnb = qb / nb;
+	const double Sa = (double)NUM_AGENTS - Ia;
+	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+	return ((Sa - Sv) * LAMBDA * qbnb - Sv * LAMBDA * (1.0 - qbnb))
+		- (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
+		- (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
+		+ (GAMMA_a * Iv);
+}
+void sim::step(const real& h, real& Ia, std::vector<real>& v_Iv, std::vector<real>& v_Sv) {
+	constexpr real one_sixth = 1.0 / 6.0;
+	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
+	vector<real> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
+
+	lookAhead(h, Ia, v_Iv, v_Sv, k1);
+	lookAhead(h, Ia, v_Iv, v_Sv, k2, k1, 0.5);
+	lookAhead(h, Ia, v_Iv, v_Sv, k3, k2, 0.5);
+	lookAhead(h, Ia, v_Iv, v_Sv, k4, k3);
+
+	//Take step:
+	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
+		//if (graph::Graph::block_prob[b] == 0)
+		//	continue;
+
+		v_Iv[v] += one_sixth * (k1[2 * v]		+ 2 * k2[2 * v]		+ 2 * k3[2 * v]		+ k4[2 * v]);
+		v_Sv[v] += one_sixth * (k1[2 * v + 1]	+ 2 * k2[2 * v + 1] + 2 * k3[2 * v + 1] + k4[2 * v + 1]);
+	}
+}
+void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target) {
+	update_Ia(Ia, v_Iv);
+	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
+		target[2 * v]	  = h * divbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
+		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
+	}
+}
+void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
+	update_Ia(Ia, v_Iv, base, fraction);
+	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
+		target[2 * v]	  = h * divbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
+		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
+	}
+}
+void sim::update_Ia(real& Ia, const std::vector<real>& v_Iv) {
+	Ia = 0;
+	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
+		Ia += v_Iv[v];
+}
+void sim::update_Ia(real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& base, const double& fraction) {
+	Ia = 0;
+	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
+		Ia += v_Iv[v] + (fraction * base[2 * v]);
+}
+#endif
 
 real sim::dilbdt(const real& Ia, const real& il, const real& Iab, const real& ilb, const uint& b) {
 	return 0;
@@ -839,10 +934,8 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vect
 }
 #endif
 
-//void sim::checkinAsInf   (const agent& ag, const node& v) {
 void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _where) {
 	currentNode[ag] = v;
-	//vector<agent>& list = iAgents[v];
 	vector<agent>& list = _where[v];
 	if (list[ELEMS] == (list.size() - 1))
 		list.resize(2 * (list.size()));
@@ -851,19 +944,7 @@ void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _wher
 	indexWithinNode[ag] = lastPos;
 	list[lastPos] = ag;
 }
-//void sim::checkinAsSus   (const agent& ag, const node& v) {
-//	currentNode[ag] = v;
-//	vector<agent>& list = sAgents[v];
-//	if (list[ELEMS]  == (list.size() - 1))
-//		list.resize(2 * (list.size()));
-//	uint& lastPos = list[ELEMS];
-//	++lastPos;
-//	indexWithinNode[ag] = lastPos;
-//	list[lastPos] = ag;
-//}
-//void sim::checkoutAsSus  (const agent& ag, const node& v) {
 void sim::check_out  (const agent& ag, const node& v, vector<vector<agent>>& _where) {
-	//vector<agent>& list = sAgents[v];
 	vector<agent>& list = _where[v];
 	uint& lastPos = list[ELEMS];
 	if (lastPos > 1) {	// ----> "Is it still going to remain any susceptible agent at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
@@ -1025,14 +1106,6 @@ void sim::recoverSite	(const uint& v, const real& now) {
 	stat::Stats::bufferizeIFrac(v, now, "Rl", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	++snapshot_l[v];
-	//const vector<uint>& slist = sAgents[v];
-	//const vector<uint>& ilist = iAgents[v];
-	//for (uint i = slist[0]; i > 0; --i) {
-	//	++snapshot_a[slist[i]];
-	//}
-	//for (uint i = ilist[0]; i > 0; --i) {
-	//	++snapshot_a[ilist[i]];
-	//}
 }
 
 void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
@@ -1204,9 +1277,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	uint _numAgents;
 
 	//v_Iab, v_ilb e v_Sab:
+#ifdef PER_BLOCK
 	vector<real> v_Iab(Graph::block_prob.size(), 0.0), v_ilb(Graph::block_prob.size(), 0.0), v_Sab(Graph::block_prob.size(), 0.0);
-	//vector<real> ivb(Graph::block_prob.size(), 0.0), svb(Graph::block_prob.size(), 0.0);
-
+#else
+	vector<real> v_Iv(Graph::n, 0.0), v_Sv(Graph::n, 0.0);
+#endif
 	while (scenario < numScenarios){
 		_numAgents = _startingNumAg + (scenario * step);
 		
@@ -1276,6 +1351,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = 0; i < iaTotal; ++i) {
 				const node v = randomLCCNode();
 				enterNodeAsInf(i, v, TIME_ZERO);
+#ifndef PER_BLOCK
+				++v_Iv[v];
+#endif
 				//++v_Iab[Graph::g[v].size()];
 				//++graph::Graph::kb[Graph::g[v].size()];
 			}
@@ -1289,6 +1367,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = iaTotal; i < _numAgents; ++i) {
 				const node v = randomLCCNode();
 				enterNodeAsSus(i, v, TIME_ZERO);
+#ifndef PER_BLOCK
+				++v_Sv[v];
+#endif
 				//++v_Sab[Graph::g[v].size()];
 				//++graph::Graph::kb[Graph::g[v].size()];
 			}
@@ -1302,8 +1383,10 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					//	continue;
 					//}
 					//const double nb = (double)graph::Graph::n * graph::Graph::block_prob[b];
+#ifdef PER_BLOCK
 					v_Iab[b] = ia * graph::Graph::kb[b];
 					v_Sab[b] = sa * graph::Graph::kb[b];
+#endif
 				}
 #ifdef DEBUG
 				double sum = 0.0;
@@ -1413,9 +1496,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		<< "_STime" << T 
 		<< "_R"		<< ROUNDS;
 	baseName = name.str();
-
+#ifdef PER_BLOCK
 	rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
-
+#else
+	rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+#endif
 	//Saving to file:
 	std::ofstream RKdata;
 	std::stringstream _ss;

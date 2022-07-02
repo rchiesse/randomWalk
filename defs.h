@@ -69,7 +69,8 @@ static constexpr uint N = 12008;
 #endif
 
 #ifdef GNP
-static constexpr uint N = 12008;
+//static constexpr uint N = 12008;
+static constexpr uint N = 200;
 #define SOURCE_FILE "", 12008
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
@@ -182,17 +183,17 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr uint T					= 1;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 150000;							// ----> Total number of agents in a simulation.
+static constexpr uint T					= 20;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 10000;							// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 7.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
+static constexpr real TAU_aa			= 0.083;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_al			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
 static constexpr real TAU_la			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_a			= 25.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real GAMMA_a			= 2.5;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real GAMMA_l			= 2000.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real LAMBDA			= 1.0;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
+static constexpr real LAMBDA			= 0.055;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
 static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 static constexpr real FRAC_ST_INFECTED	= 0.0;							// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
@@ -257,13 +258,20 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 //real i_t_pfx(const real& t);
 //#endif
 
+/* NUMERICAL SOLUTION */
+#define PER_BLOCK		// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 #ifdef SOLVE_NUMERICALLY
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const double& sumSbIb);
 //real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
+#ifdef PER_BLOCK
 real diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
 real dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
+#else
+real divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
+real dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
+#endif
 void step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab);
 
 //Returns 'true' if all the range of steps is performed; returns 'false' if the value for a new step happens to be 0, which means that the numerical solution has been completed prior to taking all the steps predicted at the input. Important: the function considers the interval [from, to[ i.e. 'from' is included but 'to' is excluded. The first index is "from" and the last is "to - 1".

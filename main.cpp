@@ -57,6 +57,7 @@ std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time 
 using std::vector; using graph::node;
 vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
 vector<uint> snapshot_a		(NUM_AGENTS,0);							// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
+vector<double> deltaInf		(NUM_AGENTS,0);
 vector<uint> snapshot_l		(N, 0);									// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
 vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
 vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
@@ -358,16 +359,22 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//const double prob_inf = ((TAU_aa) / (2 * l * LAMBDA + ibnb * TAU_aa + sbnb * TAU_aa));
 	//const double prob_presence = std::min(ibnb, 1.0) * std::min(sbnb, 1.0);
 	//const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
-	const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
-	const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
+	//const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
+	//const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
 		
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
 	//	+ 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
 	//	- (GAMMA_a * Iab);
 
-	return Ia * LAMBDA * qb - Iab * LAMBDA
-		+ Ia * LAMBDA * qb * sbnb * eTAU 
-		+ Sa * LAMBDA * qb * ibnb * eTAU 
+	//return Ia * LAMBDA * qb - Iab * LAMBDA
+	//	+ Ia * LAMBDA * qb * sbnb * eTAU 
+	//	+ Sa * LAMBDA * qb * ibnb * eTAU 
+	//	- (GAMMA_a * Iab);
+
+	if (Sab + Iab == 0)
+		return LAMBDA * Sa * qb;
+	return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+		+ (Sab * ibnb * SIGMA_aa)
 		- (GAMMA_a * Iab);
 }
 
@@ -393,13 +400,13 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	- Sab * LAMBDA * ibnb * prob_acq * C
 	//	+ (GAMMA_a * Iab);
 
-	const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
-	//const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
-	const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
-	return Sa * LAMBDA * qb - Sab * LAMBDA
-		- Ia * LAMBDA * qb * sbnb * eTAU 
-		- Sa * LAMBDA * qb * ibnb * eTAU 
-		+ (GAMMA_a * Iab);
+	//const double eTAU = TAU_aa / (TAU_aa + l * LAMBDA + GAMMA_a);		// ----> Effective TAU.
+	////const double prob_inf = ((ibnb + sbnb) * eTAU) / ((l * LAMBDA) + (ibnb + sbnb) * eTAU);
+	//const double prob_inf = (eTAU) / ((l * LAMBDA) + eTAU);
+	//return Sa * LAMBDA * qb - Sab * LAMBDA
+	//	- Ia * LAMBDA * qb * sbnb * eTAU 
+	//	- Sa * LAMBDA * qb * ibnb * eTAU 
+	//	+ (GAMMA_a * Iab);
 
 	//RONALD v2 (ótimo em regime esparso):
 	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
@@ -407,9 +414,11 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	+ (GAMMA_a * Iab);
 
 	//DON:
-	//if (Sab + Iab == 0)
-	//	return LAMBDA * Sa * qb;
-	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) - ((Sab * Iab * TAU_aa) / nb) + (GAMMA_a * Iab);
+	if (Sab + Iab == 0)
+		return LAMBDA * Sa * qb;
+	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb) 
+		- (Sab * ibnb * SIGMA_aa)
+		+ (GAMMA_a * Iab);
 	//
 	//DON 2:
 	//return nb * (
@@ -640,11 +649,11 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		graph::Graph::updateHasI(v);
 	}
 #endif
-	//const vector<uint>& list = sAgents[v];
+	const vector<uint>& list = sAgents[v];
 	const real delta = EXPTau_aa();
-	schedule.emplace(ag, now + delta, action::agInfectAg, snapshot_a[ag]);
-	//for (uint i = 1; i <= numS; ++i) {
-	//}
+	for (uint i = 1; i <= numS; ++i) {
+		schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
+	}
 	if (!isInfectedSite[v])
 		schedule.emplace(v, now + EXPTau_al(), action::agInfectSite, ag, snapshot_l[v], snapshot_a[ag]);
 }

@@ -358,34 +358,6 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	- GAMMA_a * ibnb
 	//	);
 
-	double Iagents = ibnb;
-	//double prob_escape = 1.0;
-	//double prob_inf = 0.0;
-	double trial = 0;
-	
-	//const double prob_inf = 1.0 - prob_escape;
-	//const double recInf = GAMMA_a / (GAMMA_a + LAMBDA);  // ----> Prob. of recovering and then getting infected at the same node.
-	//const double p = std::min(1.0, sbnb) * std::min(1.0, ibnb);
-	//const double invTAU = 1.0 / TAU_aa;
-	//const double inv2L = 1.0 / (2.0 * LAMBDA);
-	//const double delta = 1.0 / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
-	//const double tauDelta = invTAU / (1.0 / TAU_aa + 1.0 / (2.0 * LAMBDA));
-	//const double invTauDelta = 1.0 / tauDelta;
-	//const double l2l = (TAU_aa + LAMBDA) / (TAU_aa + (2.0 * LAMBDA));
-	//double C = (invTauDelta - inv2L) * l2l;
-	//C = (1.0/TAU_aa) / (1.0 / TAU_aa + (1.0 / (2 * LAMBDA))) * (TAU_aa * 2.0 * LAMBDA);
-	//C = 1.0;
-	//const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	//double C = ((TAU_aa) + (2.0 * (2.0 * LAMBDA))) / 3.0 - 1.0 / (TAU_aa + 2L);
-	////double diff = log10(std::max(1.0, GAMMA_a - TAU_aa));
-	////if (diff > 1.0)
-	////	C -= diff / (10.0/3.0);
-	//return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-	//	//PER BLOCK:
-	//	Ia * LAMBDA * qb - Iab * LAMBDA 
-	//	+ 2.0 * Sab * LAMBDA * ibnb * prob_inf * C
-	//	- (GAMMA_a * Iab);
-		
 	//PER NODE:
 	//nb * (
 	//	Ia * LAMBDA * (qb / nb) - (Iab / nb) * LAMBDA * (1.0 - (qb / nb))
@@ -415,12 +387,26 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//double C = (TAU_aa / (LAMBDA));
 
 	//RONALD CANDIDATO:
-	//const double prob_inf = 1.0 / (2.0 + ibnb);
-	//const double prob_acq = (ibnb * prob_inf);// +prob_inf_2nd;
-	//return //(Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
-	//	Ia * LAMBDA * qb - Iab * LAMBDA 
-	//	+ Iab * sbnb * prob_inf * TAU_aa
+	//const double lt = (LAMBDA > TAU_aa) ? 0.0 : 1.0;	// ----> lt is a flag for "LAMBDA larger than TAU".
+	//const double prob_inf = 1.0 / (1.0 + lt + ibnb);
+	////const double prob_inf = 1.0 / (2.0 + ibnb);
+	//const double prob_acq = (ibnb * prob_inf);
+	//const double s_ag = (LAMBDA > TAU_aa) ? sbnb : std::min(ibnb, sbnb);
+	//return
+	//	Ia * LAMBDA * qb - Iab * LAMBDA
+	//	+ Iab * s_ag * prob_inf * TAU_aa
 	//	+ Sab * ibnb * prob_acq * TAU_aa
+	//	- (GAMMA_a * Iab);
+
+	//RONALD ENTRADAS SEPARADAS:
+	//const double prob_inf = TAU_aa / (LAMBDA + ibnb * TAU_aa);
+	//const double prob_acq = (ibnb * prob_inf);
+	//return //Infected
+	//	+ (Ia) * LAMBDA * qb * (1.0 - prob_inf)
+	//	+ (Ia) * LAMBDA * qb * (prob_inf)
+	//	+ (Sa) * LAMBDA * qb * prob_acq
+	//	+ Sab * prob_acq
+	//	- Iab * LAMBDA
 	//	- (GAMMA_a * Iab);
 
 	//E[X]:
@@ -433,6 +419,14 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	);
 	//const double contactRate = Iab * sbnb;
 	
+	//DANIEL:
+	//const double prob_inf = (ibnb * TAU_aa) / (LAMBDA + ibnb * TAU_aa);
+	//if (kb == 0.0)
+	//	return Ia * LAMBDA * qb - Iab * LAMBDA;
+	//return Ia * LAMBDA * qb - Iab * LAMBDA
+	//	+ Iab * sbnb * prob_inf
+	//	- (GAMMA_a * Iab);
+
 	//DON:
 	if (kb == 0.0)
 		return Ia * LAMBDA * qb - Iab * LAMBDA;
@@ -504,18 +498,28 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//		- 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
 	//		+ (GAMMA_a * Iab);
 	//}
-
+	
 	//RONALD CANDIDATO
-	////double C = (TAU_aa / (LAMBDA));
-	//const double prob_inf = 1.0 / (2.0 + ibnb);
-	//const double prob_acq = (ibnb * prob_inf);// +prob_inf_2nd;
-	//return //(Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
+	//const double lt = (LAMBDA > TAU_aa) ? 0.0 : 1.0;	// ----> lt is a flag for "LAMBDA larger than TAU".
+	//const double prob_inf = 1.0 / (1.0 + lt + ibnb);
+	////const double prob_inf = 1.0 / (2.0 + ibnb);
+	//const double prob_acq = (ibnb * prob_inf);
+	//const double s_ag = (LAMBDA > TAU_aa) ? sbnb : std::min(ibnb, sbnb);
+	//return 
 	//	Sa * LAMBDA * qb - Sab * LAMBDA 
-	//	- Iab * sbnb * prob_inf * TAU_aa
+	//	- Iab * s_ag * prob_inf * TAU_aa
 	//	- Sab * ibnb * prob_acq * TAU_aa
 	//	+ (GAMMA_a * Iab);
-	////const double p = std::min(1.0, sbnb) * std::min(1.0, ibnb);
-	////const double p = std::min(1.0, ibnb);
+
+	//RONALD ENTRADAS SEPARADAS:
+	//const double prob_inf = TAU_aa / (LAMBDA + ibnb * TAU_aa);
+	//const double prob_acq = (ibnb * prob_inf);
+	//return //Susceptibles
+	//	+(Sa ) * LAMBDA * qb *  (1.0 - prob_acq)
+	//	//- (Ia) * LAMBDA * qb * (prob_inf)
+	//	- Sab * ibnb * prob_acq
+	//	- Sab * LAMBDA
+	//	+ (GAMMA_a * Iab);
 
 	//E[X]:
 	//const double q = 1.0 / (Iab * TAU_aa + TAU_aa + 2.0 * LAMBDA);
@@ -527,7 +531,16 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//);
 	//const double contactRate = Iab * sbnb;
 	
-	//DON : Very good for dense scenarios
+	//DANIEL:
+	//const double prob_inf = (ibnb * TAU_aa)/(LAMBDA + ibnb * TAU_aa);
+	//if (kb == 0.0)
+	//	return Sa * LAMBDA * qb - Sab * LAMBDA;
+	//return
+	//	Sa * LAMBDA * qb - Sab * LAMBDA
+	//	- Iab * sbnb * prob_inf
+	//	+ (GAMMA_a * Iab);
+
+	//DON : Good for dense scenarios
 	if (kb == 0.0)
 		return Sa * LAMBDA * qb - Sab * LAMBDA;
 	return 
@@ -1355,7 +1368,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.001;
+	constexpr real stepSize = 0.0001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

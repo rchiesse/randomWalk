@@ -56,6 +56,9 @@ using std::vector; using graph::node;
 vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
 vector<uint> snapshot_a		(NUM_AGENTS,0);							// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
 vector<uint> snapshot_l		(N, 0);									// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
+
+vector<double> deltaInf		(NUM_AGENTS, 0);
+
 vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
 vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
 vector<uint> indexWithinNode(NUM_AGENTS);							// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
@@ -419,20 +422,42 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	);
 	//const double contactRate = Iab * sbnb;
 	
-	//DANIEL:
-	//const double prob_inf = (ibnb * TAU_aa) / (LAMBDA + ibnb * TAU_aa);
+	//RONALD: 
+	//const double prob_inf = (TAU_aa / (LAMBDA + TAU_aa)) * TAU_aa;	// ----> ótimo quando TAU >> LAMBDA; ruim cc.
+	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
+	//const double prob_inf = (ibnb / ((1.0/sbnb) + ibnb)) * TAU_aa * p;
+	if (Sab == 0.0) {
+		return Ia * LAMBDA * qb - Iab * LAMBDA
+		-(GAMMA_a * Iab);
+	}
+	double lt;
+	double Hn = 0.0;
+	if (LAMBDA > TAU_aa) {
+		lt = std::max(sbnb, 1.0);	// ----> lt == "LAMBDA greater than TAU".
+		Hn = 1.0;
+	}
+	else {
+		lt = 1.0;
+		//const double euler = 0.577215664901532;
+		constexpr double euler = 0.57721566490153286060651209008240243104215933593992;
+		Hn = euler * log(sbnb);
+		//for (double i = std::floor(sbnb); i > 1.0; --i) {
+		//	Hn += 1.0 / i;
+		//}
+	}
+	Hn = std::max(1.0, Hn);
+	const double prob_inf = (ibnb / ((Hn / lt) + ibnb)) * TAU_aa;
+	//const double prob_inf = (sbnb / (ibnb + sbnb)) * TAU_aa;
+	return Ia * LAMBDA * qb - Iab * LAMBDA
+		+ Iab * sbnb * prob_inf
+		- (GAMMA_a * Iab);
+
+	//DON:
 	//if (kb == 0.0)
 	//	return Ia * LAMBDA * qb - Iab * LAMBDA;
 	//return Ia * LAMBDA * qb - Iab * LAMBDA
-	//	+ Iab * sbnb * prob_inf
-	//	- (GAMMA_a * Iab);
-
-	//DON:
-	if (kb == 0.0)
-		return Ia * LAMBDA * qb - Iab * LAMBDA;
-	return Ia * LAMBDA * qb - Iab * LAMBDA
-	+ Iab * sbnb * TAU_aa
-	- (GAMMA_a * Iab);
+	//+ Iab * sbnb * TAU_aa
+	//- (GAMMA_a * Iab);
 
 
 	//RONALD v2 (ótimo em regime esparso):
@@ -531,22 +556,44 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//);
 	//const double contactRate = Iab * sbnb;
 	
-	//DANIEL:
-	//const double prob_inf = (ibnb * TAU_aa)/(LAMBDA + ibnb * TAU_aa);
+	//RONALD:
+	//const double prob_inf = (TAU_aa / (LAMBDA + TAU_aa)) * TAU_aa;
+	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
+	//const double prob_inf = (ibnb / ((1.0 / sbnb) + ibnb)) * TAU_aa * p;
+	//const double prob_inf = (ibnb / (1.0 + ibnb)) * TAU_aa;
+	if (Sab == 0.0) {
+		return Sa * LAMBDA * qb - Sab * LAMBDA
+		+ (GAMMA_a * Iab);
+	}
+	double lt;
+	double Hn = 0.0;
+	if (LAMBDA > TAU_aa) {
+		lt = std::max(sbnb, 1.0);	// ----> lt == "LAMBDA greater than TAU".
+		Hn = 1.0;
+	}
+	else {
+		lt = 1.0;
+		//const double euler = 0.577215664901532;
+		constexpr double euler = 0.57721566490153286060651209008240243104215933593992;
+		Hn = euler * log(sbnb);
+		//for (double i = std::floor(sbnb); i > 1.0; --i) {
+		//	Hn += 1.0 / i;
+		//}
+	}
+	Hn = std::max(1.0, Hn);
+	const double prob_inf = (ibnb / ((Hn / lt) + ibnb)) * TAU_aa;
+	//const double prob_inf = (sbnb / (ibnb + sbnb)) * TAU_aa;
+	return Sa * LAMBDA * qb - Sab * LAMBDA
+		- Iab * sbnb * prob_inf
+		+ (GAMMA_a * Iab);
+
+	//DON : Good for dense scenarios or large walk rate
 	//if (kb == 0.0)
 	//	return Sa * LAMBDA * qb - Sab * LAMBDA;
-	//return
+	//return 
 	//	Sa * LAMBDA * qb - Sab * LAMBDA
-	//	- Iab * sbnb * prob_inf
+	//	- Iab * sbnb * TAU_aa
 	//	+ (GAMMA_a * Iab);
-
-	//DON : Good for dense scenarios
-	if (kb == 0.0)
-		return Sa * LAMBDA * qb - Sab * LAMBDA;
-	return 
-		Sa * LAMBDA * qb - Sab * LAMBDA
-		- Iab * sbnb * TAU_aa
-		+ (GAMMA_a * Iab);
 
 	//Bons resultados, mas a semântica é pobre:
 	//const double prob_inf = TAU_aa / (LAMBDA + TAU_aa);
@@ -626,6 +673,14 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//	- ibnb * sbnb * prob_inf
 	//	+ (GAMMA_a * ibnb)
 	//);
+}
+
+real sim::harmonic(const double& n) {
+	double h = 0;
+	for (double i = std::floor(n); i > 1.0; --i) {
+		h += 1.0 / i;
+	}
+	return h;
 }
 
 void sim::step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {
@@ -863,14 +918,20 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 		stat::Stats::siMeetings += (numI);
 	}
 #endif
-#ifdef QUIET_INFECTION
-	if (!quiet[ag]) {
-		if (numI > 0) {
-			const vector<uint>& list = iAgents[v];
-			for (uint i = 1; i <= numI; ++i) {
-				const real delta = EXPTau_aa();
-				schedule.emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]]);
-			}
+#ifdef SINGLE_TAU
+	//if (!quiet[ag]) {
+	//	if (numI > 0) {
+	//		const vector<uint>& list = iAgents[v];
+	//		for (uint i = 1; i <= numI; ++i) {
+	//			const real delta = EXPTau_aa();
+	//			schedule.emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]]);
+	//		}
+	//	}
+	//}
+	if (numI > 0) {
+		const vector<uint>& list = iAgents[v];
+		for (uint i = 1; i <= numI; ++i) {
+			schedule.emplace(ag, now + deltaInf[list[i]], action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]]);
 		}
 	}
 #else
@@ -897,6 +958,7 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
+
 #ifdef OCCUPANCY
 	stat::Stats::updateInfOccRaised(v, numI + numS, numI, now);
 #endif
@@ -914,13 +976,18 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		graph::Graph::updateHasI(v);
 	}
 #endif
-#ifdef QUIET_INFECTION
-	if (!quiet[ag]) {
-		const vector<uint>& list = sAgents[v];
-		for (uint i = 1; i <= numS; ++i) {
-			const real delta = EXPTau_aa();
-			schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
-		}
+#ifdef SINGLE_TAU
+	//if (!quiet[ag]) {
+	//	const vector<uint>& list = sAgents[v];
+	//	for (uint i = 1; i <= numS; ++i) {
+	//		const real delta = EXPTau_aa();
+	//		schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
+	//	}
+	//}
+	deltaInf[ag] = EXPTau_aa();
+	const vector<uint>& list = sAgents[v];
+	for (uint i = 1; i <= numS; ++i) {
+		schedule.emplace(list[i], now + deltaInf[ag], action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
 	}
 #else
 	const vector<uint>& list = sAgents[v];
@@ -1205,7 +1272,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Stats::initStream(Ws, Wi, stat::streamType::occupancy,  SHORT_LABEL, Graph::n, _numAgents, TAU, GAMMA, LAMBDA, T, ROUNDS);
 #endif
 		Stats::initStream(stat::streamType::avDuration);
-		Reporter::startChronometer("\n\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
+		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(iaTotal);
 #ifdef PROTECTION_FX
 		//long real s1 = 0, s2 = 0;

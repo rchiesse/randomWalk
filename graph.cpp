@@ -693,10 +693,10 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	averageDegree = ((2.0 * m) - n) / n;	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 	++largestDegree;
 #endif //PROTECTION_FX
-	cout << "\t ---> AUTORELATION active. Self-loop added for each node. Updated stats: \n";
-	cout << "\t\t" << m << " nodes.\n";
-	cout << "\t\tAverage degree = " << averageDegree << "\n";
-	cout << "\t\tLargest degree = " << largestDegree << "\n\n";
+	cout << "\t ---> AUTORELATION active. Self-loop added for each node. Updates:\n";
+	cout << "\t\t---> " << m << " edges.\n";
+	cout << "\t\t---> Average degree = " << averageDegree << "\n";
+	cout << "\t\t---> Largest degree = " << largestDegree;
 #endif //AUTO_RELATION
 #endif //CLIQUE
 }

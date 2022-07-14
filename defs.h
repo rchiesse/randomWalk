@@ -184,20 +184,20 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr real T					= 200;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 10000;							// ----> Total number of agents in a simulation.
+static constexpr real T					= 1.0;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
-static constexpr uint ROUNDS			= 1;							// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 5.0;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real TAU_al			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real TAU_la			= 0.000001;							// ----> Admits two different views: 1) "Resistance to exposure": the larger, the harder it gets to infect an exposed, susceptible agent; 2) "Propagator's 'Infectivity'": in this case, SMALLER values yield LARGER transmission probability. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_a			= 170.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real GAMMA_l			= 2000.0;							// ----> Recovery rate. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real LAMBDA			= 0.2;							// ----> Walking speed. The higher, the faster. Parameter of an exponentially-distributed random-number generator.
-static constexpr real FRAC_AG_INFECTED	= 0.5;							// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
-static constexpr real FRAC_ST_INFECTED	= 0.0;							// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
-static constexpr uint ABS_INFECTED		= 0;							// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
+static constexpr real TAU_aa			= 5.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_la			= 0.000001;					// ----> Agent-to-agent transmissibility rate.
+static constexpr real GAMMA_a			= 300.0;					// ----> Recovery rate. 
+static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
+static constexpr real LAMBDA			= 2.0;						// ----> Walking speed. 
+static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+static constexpr real FRAC_ST_INFECTED	= 0.0;						// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
+static constexpr uint ABS_INFECTED		= 0;						// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
 // * CONSTANTS * 
 static constexpr uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
@@ -210,6 +210,9 @@ static constexpr long real meetingRate = 2.0 * LAMBDA / N;
 static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
 static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
 static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
+
+//The Euler–Mascheroni constant
+static constexpr long real EULER = 0.57721566490153286060651209008240243104215933593992;
 
 //static constexpr long real BETA = meetingRate * SIGMA_aa * NUM_AGENTS;
 //static constexpr long real B_MINUS_G = BETA - GAMMA;

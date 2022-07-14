@@ -343,7 +343,7 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double& qb = graph::Graph::q_b[b];
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
-	const double kb = ibnb + sbnb;
+	const double kbnb = ibnb + sbnb;
 	const double Sa = (double)NUM_AGENTS - Ia;
 	const double l = ((double)b - 1) / ((double)b);
 	
@@ -430,27 +430,49 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 		return Ia * LAMBDA * qb - Iab * LAMBDA
 		-(GAMMA_a * Iab);
 	}
-	double lt;
-	double Hn = 0.0;
-	if (LAMBDA > TAU_aa) {
-		lt = std::max(sbnb, 1.0);	// ----> lt == "LAMBDA greater than TAU".
-		Hn = 1.0;
+	
+	//double ratioTL = TAU_aa / LAMBDA;
+	//double L_weight = (LAMBDA > TAU_aa) ? 1.0 - (TAU_aa / LAMBDA) : ;
+
+	//if (LAMBDA > TAU_aa) {
+	//	H = 1.0 / std::max(sbnb, 1.0);
+	//}
+	//else {
+	//	H = std::max(0.0, euler * log(sbnb));
+	//	//H = euler * log(sbnb);
+	//}
+	//const double prob_inf = ibnb / (H + ibnb);
+	// 
+		//const double ii = std::max(ibnb, 1.0);
+	//long double H = std::max(0.0L, EULER * log(sbnb));
+	//long double sat = 1.0 / std::max(sbnb, 1.0);
+	//const double prob_inf = ii / ((SIGMA_aa * H + (1.0 - SIGMA_aa) * sat) + ii);
+	//const double prob_inf = ii / (((H / (2 * LAMBDA))) * (sbnb / kbnb) + ii);
+
+	//Normalization
+	double nL, nT, nG;
+	if (TAU_aa <= LAMBDA) {
+		nT = 1.0;
+		nL = LAMBDA / TAU_aa;
+		nG = GAMMA_a / TAU_aa;
 	}
 	else {
-		lt = 1.0;
-		//const double euler = 0.577215664901532;
-		constexpr double euler = 0.57721566490153286060651209008240243104215933593992;
-		Hn = euler * log(sbnb);
-		//for (double i = std::floor(sbnb); i > 1.0; --i) {
-		//	Hn += 1.0 / i;
-		//}
+		nL = 1.0;
+		nT = TAU_aa / LAMBDA;
+		nG = GAMMA_a / LAMBDA;
 	}
-	Hn = std::max(1.0, Hn);
-	const double prob_inf = (ibnb / ((Hn / lt) + ibnb)) * TAU_aa;
-	//const double prob_inf = (sbnb / (ibnb + sbnb)) * TAU_aa;
-	return Ia * LAMBDA * qb - Iab * LAMBDA
-		+ Iab * sbnb * prob_inf
-		- (GAMMA_a * Iab);
+	//long double H = std::max(0.0L, EULER * log(kbnb)) / (nL + pi * nL);
+	//long double Hs = std::max(0.0L, EULER * log(sbnb)) / (2.0 * nL);
+	//long double Hi = std::max(0.0L, EULER * log(ibnb)) / (2.0 * nL);
+	long double ii = ibnb + 1.0;
+	long double pi = (2.0 * LAMBDA) / (2.0 * LAMBDA + TAU_aa);
+	long double H = EULER * log(sbnb + 1.0) / (nL + pi * nL);
+	const double prob_inf = ii / (H + ii);
+	//const double prob_inf = (ii ) / (((H / (2.0 * nL)))+ ii );
+	return Ia * nL * qb - Iab * nL
+		//+ Iab * sbnb * (nT - (H / nL))
+		+ Iab * sbnb * prob_inf * nT
+		- (nG * Iab);
 
 	//DON:
 	//if (kb == 0.0)
@@ -484,7 +506,7 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	const double Sa = (double)NUM_AGENTS - Ia;
 	const double ibnb = Iab / nb;
 	const double sbnb = Sab / nb;
-	const double kb = ibnb + sbnb;
+	const double kbnb = ibnb + sbnb;
 	const double l = ((double)b - 1) / ((double)b);
 	
 	
@@ -565,27 +587,50 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 		return Sa * LAMBDA * qb - Sab * LAMBDA
 		+ (GAMMA_a * Iab);
 	}
-	double lt;
-	double Hn = 0.0;
-	if (LAMBDA > TAU_aa) {
-		lt = std::max(sbnb, 1.0);	// ----> lt == "LAMBDA greater than TAU".
-		Hn = 1.0;
+	//double H;
+	//if (LAMBDA > TAU_aa) {
+	//	H = 1.0 / std::max(sbnb, 1.0);
+	//}
+	//else {
+	//	constexpr double euler = 0.57721566490153286060651209008240243104215933593992;
+	//	H = std::max(0.0, euler * log(sbnb));
+	//	//H = euler * log(sbnb);
+	//}
+	//const double prob_inf = ibnb / (H + ibnb);
+	
+	//long double sat;
+	//sat = 1.0 / (sbnb + 1.0);
+	//const double ii = std::max(ibnb, 1.0);
+	//long double H = std::max(0.0L, EULER * log(sbnb));
+	//long double sat = 1.0 / std::max(sbnb, 1.0);
+	//const double prob_inf = ii / ((SIGMA_aa * H + (1.0 - SIGMA_aa) * sat) + ii);
+	
+	//Normalization
+	double nL, nT, nG;
+	if (TAU_aa <= LAMBDA) {
+		nT = 1.0;
+		nL = LAMBDA / TAU_aa;
+		nG = GAMMA_a / TAU_aa;
 	}
 	else {
-		lt = 1.0;
-		//const double euler = 0.577215664901532;
-		constexpr double euler = 0.57721566490153286060651209008240243104215933593992;
-		Hn = euler * log(sbnb);
-		//for (double i = std::floor(sbnb); i > 1.0; --i) {
-		//	Hn += 1.0 / i;
-		//}
+		nL = 1.0;
+		nT = TAU_aa / LAMBDA;
+		nG = GAMMA_a / LAMBDA;
 	}
-	Hn = std::max(1.0, Hn);
-	const double prob_inf = (ibnb / ((Hn / lt) + ibnb)) * TAU_aa;
-	//const double prob_inf = (sbnb / (ibnb + sbnb)) * TAU_aa;
-	return Sa * LAMBDA * qb - Sab * LAMBDA
-		- Iab * sbnb * prob_inf
-		+ (GAMMA_a * Iab);
+	//long double H = EULER * log(sbnb + 1.0);
+	//long double ii = ibnb + 1.0;
+	//long double Hs = std::max(0.0L, EULER * log(sbnb)) / (2.0 * nL);
+	//long double Hi = std::max(0.0L, EULER * log(ibnb)) / (2.0 * nL);
+	//long double ii = std::max(0.0, ibnb);
+	//long double H = std::max(0.0L, EULER * log(sbnb)) / (2.0 * nL);
+	long double pi = (2.0 * LAMBDA) / (2.0 * LAMBDA + TAU_aa);	// ----> Aqui NÃO é pra normalizar! 
+	long double H = EULER * log(sbnb + 1.0) / (nL + pi * nL);
+	long double ii = ibnb + 1.0;
+	const double prob_inf = ii / (H + ii);
+	return Sa * nL * qb - Sab * nL
+		//- Iab * sbnb * (nT - (H/nL))
+		- Iab * sbnb * prob_inf * nT
+		+ (nG * Iab);
 
 	//DON : Good for dense scenarios or large walk rate
 	//if (kb == 0.0)
@@ -1435,7 +1480,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.0001;
+	constexpr real stepSize = 0.000001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

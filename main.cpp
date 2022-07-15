@@ -461,16 +461,12 @@ real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 		nT = TAU_aa / LAMBDA;
 		nG = GAMMA_a / LAMBDA;
 	}
-	//long double H = std::max(0.0L, EULER * log(kbnb)) / (nL + pi * nL);
-	//long double Hs = std::max(0.0L, EULER * log(sbnb)) / (2.0 * nL);
-	//long double Hi = std::max(0.0L, EULER * log(ibnb)) / (2.0 * nL);
+	
+	//BEST SO FAR:
+	long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
-	long double pi = (2.0 * LAMBDA) / (2.0 * LAMBDA + TAU_aa);
-	long double H = EULER * log(sbnb + 1.0) / (nL + pi * nL);
 	const double prob_inf = ii / (H + ii);
-	//const double prob_inf = (ii ) / (((H / (2.0 * nL)))+ ii );
 	return Ia * nL * qb - Iab * nL
-		//+ Iab * sbnb * (nT - (H / nL))
 		+ Iab * sbnb * prob_inf * nT
 		- (nG * Iab);
 
@@ -623,8 +619,10 @@ real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b
 	//long double Hi = std::max(0.0L, EULER * log(ibnb)) / (2.0 * nL);
 	//long double ii = std::max(0.0, ibnb);
 	//long double H = std::max(0.0L, EULER * log(sbnb)) / (2.0 * nL);
-	long double pi = (2.0 * LAMBDA) / (2.0 * LAMBDA + TAU_aa);	// ----> Aqui NÃO é pra normalizar! 
-	long double H = EULER * log(sbnb + 1.0) / (nL + pi * nL);
+	//long double pi = (2.0 * LAMBDA) / (2.0 * LAMBDA + TAU_aa);	// ----> Aqui NÃO é pra normalizar! 
+	
+	//BEST SO FAR:
+	long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
 	const double prob_inf = ii / (H + ii);
 	return Sa * nL * qb - Sab * nL
@@ -1408,7 +1406,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			double timeLimit = T;
 			job j;
 			nextJob(j, now);
-			while (now < timeLimit) {
+			while (false) {
+			//while (now < timeLimit) {
 				roundDuration += (now - roundDuration);
 				switch (j.a) {
 				case action::walk:

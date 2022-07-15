@@ -63,9 +63,9 @@ static constexpr uint N = 12008;
 #endif
 
 #ifdef CLIQUE
-//static constexpr uint N = 12008;										// ----> Network size
-//#define NWTK_LABEL "Clique"
-//#define SHORT_LABEL "CL"
+static constexpr uint N = 200;										// ----> Network size
+#define NWTK_LABEL "Clique"
+#define SHORT_LABEL "CL"
 #endif
 
 #ifdef GNP
@@ -184,17 +184,17 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr real T					= 1.0;						// ----> Simulation time.
+static constexpr real T					= 0.5;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 5.0;						// ----> Agent-to-agent transmissibility rate.
-static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-agent transmissibility rate.
-static constexpr real TAU_la			= 0.000001;					// ----> Agent-to-agent transmissibility rate.
-static constexpr real GAMMA_a			= 300.0;					// ----> Recovery rate. 
+static constexpr real TAU_aa			= 3.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-location transmissibility rate.
+static constexpr real TAU_la			= 0.000001;					// ----> Location-to-agent transmissibility rate.
+static constexpr real GAMMA_a			= 180.0;					// ----> Recovery rate. 
 static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
-static constexpr real LAMBDA			= 2.0;						// ----> Walking speed. 
+static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. 
 static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 static constexpr real FRAC_ST_INFECTED	= 0.0;						// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;						// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.

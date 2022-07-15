@@ -44,6 +44,9 @@ namespace sim {
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
 	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
 	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent
+	static real nT;		// ----> Normalized TAU
+	static real nG;		// ----> Normalized GAMMA
+	static real nL;		// ----> Normalized LAMBDA
 }
 
 // ---------------------------//----------------------------- //
@@ -277,7 +280,6 @@ real divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
 real dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
 #endif
 void step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab);
-real harmonic(const double& n);
 real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
 void update_Ia(real& Ia, const std::vector<real>& v_Iab);
 void update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& base, const double& fraction = 1.0);

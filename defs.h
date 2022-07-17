@@ -51,8 +51,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-//#define READ_NTWK_FROM_FILE
-#define GNP
+#define READ_NTWK_FROM_FILE
+//#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -184,15 +184,15 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr real T					= 0.5;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
+static constexpr real T					= 1.0;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 150000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 3.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_aa			= 50.0;						// ----> Agent-to-agent transmissibility rate.
 static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-location transmissibility rate.
 static constexpr real TAU_la			= 0.000001;					// ----> Location-to-agent transmissibility rate.
-static constexpr real GAMMA_a			= 180.0;					// ----> Recovery rate. 
+static constexpr real GAMMA_a			= 200.0;					// ----> Recovery rate. 
 static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
 static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. 
 static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).

@@ -1479,7 +1479,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.000001;
+	constexpr real stepSize = 0.00001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

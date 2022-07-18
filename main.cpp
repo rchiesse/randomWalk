@@ -1406,8 +1406,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			double timeLimit = T;
 			job j;
 			nextJob(j, now);
-			while (false) {
-			//while (now < timeLimit) {
+			//while (false) {
+			while (now < timeLimit) {
 				roundDuration += (now - roundDuration);
 				switch (j.a) {
 				case action::walk:

@@ -184,7 +184,7 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr real T					= 0.4;						// ----> Simulation time.
+static constexpr real T					= 1.0;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 150000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							

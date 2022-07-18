@@ -306,7 +306,8 @@ void Stats::resetAvDur() {
 	avDurComputed = false;
 }
 const double& Stats::avDuration() {
-	if (avDurComputed) return avDur;
+	if (avDurComputed) 
+		return avDur;
 	avDur = avDur / partials;
 	avDurComputed = true;
 	return avDur;

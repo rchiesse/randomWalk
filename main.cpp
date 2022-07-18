@@ -16,12 +16,18 @@ struct job {
 	uint validity_S			= UINT_MAX;		// ----> S-agent's snapshot from the moment the event was generated. If the S-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.
 	uint validity_I			= UINT_MAX;		// ----> I-agent's snapshot from the moment the event was generated. If the I-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.		
 	uint infective			= UINT_MAX;		// ----> ID of the infective actor (either an agent or a site). It will be necessary to later retrieve its snapshot by the time the infection event is processed. If this does not match 'validity_I', then the event is ignored and the infection does not occur.
+	uint streamer			= UINT_MAX;		// ----> ID of the agent whose queue this event come from. This information makes it possible to get the next event from the correct queue (as it may come either from the S-agent or the I-agent) and insert it into the main queue.
 
-	job(const uint&& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
-	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 	job() {}
+	job(const uint&& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
 	job(const uint& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
+	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I, const uint&& _streamer) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I), streamer(_streamer){}
+	job(const uint& _target, const real& _time, const action&& _action, const uint& _infective, const uint& _snapshot_S, const uint& _snapshot_I, const uint& _streamer) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I), streamer(_streamer) {}
+
+	//Sites:
+	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 	job(const uint& _target, const real& _time, const action&& _action, const uint& _infective, const uint& _snapshot_S, const uint& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
+
 
 	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
@@ -32,6 +38,7 @@ struct earlier {
 	}
 };
 
+std::vector<std::priority_queue<job, std::vector<job>, earlier>> agJob(NUM_AGENTS);
 std::priority_queue<job, std::vector<job>, earlier> schedule;
 
 
@@ -110,7 +117,7 @@ void recoverAg	    (const agent& ag, const real& now);
 void recoverSite    (const uint& site, const real& now);
 
 using graph::node;
-void agFate_fromAg	(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
+void agFate_fromAg	(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I, const uint& streamer);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void siteFate		(const uint& v, const real& now, const uint& infective, const uint& validity_L, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
@@ -685,18 +692,23 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	const uint& numI = iInNode[v];					// ----> Number of infected agents currently hosted in v.
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
-
+	
 	if (numI > 0) {
 		const vector<uint>& list = iAgents[v];
-		for (uint i = 1; i <= numI; ++i) {
-			const real delta = EXPTau_aa();
-			schedule.emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]]);
+		real delta;
+		for (uint i = numI; i > 0; --i) {
+			delta = EXPTau_aa();
+			agJob[ag].emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]], ag);
 		}
+
+		//The most recent event is copied to the main queue and deleted from the agent's:
+		schedule.emplace(agJob[ag].top());
+		agJob[ag].pop();
 	}
-	if (isInfectedSite[v]) {
-		const real delta = EXPTau_la();
-		schedule.emplace(ag, now + delta, action::siteInfectAg, v, snapshot_a[ag], snapshot_l[v]);
-	}
+	//if (isInfectedSite[v]) {
+	//	const real delta = EXPTau_la();
+	//	schedule.emplace(ag, now + delta, action::siteInfectAg, v, snapshot_a[ag], snapshot_l[v]);
+	//}
 #ifdef PROTECTION_FX
 	if (numS == 1)
 		graph::Graph::updateHasS(v);
@@ -709,25 +721,33 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
 
-	const vector<uint>& list = sAgents[v];
-	for (uint i = 1; i <= numS; ++i) {
-		const real delta = EXPTau_aa();
-		schedule.emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag]);
-	}
+	if (numS > 0) {
+		const vector<uint>& list = sAgents[v];
+		real delta;
+		for (uint i = numS; i > 0; --i) {
+			delta = EXPTau_aa();
+			agJob[ag].emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag], ag);
+		}
 
-	if (!isInfectedSite[v]) {
-		const real delta = EXPTau_al();
-		schedule.emplace(v, now + delta, action::agInfectSite, ag, snapshot_l[v], snapshot_a[ag]);
+		//The most recent event is copied to the main queue and deleted from the agent's:
+		schedule.emplace(agJob[ag].top());
+		agJob[ag].pop();
 	}
+	//if (!isInfectedSite[v]) {
+	//	const real delta = EXPTau_al();
+	//	schedule.emplace(v, now + delta, action::agInfectSite, ag, snapshot_l[v], snapshot_a[ag]);
+	//}
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
+	agJob[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
 	check_out(ag, v, iAgents);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
+	agJob[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
@@ -765,8 +785,12 @@ void sim::recoverSite	(const uint& v, const real& now) {
 	++snapshot_l[v];
 }
 
-void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
-	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective]) 
+void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I, const uint& streamer) {
+	if (!agJob[streamer].empty()) {
+		schedule.emplace(agJob[streamer].top());
+		agJob[streamer].pop();
+	}
+	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective])
 		return;	// ----> Event became obsolete.
 	
 	isInfectedAg[ag] = true;
@@ -974,8 +998,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			double timeLimit = T;
 			job j;
 			nextJob(j, now);
-			while (false) {
-			//while (now < timeLimit) {
+			//while (false) {
+			while (now < timeLimit) {
 				roundDuration += (now - roundDuration);
 				switch (j.a) {
 				case action::walk:
@@ -983,7 +1007,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					schedule.emplace(j.target, now + EXPLambda(), action::walk);
 					break;
 				case action::agInfectAg:
-					agFate_fromAg(j.target, now, j.infective, j.validity_S, j.validity_I);
+					agFate_fromAg(j.target, now, j.infective, j.validity_S, j.validity_I, j.streamer);
 					break;
 				case action::siteInfectAg:
 					agFate_fromSite(j.target, now, j.infective, j.validity_S, j.validity_I);
@@ -1031,7 +1055,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.000001;
+	constexpr real stepSize = 0.00001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

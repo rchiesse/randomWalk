@@ -80,76 +80,75 @@ static constexpr uint N = 200;
 #endif
 #ifdef READ_NTWK_FROM_FILE
 //static constexpr uint N = 55;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\grafoDeTestes.txt"), 55
+//#define SOURCE_FILE std::string(".\\redes\\grafoDeTestes.txt"), 55
 //#define NWTK_LABEL "Ronald"
 //#define SHORT_LABEL "ron"
 //
 //static constexpr uint N = 4039;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\facebook_combined.txt"), 4039
+//#define SOURCE_FILE std::string(".\\redes\\facebook_combined.txt"), 4039
 //#define NWTK_LABEL "Fb"
 //#define SHORT_LABEL "fb"
 //
 //static constexpr uint N = 12008;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-HepPh.txt"), 12008
+//#define SOURCE_FILE std::string(".\\redes\\CA-HepPh.txt"), 12008
 //#define NWTK_LABEL "HepPh"
 //#define SHORT_LABEL "hep"
 //
 static constexpr uint N = 12008;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\synthetic\\BA.txt"), 12008
+#define SOURCE_FILE std::string(".\\synthetic\\BA.txt"), 12008
 #define NWTK_LABEL "BA"
 #define SHORT_LABEL "BA"
 //
 //static constexpr uint N = 15233;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\netHEPT.txt"), 15233
+//#define SOURCE_FILE std::string(".\\redes\\netHEPT.txt"), 15233
 //#define NWTK_LABEL "net"
 //#define SHORT_LABEL "net"
 //
 //static constexpr uint N = 18772;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-AstroPh.txt"), 18772
+//#define SOURCE_FILE std::string(".\\redes\\CA-AstroPh.txt"), 18772
 //#define NWTK_LABEL "AstroPh"
 //#define SHORT_LABEL "astro"
 //
 //static constexpr uint N = 23133;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\CA-CondMat.txt"), 23133
+//#define SOURCE_FILE std::string(".\\redes\\CA-CondMat.txt"), 23133
 //#define NWTK_LABEL "CondMat"
 //#define SHORT_LABEL "cmat"
 //
 //static constexpr uint N = 36692;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Email-Enron.txt"), 36692
+//#define SOURCE_FILE std::string(".\\redes\\Email-Enron.txt"), 36692
 //#define NWTK_LABEL "Enron"
 //#define SHORT_LABEL "enron"
 //
 //static constexpr uint N = 58228;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Brightkite_edges.txt"), 58228
+//#define SOURCE_FILE std::string(".\\redes\\Brightkite_edges.txt"), 58228
 //#define NWTK_LABEL "Brightkite"
 //#define SHORT_LABEL "bk"
 //
 //static constexpr uint N = 196591;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\Gowalla_edges.txt"), 196591
+//#define SOURCE_FILE std::string(".\\redes\\Gowalla_edges.txt"), 196591
 //#define NWTK_LABEL "Gowalla"
 //#define SHORT_LABEL "gw"
 //
 //static constexpr uint N = 317080;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-dblp.ungraph.txt"), 317080
+//#define SOURCE_FILE std::string(".\\redes\\com-dblp.ungraph.txt"), 317080
 //#define NWTK_LABEL "dblp"
 //#define SHORT_LABEL "dblp"
 //
 //static constexpr uint N = 334863;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\com-amazon.ungraph.txt"), 334863
+//#define SOURCE_FILE std::string(".\\redes\\com-amazon.ungraph.txt"), 334863
 //#define NWTK_LABEL "amazon"
 //#define SHORT_LABEL "amz"
 //
 //static constexpr uint N = 1696415;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + "\\redes\\as-skitter.txt"), 1696415
+//#define SOURCE_FILE std::string(".\\redes\\as-skitter.txt"), 1696415
 //#define NWTK_LABEL "as-skitter"
 //#define SHORT_LABEL "as"
 #endif
 // ---------------------------//----------------------------- //
 
+
 // * AGENTS' BEHAVIOR *
-//#define SINGLE_TAU
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-//#define QUIET_INFECTION					// ----> Once an S-ag a is infected within the node v, this control variable governs whether a is allowed to further infect other S-agents inside v even before moving to somewhere else first. If set to 'false', then a will only become a propagator once it moves to another node first. In other words, this prevents 'indirect infections', when an S-ag s1 may become infected not by the I-agents it first had contact with when entering a node v, but through *another S-agent* s2, which first becomes infected within the same node and then passes it along to s1.
 //#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -158,24 +157,24 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 
 // ---------------------------//----------------------------- //
 
+
 // * STATS * 
 //#define OCCUPANCY
 #define INFECTED_FRACTION
 //#define ESTIMATE_PROBS
 #define i_t_FROM_MODEL
-#define SOLVE_NUMERICALLY
-#define NORM_SITE_PER_AG
 
 // ---------------------------//----------------------------- //
+
 
 // * REPORTER * 
 //#define MEASURE_ROUND_EXE_TIME
 
 // ---------------------------//----------------------------- //
 
-namespace sim{		// ----> Simulator's namespace.
 
 // * SIMULATION PARAMETERS *
+namespace sim{		// ----> Simulator's namespace.
 #ifdef PROTECTION_FX
 static constexpr real Ws  = 1.0;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
 static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
@@ -187,7 +186,8 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
 
-static constexpr real T					= 0.4;						// ----> Simulation time.
+// Input parameters
+static constexpr real T					= 100.0;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 150000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
@@ -202,26 +202,14 @@ static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS i
 static constexpr real FRAC_ST_INFECTED	= 0.0;						// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 static constexpr uint ABS_INFECTED		= 0;						// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
-// * CONSTANTS * 
+// Auxiliary constants
 static constexpr uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
 static constexpr long real i_0 = (real)I_0 / NUM_AGENTS;
 static constexpr long real meetingRate = 2.0 * LAMBDA / N;
-//static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa + GAMMA_a));
-//static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al + GAMMA_a));
-//static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la + GAMMA_l));
-
 static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
 static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
 static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
-
-//The Euler–Mascheroni constant
-static constexpr long real EULER = 0.57721566490153286060651209008240243104215933593992;
-
-//static constexpr long real BETA = meetingRate * SIGMA_aa * NUM_AGENTS;
-//static constexpr long real B_MINUS_G = BETA - GAMMA;
-//static constexpr long real G_OVER_B = GAMMA / BETA;
-//static constexpr long real _1_MINUS_G_OVER_B = 1.0 - G_OVER_B;
-//static constexpr long real C = i_0 / (1 - i_0 - G_OVER_B);
+static constexpr long real EULER = 0.57721566490153286060651209008240243104215933593992;	// ----> The Euler–Mascheroni constant.
 static constexpr long real NEG_RECIPR_LAMBDA	= -(1.0 / LAMBDA);				// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
 static constexpr long real NEG_RECIPR_GAMMA_a	= -(1.0 / GAMMA_a);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
 static constexpr long real NEG_RECIPR_GAMMA_l	= -(1.0 / GAMMA_l);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
@@ -230,55 +218,39 @@ static constexpr long real NEG_RECIPR_TAU_al	= -(1.0 / TAU_al);				// ----> Prep
 static constexpr long real NEG_RECIPR_TAU_la	= -(1.0 / TAU_la);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
 static constexpr uint ELEMS = 0;												// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
 static constexpr long real TIME_ZERO = 0;
-
 static constexpr uint K = NUM_AGENTS;
-//static constexpr long real a = Ws;
-//static constexpr long real b = Wi;
-//static constexpr long real meetingRate_pfx = LAMBDA * (a / (i_0 * (a - 1) + N) + b / ((1 - i_0) * K * (b - 1) + N));
-//static constexpr long real meetingRate_pfx_approx = LAMBDA * ((a+b)/N);
-//static constexpr long real BETA_pfx = SIGMA_aa * K * meetingRate_pfx;
-//static constexpr long real BETA_pfx_approx = SIGMA_aa * K * meetingRate_pfx_approx;
-//static constexpr real B_MINUS_G_pfx = BETA_pfx_approx - GAMMA;
-//static constexpr real G_OVER_B_pfx = GAMMA / BETA_pfx_approx;
-//static constexpr real _1_MINUS_G_OVER_B_pfx = 1.0 - G_OVER_B_pfx;
-//static constexpr real C_pfx = i_0 / (1 - i_0 - G_OVER_B_pfx);
-//static constexpr long real Ro_pfx = BETA_pfx / GAMMA;
-//static constexpr long real Ro_pfx_approx = BETA_pfx_approx / GAMMA;
-//static constexpr long real i_inf_pfx = 1 - (GAMMA / BETA_pfx);
-//static constexpr long real i_inf_pfx_approx = 1 - (GAMMA / BETA_pfx_approx);
-
-#ifdef INFECTED_FRACTION
-static constexpr real OVERLOOK_RATE = 1.0;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
-static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);	// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
-#endif
-
 #ifdef CLIQUE
 static const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * N)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 #else
 const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * N)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 #endif
 
-// * SIMULATION UTILS *
-//#ifdef i_t_FROM_MODEL
-//real i_t_2ndMmt(const real& t);
-//real i_t_2ndMmt_naive(const real& t);
-//real i_t_pfx(const real& t);
-//#endif
+// Output control:
+#ifdef INFECTED_FRACTION
+static constexpr real OVERLOOK_RATE = 1.0;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);
+#endif
 
-/* NUMERICAL SOLUTION */
+// ---------------------------//----------------------------- //
+
+
+// * NUMERICAL SOLUTION *
+#define SOLVE_NUMERICALLY
+//#define ONLY_NUMERIC
+#define NORM_SITE_PER_AG
 #define PER_BLOCK		// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
+
 #ifdef SOLVE_NUMERICALLY
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const double& sumSbIb);
-//real diadt(const real& ia, const real& il);
 real dildt(const real& ia, const real& il);
 #ifdef PER_BLOCK
 real diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
 real dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
-#else
+#else //PER_BLOCK
 real divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
 real dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& block);
-#endif
+#endif //PER_BLOCK
 void step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab);
 real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
 void update_Ia(real& Ia, const std::vector<real>& v_Iab);
@@ -286,7 +258,7 @@ void update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<real>
 void lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target);
 void lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target, std::vector<real>& base, const double& fraction = 1.0);
 void rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
-#endif
+#endif //SOLVE_NUMERICALLY
 
 } //namespace sim
 

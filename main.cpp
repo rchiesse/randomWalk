@@ -2,6 +2,7 @@
 #include "reporter.h"
 #include "stats.h"
 #include <numeric>		//std::accumulate()
+#include <iomanip>		//std::fixed & std::setprecision
 
 namespace sim { // Simulator's namespace.
 
@@ -28,7 +29,6 @@ struct job {
 	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 	job(const uint& _target, const real& _time, const action&& _action, const uint& _infective, const uint& _snapshot_S, const uint& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 
-
 	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
 };
@@ -48,24 +48,12 @@ uint iaTotal;														// ----> Up-to-date number of INFECTED AGENTS during 
 uint ilTotal = 0;													// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
-//real sim::beta_a;													// ----> Force of infection from an I-agent to an S-agent
-//real sim::beta_al;													// ----> Force of infection from an I-agent to a site
-//real sim::beta_la;													// ----> Force of infection from a site to an I-agent
-//std::string sim::baseName;
-//real beta2ndMmt_logistic;
-//real beta2ndMmt_naive;
-//long real C_2ndMmt;
-//long real C_2ndMmt_logistic;
-//long real C_2ndMmt_naive;
 
 //Agent control variables
 using std::vector; using graph::node;
 vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
 vector<uint> snapshot_a		(NUM_AGENTS,0);							// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
 vector<uint> snapshot_l		(N, 0);									// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
-
-vector<double> deltaInf		(NUM_AGENTS, 0);
-
 vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
 vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
 vector<uint> indexWithinNode(NUM_AGENTS);							// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
@@ -88,7 +76,6 @@ std::random_device rd;
 std::mt19937_64 generator(rd());										// ----> "mt" = "Mersenne Twister".
 std::uniform_real_distribution<real> distribution(0, 1);
 inline static real U() { return distribution(generator); }
-//auto U = bind(distribution, generator);
 
 //std::string baseName;
 //real Sim::beta_a;														// ----> Force of infection from an I-agent to an S-agent
@@ -121,22 +108,16 @@ void agFate_fromAg	(const agent& ag, const real& now, const uint& infective, con
 void agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void siteFate		(const uint& v, const real& now, const uint& infective, const uint& validity_L, const uint& validity_I);		// ----> Determines whether or not an exposed, susceptible agent 'ag' will become infected.
 void enterNodeAsSus (const agent& ag, const node& v, const real& now);
-//void checkinAsSus   (const agent& ag, const node& v);
-//void checkoutAsSus  (const agent& ag, const node& v);
-//void checkinAsInf   (const agent& ag, const node& v);
-//void checkoutAsInf  (const agent& ag, const node& v);
 void check_in		(const agent& ag, const node& v, vector<vector<agent>>& _where);
 void check_out		(const agent& ag, const node& v, vector<vector<agent>>& _where);
 void enterNodeAsInf (const agent& ag, const node& v, const real& now);
 void leaveNodeAsSus (const agent& ag, const node& v, const real& now);
 void leaveNodeAsInf (const agent& ag, const node& v, const real& now);
-//Defines the next node an agent is going to visit.
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
 void setBeta2ndMmt();
 void getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai);
-//double getSigma_a();
 #ifndef CLIQUE
 const node& randomLCCNode();
 #endif
@@ -168,143 +149,6 @@ static const real sim::EXPTau_la()	{ return NEG_RECIPR_TAU_la	* log(U()); }
 static const real sim::EXPGamma_a()	{ return NEG_RECIPR_GAMMA_a	* log(U()); }
 static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
-#ifdef i_t_FROM_MODEL
-
-//real sim::i_t_2ndMmt(const real& t) {
-//	double val = (beta2ndMmt - GAMMA_a) * t;
-//	if(val > 500) val = 500;
-//
-//	//long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
-//	long real Ce = C_2ndMmt * exp(val);
-//
-//	return std::max((1.0 - (GAMMA_a/beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
-//}
-//
-//real sim::i_t_2ndMmt_naive(const real& t) {
-//	double val = (t > 1000) ? 1000 : t;
-//
-//	long real Ce = C_2ndMmt_naive * exp((beta2ndMmt_naive - GAMMA) * val);
-//	return std::max((1.0 - (GAMMA / beta2ndMmt_naive)) * (Ce / (1.0 + Ce)), (long real)0.0);
-//}
-//real sim::i_t_2ndMmt_sys(const real& t) {
-//	for (size_t i = 0; i < sim::block_prob.size(); i++) {
-//
-//		long real Ce = C_2ndMmt * exp((beta2ndMmt - GAMMA) * t);
-//		return std::max((1.0 - (GAMMA / beta2ndMmt)) * (Ce / (1.0 + Ce)), (long real)0.0);
-//	}
-//}
-//real sim::i_t_pfx(const real& t) {
-//	long real Ce = sim::C_pfx * exp(B_MINUS_G_pfx * t);
-//	return std::max((_1_MINUS_G_OVER_B_pfx) * (Ce / (1.0 + Ce)), (long real)0.0);
-//}
-//void sim::setBeta2ndMmt() {
-//	
-//	//1st approach: 
-//	vector<double> beta_b(graph::Graph::block_prob.size(), 0);
-//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b){
-//		double _kb_ = (NUM_AGENTS * _b * N * graph::Graph::block_prob[_b]) / (2 * graph::Graph::m);
-//		//if (_kb_ < N * graph::Graph::block_prob[_b]) {
-//		if (_kb_ < N * graph::Graph::block_prob[_b]) {
-//			beta_b[_b] = (LAMBDA * _b * (TAU / (2 * LAMBDA + TAU)) * _kb_) / graph::Graph::m;
-//		}
-//		else {
-//			beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU)) * N * graph::Graph::block_prob[_b]) / graph::Graph::m;
-//		}
-//	}
-//	beta2ndMmt = 0;
-//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
-//		beta2ndMmt += beta_b[_b];
-//	}
-//
-//	//2nd approach:
-//	beta_b.resize(0);
-//	beta_b.resize(graph::Graph::block_prob.size(), 0);
-//	double sigma = 0;
-//	double sigma_2 = 0;
-//	uint validBlock = 0;
-//	double expBlock = graph::Graph::_2ndMmt / graph::Graph::averageDegree;
-//	double max_kb = (((double)NUM_AGENTS) * (double)(graph::Graph::block_prob.size() - 1) * (double)N * graph::Graph::block_prob[graph::Graph::block_prob.size() - 1]) / (2.0 * graph::Graph::m);
-//	double variance = abs(graph::Graph::_2ndMmt - pow(graph::Graph::averageDegree, 2));
-//	double _diff = abs(graph::Graph::averageDegree - graph::Graph::_2ndMmt);
-//	double std_dev = abs(sqrt(variance));
-//	const double& avDg = graph::Graph::averageDegree;
-//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
-//		double _kb_ = (((double)NUM_AGENTS) * (double)_b * (double)N * graph::Graph::block_prob[_b]) / (2.0 * graph::Graph::m);
-//		//double kbnb = _kb_ / N * graph::Graph::block_prob[_b];
-//		double norm_kb = (_kb_/N)/ ((_kb_/N)+ std::exp(-(_kb_/N)));
-//		//beta_b[_b] = (LAMBDA * _b * (TAU / (LAMBDA + TAU + (LAMBDA * (1- norm_kbnb)) )) * (_kb_ * (1 - norm_kbnb))) / graph::Graph::m;
-//		beta_b[_b] = (LAMBDA * _b * (TAU / (2*LAMBDA + TAU) * norm_kb * N )) / graph::Graph::m;
-//		
-//		if (graph::Graph::block_prob[_b] > 0) {
-//			++validBlock;
-//			//double dimmer = 1.0 - ((_kb_/(4.0 + _kb_)) / ((_kb_/ (4.0 + _kb_)) + exp(-(_kb_/ (4.0 + _kb_)))));
-//			//double dimmer = 1.0 - ((_kb_/(expBlock)) / ((_kb_/ (expBlock)) + exp(-(_kb_/ (expBlock)))));
-//			//double val = (_kb_) / (abs(std_dev - (log2(avDg) * _kb_)));
-//			//double val = (_kb_) / (1 + abs(variance - avDg));
-//			//double val = (_kb_) / (expBlock + (2 * _kb_));
-//			//double val = graph::Graph::averageDegree / graph::Graph::_2ndMmt;
-//			//double val = _kb_/(abs(expBlock - avDg) + _kb_);
-//			//double val = _kb_/(avDg + _kb_);
-//			//double val = _kb_/(log2(avDg)*max_kb);
-//			//double val = _kb_ / ((log2(expBlock) * max_kb) + _kb_);
-//			double val = _kb_/((log2(expBlock*max_kb))+_kb_);
-//			//double dimmer = 1.0 - (val / (val + exp(-val)));
-//
-//			//Bom resultado:
-//			double nTau = (double)(TAU) / std::max(1.0, _kb_ * std::min(1.0, graph::Graph::_2ndMmt/avDg));
-//			
-//			//double dimmer = 1.0 - ((_kb_/(2*expBlock)) / ((_kb_/ (2*expBlock)) + exp(-(_kb_/ (2*expBlock)))));
-//			//double dimmer = 1.0 - ((1.0/(2*_kb_)) / (((1.0 / (2 * _kb_))) + exp(-(1.0 / (2 * _kb_)))));
-//			
-//			//double dimmer = (_kb_ < 2.0) ? 1.0 : 1.0 - (_kb_) / (_kb_ + exp(-(1.0 / (_kb_))));
-//			//sigma += ((double)TAU * dimmer) / (2 * LAMBDA + (TAU * dimmer));
-//			
-//			//sigma += (double)TAU / (LAMBDA + TAU + LAMBDA * (1.0 - (std::min(1.0,(_kb_/2.0)))));
-//
-//
-//			//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
-//			sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : TAU / (LAMBDA + TAU);
-//			
-//			//sigma +=  (_kb_ < 1.5) ? TAU / (2*LAMBDA + TAU) : (TAU*dimmer) / (LAMBDA + (TAU*dimmer));
-//			sigma_2 += nTau / (2 * LAMBDA + nTau);
-//		}
-//	}
-//	sigma /= validBlock;
-//	sigma_2 /= validBlock;
-//	beta2ndMmt_logistic = 0;
-//	for (size_t _b = 1; _b < graph::Graph::block_prob.size(); ++_b) {
-//		beta2ndMmt_logistic += beta_b[_b];
-//	}
-//
-//	//double kOverN = (double)NUM_AGENTS / N;
-//	//double sigma = (double)TAU / (LAMBDA + TAU + LAMBDA * (1 - _k_n));
-//	//double _k_n = (kOverN) / (kOverN + std::exp(-(kOverN * (std::_Pi/2))));
-//	//beta2ndMmt_logistic = (double)((LAMBDA * _b * sigma * _k_n)) / graph::Graph::m;
-//
-//
-//	//double probC = 0;	// ----> Probability "correction".
-//	//probC =  TAU/(LAMBDA + TAU);
-//
-//	//3rd approach:
-//	//double _aux = (excess * (1.0 / std::exp(log(N) - log(NUM_AGENTS))));
-//	//beta2ndMmt = (meetingRate * SIGMA_aa * (std::floor((double)NUM_AGENTS - 2*generalExpOcc - _aux)) * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	
-//	//beta2ndMmt_naive = (meetingRate * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	
-//	//MUITO BOM NO BA (O NORMAL É MELHOR NO G(N,P)):
-//	//beta2ndMmt = (meetingRate * sigma * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	beta2ndMmt = (meetingRate * SIGMA_aa * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	
-//	
-//	//Bom resultado na BA:
-//	//beta2ndMmt_naive = (meetingRate * sigma_2 * NUM_AGENTS * graph::Graph::_2ndMmt) / pow(graph::Graph::averageDegree, 2);
-//	//beta2ndMmt_naive = (LAMBDA * SIGMA_aa * N * graph::Graph::_2ndMmt) / (graph::Graph::m * avDg);
-//
-//	C_2ndMmt = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt));
-//	C_2ndMmt_logistic = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_logistic));
-//	C_2ndMmt_naive = i_0 / (1.0 - i_0 - (GAMMA / beta2ndMmt_naive));
-//}
-#endif //i_t_FROM_MODEL
 
 void sim::setBeta2ndMmt() {
 	
@@ -602,29 +446,29 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vect
 	++outputSize;
 
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
-	bool stationary = false;
+	//bool stationary = false;
 	for (uint s = 1; s < largerDetailUntil; ++s) {
 		real prevIA = Ia;
 		step(h, Ia, v_Iab, v_Sab);
 		if (Ia < epsilon) {
-			saveToFile_diadt[s] = 0;
+			saveToFile_diadt[outputSize] = 0;
 			end = true;
 			++outputSize;
 			break;
 		}
 		if (Ia == prevIA) {
 			while (s < largerDetailUntil) {
-				saveToFile_diadt[s] = Ia / NUM_AGENTS;
+				saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
 				++s;
 				++outputSize;
 			}
 			end = true;
 			break;
 		}
-		saveToFile_diadt[s] = Ia / NUM_AGENTS;
+		saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
 
 #ifdef NORM_SITE_PER_AG
-		saveToFile_dildt[s] = il * (N / NUM_AGENTS);
+		saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
 #else
 		saveToFile_dildt[s] = il;
 #endif
@@ -648,9 +492,11 @@ void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vect
 		}
 		if (Ia == prevIA) {
 			while (s < totalSteps) {
-				saveToFile_diadt[s] = Ia / NUM_AGENTS;
+				if (s % outputGranularity == 0) {
+					saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
+					++outputSize;
+				}
 				++s;
-				++outputSize;
 			}
 			break;
 		}
@@ -928,7 +774,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
 #else
-			Reporter::progress(round);
+			//Reporter::progress(round);
 #endif
 			//Round-wise reset:
 			resetVariables();
@@ -998,8 +844,16 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			double timeLimit = T;
 			job j;
 			nextJob(j, now);
-			//while (false) {
+			const real logInterval = 0.01 * T; // ----> Log progress to the console at one-percent increments.
+			real prevLog = 0;
+			std::cout << std::fixed;
+			std::cout << std::setprecision(1);
+			std::cout << "\r0% complete...";
+#ifdef ONLY_NUMERIC
+			while (false) {
+#else
 			while (now < timeLimit) {
+#endif
 				roundDuration += (now - roundDuration);
 				switch (j.a) {
 				case action::walk:
@@ -1027,6 +881,10 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					break;
 				}
 				nextJob(j, now);
+				if (now - prevLog > logInterval) {
+					prevLog = now;
+					std::cout << '\r' << std::round((now/T) * 100) << "% complete...";
+				}
 			}
 			Stats::partialsAvDur(roundDuration);
 #ifdef MEASURE_ROUND_EXE_TIME
@@ -1066,14 +924,14 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	name << SHORT_LABEL 
 		<< "_N"		<< N 
 		<< "_AG"	<< NUM_AGENTS 
-		<< "_Taa"	<< TAU_aa 
-		<< "_Tal"	<< TAU_al 
-		<< "_Tla"	<< TAU_la 
-		<< "_Ga"	<< GAMMA_a 
-		<< "_Gl"	<< GAMMA_l 
+		<< "_T"	<< TAU_aa 
+		<< "_G"	<< GAMMA_a 
 		<< "_L"		<< LAMBDA 
 		<< "_STime" << T 
 		<< "_R"		<< ROUNDS;
+		//<< "_Tal"	<< TAU_al 
+		//<< "_Tla"	<< TAU_la 
+		//<< "_Gl"	<< GAMMA_l 
 	baseName = name.str();
 #ifdef PER_BLOCK
 	rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
@@ -1084,7 +942,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	std::ofstream RKdata;
 	std::stringstream _ss;
 	_ss.precision(4);
-	_ss << EXE_DIR << "/stats/Runge-Kutta_" << baseName << ".csv";
+	_ss << "./stats/Runge-Kutta_" << baseName << ".csv";
 	std::string _fileName = _ss.str();
 	RKdata.open(_fileName);
 	RKdata << "Time\tia\til\n"; // ----> Header

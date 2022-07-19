@@ -77,16 +77,18 @@ void Stats::initStream(const streamType& s) {
 		ss << "fractionInfected_" << baseName;
 		{
 			std::string ref = ss.str();
+#ifdef ONLY_NUMERIC
+			genPlotScript(ref, true);
+#else
 			genPlotScript(ref);
+#endif
 		}
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/fractionInfected_" << baseName << ".csv";
+		ss << "./stats/fractionInfected_" << baseName << ".csv";
 		fileName = ss.str();
 		infFracData.open(fileName);
 #ifdef i_t_FROM_MODEL
 		//Header
-		// infFracData << "Agent\tAction\tTime\tInfFrac\ti_ag\ti_site\n";
-		//infFracData << "Agent\tAction\tTime\ti_ag\ti_site\n";
 		infFracData << "Agent\tTime\ti_ag\ti_site\n";
 #else
 		//Header
@@ -126,7 +128,7 @@ void Stats::initStream(const streamType& s) {
 #endif //OCCUPANCY
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/averageDuration_" << baseName << ".csv";
+		ss << "./stats/averageDuration_" << baseName << ".csv";
 		fileName = ss.str();
 		avDurData.open(fileName, std::ios::app);
 		//Header
@@ -166,7 +168,6 @@ void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& ac
 #endif
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
-	//actionBuffer[_bufferPos] = action;
 	++_bufferPos;
 	if (_bufferPos == BUFFER_SIZE) {	// ----> Flush
 		for (uint i = 0; i < BUFFER_SIZE; ++i) {
@@ -192,8 +193,8 @@ void Stats::iFracToFile(const uint& overlook) {
 		i += overlook;
 	}
 }
-void Stats::genPlotScript(const std::string& referenceFile) {
-	std::string fileName(EXE_DIR + std::string("/genplot.py"));
+void Stats::genPlotScript(const std::string& referenceFile, const bool&& numericOnly) {
+	std::string fileName(std::string("./genplot.py"));
 	std::ofstream of;
 	of.open(fileName);
 	of <<
@@ -203,28 +204,30 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 
 		"import matplotlib.pyplot as plt\n" <<
 		"import numpy as np\n" <<
-		"import csv\n\n" <<
+		"import csv\n\n";
 
-		"#Import CSV data\n" <<
-		"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
-		"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
-
-		"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
-		"timeData = myData[:, 1]\n" <<
-		"infAgSimul = myData[:, 2]\n" <<
-		"infSiteSimul = myData[:, 3]\n" <<
-		"cumSumAg = np.cumsum(infAgSimul)\n" <<
-		"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
-		"cumSumSites = np.cumsum(infSiteSimul)\n" <<
-		"cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n" <<
-
+	if (!numericOnly) {
+		of <<
+			"#Import CSV data\n" <<
+			"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
+			"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
+			"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
+			"timeData = myData[:, 1]\n" <<
+			"infAgSimul = myData[:, 2]\n" <<
+			"#infSiteSimul = myData[:, 3]\n" <<
+			"cumSumAg = np.cumsum(infAgSimul)\n" <<
+			"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
+			"#cumSumSites = np.cumsum(infSiteSimul)\n" <<
+			"#cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n";
+	}
+	of <<
 		"with open(\"./stats/Runge-Kutta_" << baseName << ".csv\", \"r\") as j :\n" <<
 		"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<
 
 		"rkData = np.array(rawRK[1:], dtype = np.float64)\n" <<
 		"timeRK = rkData[:, 0]\n" <<
 		"infAgRK = rkData[:, 1]\n" <<
-		"infSiteRK = rkData[:, 2]\n" <<
+		"#infSiteRK = rkData[:, 2]\n" <<
 
 		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
@@ -233,20 +236,22 @@ void Stats::genPlotScript(const std::string& referenceFile) {
 		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << T << ")\n" <<
 		"plt.ylim(0, 1)\n" <<
-		"plt.plot(timeData, infAgSimul, label = \"InfAg\")\n" <<
-		"plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
-
 		"plt.plot(timeRK, infAgRK, label = \"Model-Ag\")\n" <<
-		"plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
+		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n";
 
-		"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
-		"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n" <<
-		"plt.plot(timeData, cumMeanAg, label = \"Cum.Av.#infAg\")\n" <<
-		"plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
+	if (!numericOnly) {
+		of <<
+			"plt.plot(timeData, infAgSimul, label = \"InfAg\")\n" <<
+			"#plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
+			"plt.plot(timeData, cumMeanAg, label = \"Cum.Av.#infAg\")\n" <<
+			"#plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
+			"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
+			"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n";
+	}
+
+	of <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
-		"#plt.xlabel(rawdata[0][2])\n" <<
-		"#plt.ylabel(rawdata[0][1])\n" <<
 		"#plt.xscale(\"log\")\n" <<
 		"#plt.yscale(\"log\")\n\n" <<
 
@@ -317,20 +322,18 @@ bool Stats::isEmpty(std::ofstream& s) {
 	return s.tellp() == 0;
 }
 void Stats::setBasename() {
-	//baseName = std::string(std::string(SHORT_LABEL) + "_Ws" + std::to_string(Ws) + "_Wi" + std::to_string(Wi) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
-	//baseName = std::string(std::string(SHORT_LABEL) + "_N" + std::to_string(N) + "_AG" + std::to_string(NUM_AGENTS) + "_Taa" + std::to_string(TAU_aa) + "_Tal" + std::to_string(TAU_al) + "_Tla" + std::to_string(TAU_la) + "_Ga" + std::to_string(GAMMA_a) + "_Gl" + std::to_string(GAMMA_l) + "_L" + std::to_string(LAMBDA) + "_STime" + std::to_string(T) + "_R" + std::to_string(ROUNDS));
 	std::stringstream name;
 	name << SHORT_LABEL 
 		<< "_N"		<< N 
 		<< "_AG"	<< NUM_AGENTS 
-		<< "_Taa"	<< TAU_aa 
-		<< "_Tal"	<< TAU_al 
-		<< "_Tla"	<< TAU_la 
-		<< "_Ga"	<< GAMMA_a 
-		<< "_Gl"	<< GAMMA_l 
+		<< "_T"		<< TAU_aa 
+		<< "_G"		<< GAMMA_a 
 		<< "_L"		<< LAMBDA 
 		<< "_STime" << T 
 		<< "_R"		<< ROUNDS;
+		//<< "_Tal"	<< TAU_al 
+		//<< "_Tla"	<< TAU_la 
+		//<< "_Gl"	<< GAMMA_l 
 	baseName = name.str();
 }
 void Stats::resetStats() {
@@ -341,19 +344,6 @@ void Stats::resetStats() {
 #endif
 }
 
-void Stats::roots(const long real& a, const long real& b, const long real& c, long real& r1, long real& r2) {
-	long real discriminant = b * b - 4 * a * c;
-	if (discriminant > 0) {
-		r1 = (-b + sqrt(discriminant)) / (2.0 * a);
-		r2 = (-b - sqrt(discriminant)) / (2.0 * a);
-		return;
-	}
-	if (discriminant == 0) {
-		r1 = r2 = (-b + sqrt(discriminant)) / (2.0 * a);
-		return;
-	}
-	return;
-}
 #ifdef OCCUPANCY
 void Stats::initOcc(const uint& n) {
 	if (avOcc.empty()) {

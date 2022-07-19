@@ -86,16 +86,14 @@ void Reporter::simulationInfo(const uint& itotal) {
 		<< "\tNUM_AGENTS: "							<< NUM_AGENTS	<< '\n'
 		<< "\tInitially infected: "					<< itotal		<< '\n'
 		<< "\tN: "									<< N			<< '\n'
-		<< "\tTAU_aa (Infect): "					<< TAU_aa		<< '\n'
-		<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
-		<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
-		<< "\tGAMMA_a (Recover): "					<< GAMMA_a		<< '\n'
-		<< "\tGAMMA_l (Recover): "					<< GAMMA_l		<< '\n'
+		<< "\tTAU (Infect): "						<< TAU_aa		<< '\n'
+		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-//#ifdef i_t_FROM_MODEL
-		<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< std::to_string(_R0)	<< '\n'
-		<< "\ti_inf (Estimated % infected by the end): "	<< _infFrac << '\n'
-//#endif
+		//<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
+		//<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
+		//<< "\tGAMMA_l (Recover): "				<< GAMMA_l		<< '\n'
+		//<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< std::to_string(_R0)	<< '\n'
+		//<< "\ti_inf (Estimated % infected by the end): "	<< _infFrac << '\n'
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

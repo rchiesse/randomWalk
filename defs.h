@@ -186,15 +186,15 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROTECTION_FX
 
 // Input parameters
-static constexpr real T					= 0.1;						// ----> Simulation time.
+static constexpr real T					= 3;						// ----> Simulation time.
 static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 123.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_aa			= 1.0;						// ----> Agent-to-agent transmissibility rate.
 static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-location transmissibility rate.
 static constexpr real TAU_la			= 0.000001;					// ----> Location-to-agent transmissibility rate.
-static constexpr real GAMMA_a			= 2000.0;					// ----> Recovery rate. 
+static constexpr real GAMMA_a			= 60.0;						// ----> Recovery rate. 
 static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
 static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. 
 static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).

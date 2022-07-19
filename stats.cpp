@@ -224,14 +224,14 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << T << ")\n" <<
 		"plt.ylim(0, 1)\n" <<
-		"plt.plot(timeRK, infAgRK, label = \"Model-Ag\")\n" <<
+		"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
 		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n";
 
 	if (!numericOnly) {
 		of <<
-			"plt.plot(timeData, infAgSimul, label = \"InfAg\")\n" <<
+			"plt.plot(timeData, infAgSimul, label = \"Simulation\")\n" <<
 			"#plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
-			"plt.plot(timeData, cumMeanAg, label = \"Cum.Av.#infAg\")\n" <<
+			"plt.plot(timeData, cumMeanAg, label = \"Cumul. Average\")\n" <<
 			"#plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
 			"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
 			"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n";

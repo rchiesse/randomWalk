@@ -216,7 +216,7 @@ real sim::diabdt(const real& Ia, const real& Sa) {
 		return - (GAMMA_a * Ia);
 
 	//long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
-	long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	long double H = EULER * log(std::min(sbnb, ibnb) * ibnb * (1.0 / nT)) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
@@ -240,7 +240,7 @@ real sim::dsabdt(const real& Ia, const real& Sa) {
 			GAMMA_a * Ia;
 	}
 	//long double H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
-	long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	long double H = EULER * log(std::min(sbnb, ibnb) * ibnb * (1.0 / nT)) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);

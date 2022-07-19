@@ -53,8 +53,8 @@ namespace sim {
 
 
 // * NETWORK *
-//#define CLIQUE
-#define READ_NTWK_FROM_FILE
+#define CLIQUE
+//#define READ_NTWK_FROM_FILE
 //#define GNP
 //#define STAR
 
@@ -159,10 +159,9 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 
 
 // * STATS * 
-//#define OCCUPANCY
 #define INFECTED_FRACTION
+//#define OCCUPANCY
 //#define ESTIMATE_PROBS
-#define i_t_FROM_MODEL
 
 // ---------------------------//----------------------------- //
 
@@ -187,15 +186,15 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROTECTION_FX
 
 // Input parameters
-static constexpr real T					= 100.0;						// ----> Simulation time.
-static constexpr uint NUM_AGENTS		= 150000;					// ----> Total number of agents in a simulation.
+static constexpr real T					= 0.1;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
 static constexpr uint STARTING_NUM_AG	= 1000000;							
 static constexpr uint GRAN_NUM_AG		= 1;							
 static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
-static constexpr real TAU_aa			= 50.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_aa			= 123.0;						// ----> Agent-to-agent transmissibility rate.
 static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-location transmissibility rate.
 static constexpr real TAU_la			= 0.000001;					// ----> Location-to-agent transmissibility rate.
-static constexpr real GAMMA_a			= 200.0;					// ----> Recovery rate. 
+static constexpr real GAMMA_a			= 2000.0;					// ----> Recovery rate. 
 static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
 static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. 
 static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
@@ -244,6 +243,22 @@ static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);
 static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const double& sumSbIb);
 real dildt(const real& ia, const real& il);
+
+#ifdef CLIQUE
+#ifdef PER_BLOCK
+real diabdt(const real& Ia, const real& Sa);
+real dsabdt(const real& Ia, const real& Sa);
+#else //PER_BLOCK
+real divbdt(const real& Ia, const real& Iv, const real& Sv);
+real dsvbdt(const real& Ia, const real& Iv, const real& Sv);
+#endif //PER_BLOCK
+void step(const real& h, real& Ia, real& Sa);
+//real dilbdt(const real& ia, const real& il, const real& iab, const real& ilb, const uint& block);
+void lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target);
+void lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target, std::vector<real>& base, const double& fraction = 1.0);
+void rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+
+#else //CLIQUE
 #ifdef PER_BLOCK
 real diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
 real dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& block);
@@ -258,6 +273,7 @@ void update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<real>
 void lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target);
 void lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target, std::vector<real>& base, const double& fraction = 1.0);
 void rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+#endif //CLIQUE
 #endif //SOLVE_NUMERICALLY
 
 } //namespace sim

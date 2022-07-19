@@ -64,23 +64,16 @@ void Reporter::avSimTimeInfo(const real& avDuration) {
 void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize) {
 	using std::endl;
 	std::cout << endl
-		<< "\t ---> "					<< n << " nodes."	<< endl
-		<< "\t ---> "					<< m << " edges."	<< endl
-		<< "\t ---> Average degree: "	<< averageDegree	<< endl
-		<< "\t ---> Largest degree: "	<< largestDegree	<< endl
-		<< "\t ---> Smallest degree: "	<< smallestDegree	<< endl
-		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)" << std::endl;
+		<< "\t ---> Network name: "		<< NWTK_LABEL		<< '\n'
+		<< "\t ---> "					<< n << " nodes."	<< '\n'
+		<< "\t ---> "					<< m << " edges."	<< '\n'
+		<< "\t ---> Average degree: "	<< averageDegree	<< '\n'
+		<< "\t ---> Largest degree: "	<< largestDegree	<< '\n'
+		<< "\t ---> Smallest degree: "	<< smallestDegree	<< '\n'
+		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)";
 }
 void Reporter::simulationInfo(const uint& itotal) {
-	using std::endl;
-	const double _beta_a = sim::beta_a;
-	const double _beta_la = sim::beta_la;
-	const double gamma_a = GAMMA_a, gamma_l = GAMMA_l;
-	const double _R0 = (_beta_a + _beta_la) / gamma_a;
-	double diff = _beta_a + _beta_la;
-	diff = gamma_a / diff;
-	const double _infFrac = 1.0 - diff;
-	std::cout << endl
+	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
 		<< "\tNUM_AGENTS: "							<< NUM_AGENTS	<< '\n'
@@ -92,8 +85,6 @@ void Reporter::simulationInfo(const uint& itotal) {
 		//<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
 		//<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
 		//<< "\tGAMMA_l (Recover): "				<< GAMMA_l		<< '\n'
-		//<< "\tR0 (Reprod. number = (beta_a + beta_la)/gamma_a): "	<< std::to_string(_R0)	<< '\n'
-		//<< "\ti_inf (Estimated % infected by the end): "	<< _infFrac << '\n'
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

@@ -87,13 +87,9 @@ void Stats::initStream(const streamType& s) {
 		ss << "./stats/fractionInfected_" << baseName << ".csv";
 		fileName = ss.str();
 		infFracData.open(fileName);
-#ifdef i_t_FROM_MODEL
+
 		//Header
 		infFracData << "Agent\tTime\ti_ag\ti_site\n";
-#else
-		//Header
-		infFracData << "Agent\tAction\tTime\tInfFrac" << std::endl;
-#endif
 		break;
 #endif //INFECTED_FRACTION
 #ifdef ESTIMATE_PROBS
@@ -171,12 +167,8 @@ void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& ac
 	++_bufferPos;
 	if (_bufferPos == BUFFER_SIZE) {	// ----> Flush
 		for (uint i = 0; i < BUFFER_SIZE; ++i) {
-#ifdef i_t_FROM_MODEL
 			//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
 			infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] /*<< "\t" << sim::i_t(timestampBuffer[i])*/ << '\n';
-#else
-			infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << '\n';
-#endif
 			i += EVT_GRANULARITY;
 		}
 		_bufferPos = 0;
@@ -184,12 +176,8 @@ void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& ac
 }
 void Stats::iFracToFile(const uint& overlook) {
 	for (uint i = 0; i < _bufferPos; ++i) {
-#ifdef i_t_FROM_MODEL
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
 		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
-#else
-		infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
-#endif
 		i += overlook;
 	}
 }

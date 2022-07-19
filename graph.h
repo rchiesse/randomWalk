@@ -14,6 +14,16 @@ class Graph {
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
+	static uint m;													// ----> Network's total number of edges.
+	static uint largestDegree;
+	static uint smallestDegree;
+	static uint selfLoops;
+	static uint largestDgNode;
+	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
+	static real averageDegree;
+	static real originalAvDeg;
+	static real validBlocks;
+
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
 	static vector<node> gs;											// ----> The graph, with nodes varying their index according to the susceptible agents' random walk.
@@ -25,33 +35,6 @@ public:
 #ifdef PROTECTION_FX
 	static vector<vector<node>> gs;									// ----> The graph, as an edge list, with nodes varying their index according to the susceptible agents' random walk.
 	static vector<vector<node>> gi;									// ----> The graph, as an edge list, with nodes varying their index according to the infected agents' random walk.
-#else 
-	static vector<vector<node>> g;									// ----> The graph, as an edge list.
-#endif // PROTECTION_FX
-	static uint m;													// ----> Network's total number of edges.
-	static uint largestDegree;
-	static uint smallestDegree;
-	static uint selfLoops;
-	static uint largestDgNode;
-	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
-	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
-	static real averageDegree;
-	static real originalAvDeg;
-	//static real original2ndMmt;
-	static real _2ndMmt;
-	static vector<real> block_prob;								
-	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
-	//static vector<real> originalFreq;								
-	static vector<real> kb;										// ----> Expected number of agents in each block b.
-	static real avSelfLoop;											// ----> Average over all blocks of the probability ((b-1)/b) that a randomly chosen link from a node v from block b leads the agent to somewhere else, instead of remaining at v.
-	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
-	//static vector<real> rho_bs;										// ----> Prob. that some node v_b from block b contains at least one S-ag, i.e. the probability that v_b hosts at least one S-agent.
-	//static vector<real> rho_bi;										// ----> Prob. that some node v_b from block b contains at least one I-ag, i.e. the probability that v_b hosts at least one I-agent.
-	//static real sumKB;
-	static real psi;
-	static real validBlocks;
-
-#ifdef PROTECTION_FX
 	struct largerDegreeGS {
 		bool operator()(const node& v1, const node& v2) {
 			return gs[v1].size() > gs[v2].size();
@@ -61,16 +44,25 @@ public:
 		bool operator()(const node& v1, const node& v2) {
 			return gi[v1].size() > gi[v2].size();
 		}
-};
-#else
+	};
+#else 
+	static vector<vector<node>> g;									// ----> The graph, as an edge list.
 	struct largerDegree {
 		bool operator()(const node& v1, const node& v2) {
 			return g[v1].size() > g[v2].size();
 		}
 	};
-#endif
-	static void readGraph(const string& fileName, const size_t& totalNodes);
+#endif // PROTECTION_FX
+	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
+	static real _2ndMmt;
+	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
+	static vector<real> kb;											// ----> Expected number of agents in each block b.
+	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	static real psi;
+	static vector<real> block_prob;
+	//static real avSelfLoop;
 	static void set2ndMoment();
+	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
 #ifdef PROTECTION_FX
 private:

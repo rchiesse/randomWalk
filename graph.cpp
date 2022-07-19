@@ -4,12 +4,23 @@ using namespace graph;
 
 std::unordered_map<uint, uint> Graph::idMap;
 uint Graph::n;													// ----> Network size, i.e. the number of nodes.
+real Graph::averageDegree;
+real Graph::originalAvDeg;
+uint Graph::m;												
+uint Graph::largestDegree;
+uint Graph::smallestDegree;
+uint Graph::selfLoops;
+uint Graph::largestDgNode;
+uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
+real Graph::validBlocks;
+
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
 vector<node> Graph::gs;
 vector<node> Graph::gi;
 #else
 vector<node> Graph::g;
+
 #endif //PROTECTION_FX
 #else  //CLIQUE
 #ifdef PROTECTION_FX
@@ -18,28 +29,6 @@ vector<vector<node>> Graph::gi;									// ----> The graph, as an edge list.
 #else
 vector<vector<node>> Graph::g;									// ----> The graph, as an edge list.
 #endif //PROTECTION_FX
-uint Graph::m;												
-uint Graph::largestDegree;
-uint Graph::smallestDegree;
-uint Graph::selfLoops;
-uint Graph::largestDgNode;
-uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
-vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
-real Graph::averageDegree;
-real Graph::originalAvDeg;
-//real Graph::original2ndMmt;
-real Graph::_2ndMmt;
-vector<real> Graph::block_prob;
-vector<real> Graph::q_b;
-//vector<double> Graph::originalFreq;
-vector<real> Graph::kb;
-real Graph::avSelfLoop;
-vector<real> Graph::rho_b;
-//vector<double> Graph::rho_bs;
-//vector<double> Graph::rho_bi;
-//real Graph::sumKB;
-real Graph::psi;
-real Graph::validBlocks;
 #endif //CLIQUE
 
 #ifdef PROTECTION_FX
@@ -247,6 +236,14 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #endif //PROTECTION_FX
 
 #ifndef CLIQUE
+vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
+real Graph::_2ndMmt;
+vector<real> Graph::block_prob;
+vector<real> Graph::q_b;
+vector<real> Graph::kb;
+//real Graph::avSelfLoop;
+vector<real> Graph::rho_b;
+real Graph::psi;
 
 void Graph::set2ndMoment() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
@@ -256,23 +253,16 @@ void Graph::set2ndMoment() {
 	rho_b.resize(largestDegree + 1, 0);
 
 	//Frequencies:
-	for (uint i = 0; i < lccSize; ++i) {
-#ifdef PROTECTION_FX
-		++(block_prob[gs[lcc[i]].size()]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
-		++(originalFreq[gs[lcc[i]].size()-1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
-#else
-		++(block_prob[g[lcc[i]].size()]);		
-		//++(originalFreq[g[lcc[i]].size() - 1]);		// ----> '-1' applied since every node was given an extra edge, which should not be counted here. This extra edge is an auto-relation, which allows an agent to remain at its current node upon a walk event (See the AUTORELATION macro definition and its associated commentary for more info). 
-#endif
-	}
+	for (uint i = 0; i < lccSize; ++i)
+		++(block_prob[g[lcc[i]].size()]);
+
 	//Probabilities:
 	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
-		//originalFreq[b] /= lccSize;
 	}
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		rho_b[b]	= 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
+		rho_b[b] = 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
 	}
 	psi = 0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
@@ -311,14 +301,13 @@ void Graph::set2ndMoment() {
 	}
 
 	//avSelfLoop:
-	avSelfLoop = 0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		if (block_prob[b] == 0)
-			continue;
-		avSelfLoop += (((double)b - 1.0) / b) * n * block_prob[b];
-	}
-	//avSelfLoop /= validBlocks;
-	avSelfLoop /= n;
+	//avSelfLoop = 0;
+	//for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	//	if (block_prob[b] == 0)
+	//		continue;
+	//	avSelfLoop += (((double)b - 1.0) / b) * n * block_prob[b];
+	//}
+	//avSelfLoop /= n;
 	
 #ifdef DEBUG
 	double sumQB = 0, sumBP = 0, sumKB = 0.0;

@@ -148,7 +148,7 @@ static constexpr uint N = 12008;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-#define AUTO_RELATION					// ----> Gives an agent the option of staying at its current node upon every other walk event. If not enabled, agents will necessarily move to a different node when their walk event is processed.
+#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
 //#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -186,38 +186,38 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROTECTION_FX
 
 // Input parameters
-static real T;															// ----> Simulation time.
-static uint NUM_AGENTS;													// ----> Total number of agents in a simulation.
-static uint STARTING_NUM_AG;											
-static uint GRAN_NUM_AG;	
-static uint ROUNDS;														// ----> Number of simulation runs for a given setup. 
-static real TAU_aa;														// ----> Agent-to-agent transmissibility rate.
-static real TAU_al;														// ----> Agent-to-location transmissibility rate.
-static real TAU_la;														// ----> Location-to-agent transmissibility rate.
-static real GAMMA_a;													// ----> Recovery rate. 
-static real GAMMA_l;													// ----> Recovery rate. 
-static real LAMBDA;														// ----> Walk rate. 
-static real FRAC_AG_INFECTED;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
-static real FRAC_ST_INFECTED;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
-static uint ABS_INFECTED;												// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+static constexpr real T					= 12;						// ----> Simulation time.
+static constexpr uint NUM_AGENTS		= 15000;					// ----> Total number of agents in a simulation.
+static constexpr uint STARTING_NUM_AG	= 1000000;							
+static constexpr uint GRAN_NUM_AG		= 1;							
+static constexpr uint ROUNDS			= 1;						// ----> Number of simulation runs for a given setup. 
+static constexpr real TAU_aa			= 1.0;						// ----> Agent-to-agent transmissibility rate.
+static constexpr real TAU_al			= 0.000001;					// ----> Agent-to-location transmissibility rate.
+static constexpr real TAU_la			= 0.000001;					// ----> Location-to-agent transmissibility rate.
+static constexpr real GAMMA_a			= 60.0;						// ----> Recovery rate. 
+static constexpr real GAMMA_l			= 20000.0;					// ----> Recovery rate. 
+static constexpr real LAMBDA			= 1.0;						// ----> Walking speed. 
+static constexpr real FRAC_AG_INFECTED	= 0.5;						// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+static constexpr real FRAC_ST_INFECTED	= 0.0;						// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
+static constexpr uint ABS_INFECTED		= 0;						// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
 // Auxiliary constants
-static const uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
-static const long real i_0 = (real)I_0 / NUM_AGENTS;
-static const long real meetingRate = 2.0 * LAMBDA / N;
-static const long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-static const long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
-static const long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
-static const long real EULER = 0.57721566490153286060651209008240243104215933593992;	// ----> The Euler–Mascheroni constant.
-static const long real NEG_RECIPR_LAMBDA	= -(1.0 / LAMBDA);				// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
-static const long real NEG_RECIPR_GAMMA_a	= -(1.0 / GAMMA_a);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
-static const long real NEG_RECIPR_GAMMA_l	= -(1.0 / GAMMA_l);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
-static const long real NEG_RECIPR_TAU_aa	= -(1.0 / TAU_aa);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
-static const long real NEG_RECIPR_TAU_al	= -(1.0 / TAU_al);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
-static const long real NEG_RECIPR_TAU_la	= -(1.0 / TAU_la);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
-static const uint ELEMS = 0;												// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
-static const long real TIME_ZERO = 0;
-static const uint K = NUM_AGENTS;
+static constexpr uint I_0 = (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
+static constexpr long real i_0 = (real)I_0 / NUM_AGENTS;
+static constexpr long real meetingRate = 2.0 * LAMBDA / N;
+static constexpr long real SIGMA_aa = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+static constexpr long real SIGMA_al = (TAU_al / (LAMBDA + TAU_al));
+static constexpr long real SIGMA_la = (TAU_la / (LAMBDA + TAU_la));
+static constexpr long real EULER = 0.57721566490153286060651209008240243104215933593992;	// ----> The Euler–Mascheroni constant.
+static constexpr long real NEG_RECIPR_LAMBDA	= -(1.0 / LAMBDA);				// ----> Preprocessing. The negative reciprocal of LAMBDA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_GAMMA_a	= -(1.0 / GAMMA_a);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_GAMMA_l	= -(1.0 / GAMMA_l);				// ----> Preprocessing. The negative reciprocal of GAMMA, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_aa	= -(1.0 / TAU_aa);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_al	= -(1.0 / TAU_al);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr long real NEG_RECIPR_TAU_la	= -(1.0 / TAU_la);				// ----> Preprocessing. The negative reciprocal of TAU, to be used by the exponential random-number generator.
+static constexpr uint ELEMS = 0;												// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
+static constexpr long real TIME_ZERO = 0;
+static constexpr uint K = NUM_AGENTS;
 #ifdef CLIQUE
 static const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 * N)))); // ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 #else
@@ -227,7 +227,7 @@ const uint LIST_INI_SZ = (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3 
 // Output control:
 #ifdef INFECTED_FRACTION
 static constexpr real OVERLOOK_RATE = 1.0;									// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
-static const uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);
+static constexpr uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);
 #endif
 
 // ---------------------------//----------------------------- //
@@ -240,7 +240,7 @@ static const uint OVERLOOK = (uint)((NUM_AGENTS * OVERLOOK_RATE)/1);
 #define PER_BLOCK		// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 
 #ifdef SOLVE_NUMERICALLY
-//static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
+static constexpr long real crowdFactor = std::min(2.0, std::max((real)K / N, 1.0));
 real diadt(const real& ia, const double& sumSbIb);
 real dildt(const real& ia, const real& il);
 

@@ -170,6 +170,21 @@ void sim::setBeta2ndMmt() {
 		nT = TAU_aa / LAMBDA;
 		nG = GAMMA_a / LAMBDA;
 	}
+
+	T					= 6.1;					// ----> Simulation time.
+	NUM_AGENTS			= 15000;				// ----> Total number of agents in a simulation.
+	STARTING_NUM_AG		= 1000000;
+	GRAN_NUM_AG			= 1;
+	ROUNDS				= 1;					// ----> Number of simulation runs for a given setup. 
+	TAU_aa				= 1.0;					// ----> Agent-to-agent transmissibility rate.
+	TAU_al				= 0.000001;				// ----> Agent-to-location transmissibility rate.
+	TAU_la				= 0.000001;				// ----> Location-to-agent transmissibility rate.
+	GAMMA_a				= 60.0;					// ----> Recovery rate. 
+	GAMMA_l				= 20000.0;				// ----> Recovery rate. 
+	LAMBDA				= 1.0;					// ----> Walk rate. 
+	FRAC_AG_INFECTED	= 0.5;					// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+	FRAC_ST_INFECTED	= 0.0;					// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
+	ABS_INFECTED		= 0;					// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 }
 
 //void sim::getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai) {
@@ -216,7 +231,10 @@ real sim::diabdt(const real& Ia, const real& Sa) {
 		return - (GAMMA_a * Ia);
 
 	//long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
-	long double H = EULER * log(std::min(sbnb, ibnb) * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
+	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
+	long double H = EULER * log(ibnb * (std::min(sbnb, ibnb)/2.0)) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
@@ -240,7 +258,10 @@ real sim::dsabdt(const real& Ia, const real& Sa) {
 			GAMMA_a * Ia;
 	}
 	//long double H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
-	long double H = EULER * log(std::min(sbnb, ibnb) * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
+	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
+	long double H = EULER * log(ibnb * (std::min(sbnb, ibnb) / 2.0)) / (2.0 * nL);
 	long double ii = ibnb + 1.0;
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);

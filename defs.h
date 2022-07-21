@@ -66,7 +66,7 @@ static constexpr uint N = 12008;
 #endif
 
 #ifdef CLIQUE
-static constexpr uint N = 3;										// ----> Network size
+static constexpr uint N = 200;										// ----> Network size
 #define NWTK_LABEL "Clique"
 #define SHORT_LABEL "CL"
 #endif

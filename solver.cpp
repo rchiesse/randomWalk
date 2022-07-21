@@ -37,14 +37,17 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
 	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
 	//long double H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
-	long double H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
+	//long double H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
+	//long double ii = ibnb + 1.0;
+	//const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
+	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0 * nL));
+	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0 * nL));
+	const double infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
 	return
 		nb * (
 			(Ia - ibnb) * nL / (nb - 1.0)
-			- ibnb * nL 
+			- ibnb * nL
 			+ ibnb * sbnb * nT
 			- (nG * ibnb)
 		);
@@ -72,9 +75,12 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
 	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
 	//long double H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
-	long double H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
+	//long double H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
+	//long double ii = ibnb + 1.0;
+	//const double prob_inf = ii / (H + ii);
+	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0*nL));
+	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0*nL));
+	const double infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
 	return
 		//-Ia * sbnb * prob_inf * nT

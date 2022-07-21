@@ -23,6 +23,9 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	const double ibnb = Ia / nb;
 	const double sbnb = Sa / nb;
 	const double kbnb = ibnb + sbnb;
+	const double b = N;
+	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
+	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
 	//const double Sa = (double)NUM_AGENTS - Ia;
 
 	//RONALD (BEST SO FAR):
@@ -39,8 +42,12 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
 	return
-		Ia * sbnb * prob_inf * nT
-		- (nG * Ia);
+		nb * (
+			(Ia - ibnb) * nL / (nb - 1.0)
+			- ibnb * nL 
+			+ ibnb * sbnb * nT
+			- (nG * ibnb)
+		);
 }
 
 real Solver::dsabdt(const real& Ia, const real& Sa) {
@@ -50,6 +57,9 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	const double ibnb = Ia / nb;
 	const double sbnb = Sa / nb;
 	const double kbnb = ibnb + sbnb;
+	const double b = N;
+	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
+	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
 	//const double Sa = (double)NUM_AGENTS - Ia;
 
 	//BEST SO FAR:
@@ -67,8 +77,13 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
 	return
-		-Ia * sbnb * prob_inf * nT
-		+ (nG * Ia);
+		//-Ia * sbnb * prob_inf * nT
+		nb * (
+			(Sa - sbnb) * nL / (nb - 1.0)
+			- sbnb * nL 
+			- ibnb * sbnb * nT
+			+ (nG * ibnb)
+		);
 }
 
 void Solver::step(const real& h, real& Ia, real& Sa) {

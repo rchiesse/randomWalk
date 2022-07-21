@@ -178,13 +178,13 @@ static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 
 void sim::setEnvironment() {
-	T					= 4;											// ----> Simulation time.
-	NUM_AGENTS			= 15000;										// ----> Total number of agents in a simulation.
+	T					= 0.2;											// ----> Simulation time.
+	NUM_AGENTS			= 500;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
 	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
-	TAU_aa				= 1.0;										// ----> Agent-to-agent transmissibility rate.
-	GAMMA_a				= 60.0;										// ----> Recovery rate. 
+	TAU_aa				= 10.0;										// ----> Agent-to-agent transmissibility rate.
+	GAMMA_a				= 1000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
@@ -458,7 +458,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	Graph::averageDegree = N;
 	Graph::largestDegree = N;
 	Graph::lccSize = N;
-	Graph::m = N * N / 2;	// ----> Note that the total number of edges here is NOT (n*(n-1))/2 because each node contains an implicit self loop.
+	Graph::m = (N * (N-1) / 2) + N;		// ----> "+ N" because each node contains an implicit self loop.
 	Graph::selfLoops = N;
 	Graph::smallestDegree = N;
 	Graph::validBlocks = 1;
@@ -664,7 +664,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.000001;
+	constexpr real stepSize = 0.00001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

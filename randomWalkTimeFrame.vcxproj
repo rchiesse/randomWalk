@@ -156,12 +156,14 @@
     <ClCompile Include="graph.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="reporter.cpp" />
+    <ClCompile Include="solver.cpp" />
     <ClCompile Include="stats.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />
     <ClInclude Include="graph.h" />
     <ClInclude Include="reporter.h" />
+    <ClInclude Include="solver.h" />
     <ClInclude Include="stats.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

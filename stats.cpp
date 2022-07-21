@@ -1,6 +1,12 @@
 #include "stats.h"
-using namespace sim::stat;
+using namespace sim;
 std::ofstream Stats::infFracData;
+real Stats::t			= 0;
+uint Stats::numAgents	= 0;
+uint Stats::rounds		= 0;
+real Stats::tau			= 0;
+real Stats::gamma		= 0;
+real Stats::lambda		= 0;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
@@ -64,6 +70,15 @@ void Stats::probsToFile() {
 		<< siMeetingRate << std::endl;
 }
 #endif
+void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda) {
+	t			= time;
+	numAgents	= _numAgents;
+	rounds		= _rounds;
+	tau			= _tau;
+	gamma		= _gamma;
+	lambda		= _lambda;
+}
+
 //void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
 void Stats::initStream(const streamType& s) {
 	setBasename();
@@ -77,7 +92,7 @@ void Stats::initStream(const streamType& s) {
 		ss << "fractionInfected_" << baseName;
 		{
 			std::string ref = ss.str();
-#ifdef ONLY_NUMERIC
+#ifdef BYPASS_SIMULATION
 			genPlotScript(ref, true);
 #else
 			genPlotScript(ref);
@@ -222,7 +237,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.title(\"Fraction of Infected Agents/Sites over Time\")\n" <<
 		"plt.xlabel(\"Time\")\n" <<
 		"plt.ylabel(\"Infected Fraction\")\n" <<
-		"plt.xlim(0, " << T << ")\n" <<
+		"plt.xlim(0, " << t << ")\n" <<
 		"plt.ylim(0, 1)\n" <<
 		"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
 		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n";
@@ -313,12 +328,12 @@ void Stats::setBasename() {
 	std::stringstream name;
 	name << SHORT_LABEL 
 		<< "_N"		<< N 
-		<< "_AG"	<< NUM_AGENTS 
-		<< "_T"		<< TAU_aa 
-		<< "_G"		<< GAMMA_a 
-		<< "_L"		<< LAMBDA 
-		<< "_STime" << T 
-		<< "_R"		<< ROUNDS;
+		<< "_AG"	<< numAgents 
+		<< "_T"		<< tau 
+		<< "_G"		<< gamma 
+		<< "_L"		<< lambda 
+		<< "_STime" << t 
+		<< "_R"		<< rounds;
 		//<< "_Tal"	<< TAU_al 
 		//<< "_Tla"	<< TAU_la 
 		//<< "_Gl"	<< GAMMA_l 

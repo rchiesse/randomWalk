@@ -72,7 +72,7 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 		<< "\t ---> Smallest degree: "	<< smallestDegree	<< '\n'
 		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)";
 }
-void Reporter::simulationInfo(const uint& itotal) {
+void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA) {
 	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'

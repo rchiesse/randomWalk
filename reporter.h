@@ -23,7 +23,7 @@ public:
 	static void avSimTimeInfo	 (const real& avDuration);
 	static void networkInfo		 (const uint& n, const uint& m, const real& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize);
 	//static void simulationInfo	 (const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const real& TAU_aa, const real& TAU_al, const real& TAU_la, const real& GAMMA_a, const real& GAMMA_l, const real& LAMBDA);
-	static void simulationInfo	 (const uint& itotal);
+	static void simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA);
 	static void errorOpening	 (const std::string& fileName);
 	static void openedWithSuccess(const std::string& fileName);
 #ifdef OCCUPANCY

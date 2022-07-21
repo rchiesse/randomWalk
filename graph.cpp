@@ -245,7 +245,7 @@ vector<real> Graph::kb;
 vector<real> Graph::rho_b;
 real Graph::psi;
 
-void Graph::set2ndMoment() {
+void Graph::setBlockData() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	q_b.resize(largestDegree + 1, 0);
 	//originalFreq.resize(largestDegree + 1, 0);

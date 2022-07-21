@@ -1,23 +1,62 @@
 #include "graph.h"
 #include "reporter.h"
 #include "stats.h"
+#include "solver.h"
 #include <numeric>		//std::accumulate()
 #include <iomanip>		//std::fixed & std::setprecision
 
+
 namespace sim { // Simulator's namespace.
+// Input parameters
+real T;																	// ----> Simulation time.
+uint NUM_AGENTS;														// ----> Total number of agents in a simulation.
+uint STARTING_NUM_AG;
+uint GRAN_NUM_AG;
+uint ROUNDS;															// ----> Number of simulation runs for a given setup. 
+real TAU_aa;															// ----> Agent-to-agent transmissibility rate.
+real TAU_al;															// ----> Agent-to-location transmissibility rate.
+real TAU_la;															// ----> Location-to-agent transmissibility rate.
+real GAMMA_a;															// ----> Recovery rate. 
+real GAMMA_l;															// ----> Recovery rate. 
+real LAMBDA;															// ----> Walking speed. 
+real FRAC_AG_INFECTED;													// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+real FRAC_ST_INFECTED;													// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
+uint ABS_INFECTED;														// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+
+// Auxiliary constants
+uint I_0;
+real i_0;
+real meetingRate;
+real SIGMA_aa;
+real SIGMA_al;
+real SIGMA_la;
+real NEG_RECIPR_LAMBDA;
+real NEG_RECIPR_GAMMA_a;
+real NEG_RECIPR_GAMMA_l;
+real NEG_RECIPR_TAU_aa;
+real NEG_RECIPR_TAU_al;
+real NEG_RECIPR_TAU_la;
+uint ELEMS;																// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
+real TIME_ZERO;
+uint K;
+uint LIST_INI_SZ;														// ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
+
+// Output control:
+constexpr real OVERLOOK_RATE = 1.0;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+uint OVERLOOK;
 
 //Main structures
 enum class action{walk, recoverAg, recoverSite, agInfectAg, agInfectSite, siteInfectAg };
 struct job {
-	uint target		= INT32_MAX;			// ----> Target ID (either an agent or a site).
+	uint target		= INT32_MAX;										// ----> Target ID (either an agent or a site).
 	real time		= 0;
 	action a		= action::walk;
 
 	//Infection only:
-	uint validity_S			= UINT_MAX;		// ----> S-agent's snapshot from the moment the event was generated. If the S-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.
-	uint validity_I			= UINT_MAX;		// ----> I-agent's snapshot from the moment the event was generated. If the I-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.		
-	uint infective			= UINT_MAX;		// ----> ID of the infective actor (either an agent or a site). It will be necessary to later retrieve its snapshot by the time the infection event is processed. If this does not match 'validity_I', then the event is ignored and the infection does not occur.
-	uint streamer			= UINT_MAX;		// ----> ID of the agent whose queue this event come from. This information makes it possible to get the next event from the correct queue (as it may come either from the S-agent or the I-agent) and insert it into the main queue.
+	uint validity_S			= UINT_MAX;									// ----> S-agent's snapshot from the moment the event was generated. If the S-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.
+	uint validity_I			= UINT_MAX;									// ----> I-agent's snapshot from the moment the event was generated. If the I-agent's snapshot by the time the infection event is processed does not match this one, then the event is ignored and the infection does not occur.		
+	uint infective			= UINT_MAX;									// ----> ID of the infective actor (either an agent or a site). It will be necessary to later retrieve its snapshot by the time the infection event is processed. If this does not match 'validity_I', then the event is ignored and the infection does not occur.
+	uint streamer			= UINT_MAX;									// ----> ID of the agent whose queue this event come from. This information makes it possible to get the next event from the correct queue (as it may come either from the S-agent or the I-agent) and insert it into the main queue.
 
 	job() {}
 	job(const uint&& _target, const real&& _time, const action&& _action) : target(_target), time(_time), a(_action) {}
@@ -29,7 +68,7 @@ struct job {
 	job(const uint&& _target, const real&& _time, const action&& _action, const uint&& _infective, const uint&& _snapshot_S, const uint&& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 	job(const uint& _target, const real& _time, const action&& _action, const uint& _infective, const uint& _snapshot_S, const uint& _snapshot_I) : target(_target), time(_time), a(_action), infective(_infective), validity_S(_snapshot_S), validity_I(_snapshot_I) {}
 
-	job(const job& other) { *this = other; }						// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
+	job(const job& other) { *this = other; }							// ----> Copy Contructor. Jobs will be handled by an STL vector (via priority-queue). It thus requires a copy contructor to be explicitly defined. 
 
 };
 struct earlier {
@@ -38,38 +77,34 @@ struct earlier {
 	}
 };
 
-std::vector<std::priority_queue<job, std::vector<job>, earlier>> agJob(NUM_AGENTS);
+std::vector<std::priority_queue<job, std::vector<job>, earlier>> myEvents;
 std::priority_queue<job, std::vector<job>, earlier> schedule;
 
 
 //Simulation variables:
-uint saTotal;														// ----> Up-to-date number of SUSCEPTIBLE AGENTS during the simulation.
-uint iaTotal;														// ----> Up-to-date number of INFECTED AGENTS during the simulation.
-uint ilTotal = 0;													// ----> Up-to-date number of INFECTED SITES during the simulation.
+uint saTotal;															// ----> Up-to-date number of SUSCEPTIBLE AGENTS during the simulation.
+uint iaTotal;															// ----> Up-to-date number of INFECTED AGENTS during the simulation.
+uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
-std::vector<real> totalSimTime(ROUNDS, 0);							// ----> Total simulation time at each round, to average upon.
+std::vector<real> totalSimTime;											// ----> Total simulation time at each round, to average upon.
 
 //Agent control variables
 using std::vector; using graph::node;
-vector<real> exposure		(NUM_AGENTS);							// ----> The total time interval a susceptible agent remained exposed to infected individuals at a given node. Susceptible agents have this value "zeroed" every time they enter a new node.
-vector<uint> snapshot_a		(NUM_AGENTS,0);							// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
-vector<uint> snapshot_l		(N, 0);									// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
-vector<real> iniExposureTime(NUM_AGENTS);							// ----> The moment a new exposition cicle starts for a susceptible agent at its current node.
-vector<node> currentNode	(NUM_AGENTS);							// ----> Keeps track of the node an agent is currently located.
-vector<uint> indexWithinNode(NUM_AGENTS);							// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
-vector<bool> isInfectedAg	(NUM_AGENTS);							// ----> Keeps track of each agent's current state.
-vector<bool> isInfectedSite (N, false);								// ----> Keeps track of each site's current state.
+vector<uint> snapshot_a		;											// ----> A counter assigned to each AGENT and incremented every time the agent walks. Its main purpose is to control whether or not an infection event should be applied: when the infection event is processed, even if the agent comes to be currently located in the node at which the event relates, we must ensure that it is not the case that between the event creation and its processing the agent went somewhere else and then came back to said node. We do this by checking the event's snapshot against the agent's. These must be the same for the infection to take place.
+vector<uint> snapshot_l		;											// ----> A counter assigned to each LOCATION (NODE). Its purpose is the same of 'snapshot_a'.
+vector<node> currentNode	;											// ----> Keeps track of the node an agent is currently located.
+vector<uint> indexWithinNode;											// ----> By storing the agent's index in the list of its current node, we are able to always find any agent in O(1). **This is critical for the overall performance**
+vector<bool> isInfectedAg	;											// ----> Keeps track of each agent's current state.
+vector<bool> isInfectedSite ;											// ----> Keeps track of each site's current state.
 #ifdef QUIET_INFECTION
-vector<bool> quiet			(NUM_AGENTS, false);					// ----> Once an S-ag a is infected within the node v, this control variable governs whether a is allowed to further infect other S-agents inside v even before moving to somewhere else first. If set to 'false', then a will only become a propagator once it moves to another node first.
+vector<bool> quiet			(NUM_AGENTS, false);						// ----> Once an S-ag a is infected within the node v, this control variable governs whether a is allowed to further infect other S-agents inside v even before moving to somewhere else first. If set to 'false', then a will only become a propagator once it moves to another node first.
 #endif
 //Node control variables
-vector<agent> sInNode;												// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
-vector<agent> iInNode;												// ----> Keeps track, for each node v, of how many infected agents are in v at time t.
-vector<vector<agent>> sAgents;										// ----> Up-to-date list of susceptible agents within each node v.
-vector<vector<agent>> iAgents;										// ----> Up-to-date list of infected agents within each node v.
-#ifdef CLIQUE
-uint _neighbor;
-#endif
+vector<agent> sInNode;													// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
+vector<agent> iInNode;													// ----> Keeps track, for each node v, of how many infected agents are in v at time t.
+vector<vector<agent>> sAgents;											// ----> Up-to-date list of susceptible agents within each node v.
+vector<vector<agent>> iAgents;											// ----> Up-to-date list of infected agents within each node v.
+
 
 // * GLOBAL UNIFORM(0,1) RANDOM-NUMBER GENERATOR * 
 std::random_device rd;
@@ -77,24 +112,17 @@ std::mt19937_64 generator(rd());										// ----> "mt" = "Mersenne Twister".
 std::uniform_real_distribution<real> distribution(0, 1);
 inline static real U() { return distribution(generator); }
 
-//std::string baseName;
-//real Sim::beta_a;														// ----> Force of infection from an I-agent to an S-agent
-//real Sim::beta_al;														// ----> Force of infection from an I-agent to a site
-//real Sim::beta_la;														// ----> Force of infection from a site to an I-agent
 
 /* PROTOTYPES */
-//Returns a random value uniformly drawn from the interval [0, openRange), i.e. a number between 0 and 'openRange - 1' (for ex., "randomInt(6)" will return an integer between 0 and 5). This is particularly useful when determining an agent's "next stop" during its random walk. In this case, "randomInt(<v's degree>)" provides a neighbor's index each time an agent walks out some node v.
+//Returns a random value uniformly drawn from the interval [0, openRange), i.e. a number between 0 and 'openRange - 1' (for ex., "randomInt(6)" returns an integer between 0 and 5). Likewise, for some node v, "randomInt(<v's degree>)" uniformly chooses an agent's next-hop up from v's neighbors.
 static const uint randomInt(const uint& openRange);
-//Exponential random-number generator.
+//Exponential random-number generators.
 static const real EXP(const real& param);
-//Exponential random-number generator based on the transmissibility parameter.
 static const real EXPTau_aa();
 static const real EXPTau_al();
 static const real EXPTau_la();
-//Exponential random-number generator that sets the moment an infected agent will recover.
 static const real EXPGamma_a();
 static const real EXPGamma_l();
-//Exponential random-number generator that sets the next moment an agent walks.
 static const real EXPLambda();
 void resetVariables();
 void readParams();
@@ -116,8 +144,7 @@ void leaveNodeAsInf (const agent& ag, const node& v, const real& now);
 const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, real& _time);
-void setBeta2ndMmt();
-//void getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai);
+void setEnvironment();
 #ifndef CLIQUE
 const node& randomLCCNode();
 #endif
@@ -130,9 +157,9 @@ int main() {
 	sim::Reporter::startChronometer();
 #ifndef CLIQUE
 	graph::Graph::readGraph(SOURCE_FILE);
-	graph::Graph::set2ndMoment();
+	graph::Graph::setBlockData();
 #endif
-	sim::setBeta2ndMmt();
+	sim::setEnvironment();
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
 	sim::Reporter::logTimestamp("End of simulation.");
@@ -150,16 +177,52 @@ static const real sim::EXPGamma_a()	{ return NEG_RECIPR_GAMMA_a	* log(U()); }
 static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 
-void sim::setBeta2ndMmt() {
-#ifndef CLIQUE
-	beta_a = (double)(LAMBDA * SIGMA_aa * graph::Graph::psi) / graph::Graph::averageDegree;
-	beta_al = (LAMBDA * NUM_AGENTS *  SIGMA_al)/N;
-	beta_la = (LAMBDA * graph::Graph::_2ndMmt * N * SIGMA_la) / (N * pow(graph::Graph::averageDegree, 2));
-#endif
-	//Normalization
-	//nT = TAU_aa;
-	//nL = LAMBDA;
-	//nG = GAMMA_a;
+void sim::setEnvironment() {
+	T					= 4;											// ----> Simulation time.
+	NUM_AGENTS			= 15000;										// ----> Total number of agents in a simulation.
+	STARTING_NUM_AG		= 1000000;
+	GRAN_NUM_AG			= 1;
+	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
+	TAU_aa				= 1.0;										// ----> Agent-to-agent transmissibility rate.
+	GAMMA_a				= 60.0;										// ----> Recovery rate. 
+	LAMBDA				= 1.0;											// ----> Walking speed. 
+	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
+	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
+	ABS_INFECTED		= 0;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+	//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
+	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
+	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
+	
+	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
+	LIST_INI_SZ			= (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3.0 * N))));
+	
+	I_0					= (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
+	i_0					= (real)I_0 / NUM_AGENTS;
+	meetingRate			= 2.0 * LAMBDA / N;
+	SIGMA_aa			= (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+	SIGMA_al			= (TAU_al / (LAMBDA + TAU_al));
+	SIGMA_la			= (TAU_la / (LAMBDA + TAU_la));
+	NEG_RECIPR_LAMBDA	= -(1.0 / LAMBDA);	
+	NEG_RECIPR_GAMMA_a	= -(1.0 / GAMMA_a);	
+	NEG_RECIPR_GAMMA_l	= -(1.0 / GAMMA_l);	
+	NEG_RECIPR_TAU_aa	= -(1.0 / TAU_aa);	
+	NEG_RECIPR_TAU_al	= -(1.0 / TAU_al);	
+	NEG_RECIPR_TAU_la	= -(1.0 / TAU_la);	
+	ELEMS				= 0;													// ----> Zero here means "the first position of the container". Both 'sAgents' and 'iAgents' lists store their current number of elements in their respective first positions. 
+	TIME_ZERO			= 0;
+	K					= NUM_AGENTS;
+
+	totalSimTime	.resize(ROUNDS, 0);
+	snapshot_a		.resize(NUM_AGENTS, 0);
+	snapshot_l		.resize(N, 0);
+	currentNode		.resize(NUM_AGENTS);
+	indexWithinNode	.resize(NUM_AGENTS);
+	isInfectedAg	.resize(NUM_AGENTS);
+	isInfectedSite	.resize(N, false);
+	myEvents		.resize(NUM_AGENTS);
+
+#ifdef SOLVE_NUMERICALLY
+	// * NORMALIZATION *
 	if (TAU_aa <= LAMBDA) {
 		nT = 1.0;
 		nL = LAMBDA / TAU_aa;
@@ -170,498 +233,13 @@ void sim::setBeta2ndMmt() {
 		nT = TAU_aa / LAMBDA;
 		nG = GAMMA_a / LAMBDA;
 	}
-}
 
-//void sim::getSigma_a(const double& Ia, double& sigma_as, double& sigma_ai) {
-//	sigma_as = 0;
-//	sigma_ai = 0;
-//	for (uint b = 1; b < graph::Graph::block_prob.size(); ++b) {
-//		if (graph::Graph::kb[b] == 0)
-//			continue;
-//		const double expNumAg = graph::Graph::kb[b];
-//		const double expNumInfAg = expNumAg * Ia;			// ----> Talvez seja errado fazer dessa forma...
-//		const double minInfAg = std::min(1.0, expNumInfAg);	// ----> REVER! Talvesz o mínimo unitário faça mais sentido (fora que evita erros de número muito pequeno em cenários extremamente esparsos, onde esse número seria mt próx de zero).
-//		const double expNumSusAg = expNumAg * (1.0 - Ia);
-//		constexpr double euler = 0.5772156649;
-//		const double digamma_i = log(expNumInfAg) - 1.0 / (2 * expNumInfAg);
-//		const double digamma_s = log(expNumSusAg) - 1.0 / (2 * expNumSusAg);
-//		const double H_i = std::max(1.0, euler + digamma_i);
-//		const double H_s = std::max(1.0, euler + digamma_s);
-//		const double prob_NoAcq = (H_i * LAMBDA + H_i * GAMMA_a + LAMBDA) / (H_i * LAMBDA + LAMBDA + H_i * GAMMA_a + expNumInfAg * TAU_aa);
-//		const double prob_acq = (std::max(expNumInfAg, 1.0) * TAU_aa) / ((1.0 + H_i) * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
-//		const double prob_inf = (TAU_aa) / (2 * LAMBDA + std::max(expNumInfAg, 1.0) * TAU_aa);
-//		const double prob_NoTransmission = (H_s * LAMBDA + LAMBDA + GAMMA_a) / (H_s * LAMBDA + LAMBDA + GAMMA_a + TAU_aa);
-//		sigma_as += prob_acq * graph::Graph::block_prob[b];
-//		sigma_ai += prob_inf * graph::Graph::block_prob[b];
-//	}
-//
-//}
-
-#ifdef SOLVE_NUMERICALLY
-
-
-
-#ifdef CLIQUE
-real sim::diabdt(const real& Ia, const real& Sa) {
-	const double pb = 1.0;
-	const double nb = graph::Graph::n;
-	const double qb = 1.0;
-	const double ibnb = Ia/nb;
-	const double sbnb = Sa/nb;
-	const double kbnb = ibnb + sbnb;
-	//const double Sa = (double)NUM_AGENTS - Ia;
-
-	//RONALD (BEST SO FAR):
-	if (Sa == 0.0)
-		return - (GAMMA_a * Ia);
-
-	//long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
-	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
-	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
-	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
-	long double H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0 * nT))) + 1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
-	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
-	return 
-		Ia * sbnb * prob_inf * nT 
-		- (nG * Ia);
-}
-
-real sim::dsabdt(const real& Ia, const real& Sa) {
-	const double pb = 1.0;
-	const double nb = graph::Graph::n;
-	const double qb = 1.0;
-	const double ibnb = Ia / nb;
-	const double sbnb = Sa / nb;
-	const double kbnb = ibnb + sbnb;
-	//const double Sa = (double)NUM_AGENTS - Ia;
-
-	//BEST SO FAR:
-	if (Sa == 0.0) {
-		return 
-			GAMMA_a * Ia;
-	}
-	//long double H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
-	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
-	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
-	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
-	long double H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0 * nT))) + 1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
-	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
-	return 
-		- Ia * sbnb * prob_inf * nT
-		+ (nG * Ia);
-}
-
-void sim::step(const real& h, real& Ia, real& Sa) {
-	constexpr real one_sixth = 1.0 / 6.0;
-	vector<real> k1(2, 0), k2(2, 0), k3(2, 0), k4(2, 0);
-
-	lookAhead(h, Ia, Sa, k1);
-	lookAhead(h, Ia, Sa, k2, k1, 0.5);
-	lookAhead(h, Ia, Sa, k3, k2, 0.5);
-	lookAhead(h, Ia, Sa, k4, k3);
-
-	//Take step:
-	Ia += one_sixth * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
-	Sa += one_sixth * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
-}
-
-void sim::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target) {
-	target[0] = h * diabdt(Ia, Sa);
-	target[1] = h * dsabdt(Ia, Sa);
-}
-
-void sim::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
-	target[0] = h * diabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
-	target[1] = h * dsabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
-}
-
-void sim::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
-	uint totalSteps = (uint)((t - t0) / h) + 1;
-	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
-
-	saveToFile_diadt[0] = Ia / NUM_AGENTS;
-	bool end = false;
-	++outputSize;
-
-	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
-	for (uint s = 1; s < largerDetailUntil; ++s) {
-		real prevIA = Ia;
-		step(h, Ia, Sa);
-		if (Ia < epsilon) {
-			saveToFile_diadt[outputSize] = 0;
-			end = true;
-			++outputSize;
-			break;
-		}
-		if (Ia == prevIA) {
-			while (s < largerDetailUntil) {
-				saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-				++s;
-				++outputSize;
-			}
-			end = true;
-			break;
-		}
-		saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-		++outputSize;
-	}
-	if (end) return;
-
-	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
-	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		real prevIA = Ia;
-		step(h, Ia, Sa);
-		if (Ia < epsilon) {
-			saveToFile_diadt[outputSize] = 0;
-			++outputSize;
-			break;
-		}
-		if (Ia == prevIA) {
-			while (s < totalSteps) {
-				if (s % outputGranularity == 0) {
-					saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-					++outputSize;
-				}
-				++s;
-			}
-			break;
-		}
-		if (s % outputGranularity == 0) {
-			saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-			++outputSize;
-		}
-	}
-}
-
-#else //CLIQUE
-#ifdef PER_BLOCK
-real sim::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b];
-	const double ibnb = Iab / nb;
-	const double sbnb = Sab / nb;
-	const double kbnb = ibnb + sbnb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double l = ((double)b - 1) / ((double)b);
-
-	//RONALD (BEST SO FAR):
-	if (Sab == 0.0) {
-		return Ia * LAMBDA * qb - Iab * LAMBDA
-			- (GAMMA_a * Iab);
-	}
-
-	long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
-	return Ia * nL * qb - Iab * nL
-		+ Iab * sbnb * prob_inf * nT
-		- (nG * Iab);
-}
-
-real sim::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b];
-	const double ibnb = Iab / nb;
-	const double sbnb = Sab / nb;
-	const double kbnb = ibnb + sbnb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double l = ((double)b - 1) / ((double)b);
-
-	//DON 2:
-	//return nb * (
-	//	(LAMBDA/nb) * (Sa * qb - Sab) 
-	//	- LAMBDA * sbnb * ibnb * prob_inf
-	//	- LAMBDA * sbnb * ibnb * prob_acq
-	//	+ GAMMA_a * ibnb
-	//	);
-
-	//Ronald (sparse):
-	//return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-	//	- 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
-	//	+ (GAMMA_a * Iab);
-
-	////RONALD (excelente quando LAMBDA == TAU, mesmo em cenários densos):
-	//const double C = TAU_aa - LAMBDA + 1.0;
-	//C -= TAU_aa / ((2.0 * LAMBDA) / TAU_aa);
-	//const double prob_inf = TAU_aa / (2 * LAMBDA + std::max(ibnb, 1.0) * TAU_aa);
-	//const double prob_inf_2nd = TAU_aa / (2 * LAMBDA + ((Iab + Sab) / nb) * TAU_aa);
-	//double C = (LAMBDA/TAU_aa);
-	//const double prob_inf = 1.0 / ((1.0 + std::min(sbnb, 1.0)) + std::max(ibnb, 1.0));
-	//double prob_inf_2nd = 1.0 / (2.0 + ((Iab + Sab) / nb));
-	//prob_inf_2nd *= std::max(0.0, sbnb - ibnb) * prob_inf;
-	//prob_inf_2nd *= (Ia > Sa) ? 1.0 : -1.0;
-	//const double prob_acq = ibnb * prob_inf + (1.0 - (ibnb * prob_inf)) * prob_inf_2nd * (std::max(0.0, sbnb) * prob_inf);
-	//if (ibnb < 1.0 || sbnb < 1.0) {
-	//	return (Sa - Sab) * LAMBDA * qb - Sab * LAMBDA * (1.0 - qb)
-	//		- 2 * ((Sab * Iab) / nb) * LAMBDA * SIGMA_aa
-	//		+ (GAMMA_a * Iab);
-	//}
-
-	//RONALD CANDIDATO
-	//const double lt = (LAMBDA > TAU_aa) ? 0.0 : 1.0;	// ----> lt is a flag for "LAMBDA larger than TAU".
-	//const double prob_inf = 1.0 / (1.0 + lt + ibnb);
-	////const double prob_inf = 1.0 / (2.0 + ibnb);
-	//const double prob_acq = (ibnb * prob_inf);
-	//const double s_ag = (LAMBDA > TAU_aa) ? sbnb : std::min(ibnb, sbnb);
-	//return 
-	//	Sa * LAMBDA * qb - Sab * LAMBDA 
-	//	- Iab * s_ag * prob_inf * TAU_aa
-	//	- Sab * ibnb * prob_acq * TAU_aa
-	//	+ (GAMMA_a * Iab);
-
-
-	//BEST SO FAR:
-	if (Sab == 0.0) {
-		return Sa * LAMBDA * qb - Sab * LAMBDA
-			+ (GAMMA_a * Iab);
-	}
-	//const double s_ag = (LAMBDA > TAU_aa) ? sbnb : std::min(ibnb, sbnb);
-	long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
-	long double ii = ibnb + 1.0;
-	const double prob_inf = ii / (H + ii);
-	return Sa * nL * qb - Sab * nL
-		- Iab * sbnb * prob_inf * nT
-		+ (nG * Iab);
-
-	//DON : Good for dense scenarios or large walk rate
-	//if (kb == 0.0)
-	//	return Sa * LAMBDA * qb - Sab * LAMBDA;
-	//return 
-	//	Sa * LAMBDA * qb - Sab * LAMBDA
-	//	- Iab * sbnb * TAU_aa
-	//	+ (GAMMA_a * Iab);
-}
-
-void sim::step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {
-	constexpr real one_sixth = 1.0 / 6.0;
-	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	vector<real> k1(2 * blocks, 0), k2(2 * blocks, 0), k3(2 * blocks, 0), k4(2 * blocks, 0);
-
-	lookAhead(h, Ia, v_Iab, v_Sab, k1);
-	lookAhead(h, Ia, v_Iab, v_Sab, k2, k1, 0.5);
-	lookAhead(h, Ia, v_Iab, v_Sab, k3, k2, 0.5);
-	lookAhead(h, Ia, v_Iab, v_Sab, k4, k3);
-
-	//Take step:
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-		if (graph::Graph::block_prob[b] == 0)
-			continue;
-
-		v_Iab[b] += one_sixth * (k1[2 * b] + 2 * k2[2 * b] + 2 * k3[2 * b] + k4[2 * b]);
-		v_Sab[b] += one_sixth * (k1[2 * b + 1] + 2 * k2[2 * b + 1] + 2 * k3[2 * b + 1] + k4[2 * b + 1]);
-	}
-}
-
-void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target) {
-	update_Ia(Ia, v_Iab);
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-		if (graph::Graph::block_prob[b] == 0)
-			continue;
-
-		target[2 * b] = h * diabdt(Ia, v_Iab[b], v_Sab[b], b);
-		target[2 * b + 1] = h * dsabdt(Ia, v_Iab[b], v_Sab[b], b);
-	}
-}
-
-void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
-	update_Ia(Ia, v_Iab, base, fraction);
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-		if (graph::Graph::block_prob[b] == 0)
-			continue;
-
-		target[2 * b] = h * diabdt(Ia, v_Iab[b] + fraction * base[2 * b], v_Sab[b] + fraction * base[2 * b + 1], b);
-		target[2 * b + 1] = h * dsabdt(Ia, v_Iab[b] + fraction * base[2 * b], v_Sab[b] + fraction * base[2 * b + 1], b);
-	}
-}
-
-void sim::update_Ia(real& Ia, const std::vector<real>& v_Iab) {
-	Ia = 0;
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
-		Ia += v_Iab[b];
-}
-
-void sim::update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& base, const double& fraction) {
-	Ia = 0;
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
-		Ia += v_Iab[b] + (fraction * base[2 * b]);
-}
-#else //PER_BLOCK
-real sim::divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b];
-	const double qbnb = qb / nb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	return ((Ia - Iv) * LAMBDA * qbnb - Iv * LAMBDA * (1.0 - qbnb))
-		+ (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
-		+ (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
-		- (GAMMA_a * Iv);
-}
-real sim::dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b]; const double qbnb = qb / nb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	return ((Sa - Sv) * LAMBDA * qbnb - Sv * LAMBDA * (1.0 - qbnb))
-		- (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
-		- (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
-		+ (GAMMA_a * Iv);
-}
-void sim::step(const real& h, real& Ia, std::vector<real>& v_Iv, std::vector<real>& v_Sv) {
-	constexpr real one_sixth = 1.0 / 6.0;
-	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	vector<real> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
-
-	lookAhead(h, Ia, v_Iv, v_Sv, k1);
-	lookAhead(h, Ia, v_Iv, v_Sv, k2, k1, 0.5);
-	lookAhead(h, Ia, v_Iv, v_Sv, k3, k2, 0.5);
-	lookAhead(h, Ia, v_Iv, v_Sv, k4, k3);
-
-	//Take step:
-	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
-		//if (graph::Graph::block_prob[b] == 0)
-		//	continue;
-
-		v_Iv[v] += one_sixth * (k1[2 * v] + 2 * k2[2 * v] + 2 * k3[2 * v] + k4[2 * v]);
-		v_Sv[v] += one_sixth * (k1[2 * v + 1] + 2 * k2[2 * v + 1] + 2 * k3[2 * v + 1] + k4[2 * v + 1]);
-	}
-}
-void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target) {
-	update_Ia(Ia, v_Iv);
-	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
-		target[2 * v] = h * divbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
-		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
-	}
-}
-void sim::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
-	update_Ia(Ia, v_Iv, base, fraction);
-	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
-		target[2 * v] = h * divbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
-		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
-	}
-}
-void sim::update_Ia(real& Ia, const std::vector<real>& v_Iv) {
-	Ia = 0;
-	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
-		Ia += v_Iv[v];
-}
-void sim::update_Ia(real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& base, const double& fraction) {
-	Ia = 0;
-	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
-		Ia += v_Iv[v] + (fraction * base[2 * v]);
-}
-#endif //PER_BLOCK
-
-real sim::dilbdt(const real& Ia, const real& il, const real& Iab, const real& ilb, const uint& b) {
-	return 0;
-}
-
-void sim::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, vector<real>& saveToFile_diadt, vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
-	uint totalSteps = (uint)((t - t0) / h) + 1;
-	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
-	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
-
-	double Ia = 0;
-	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
-		Ia += v_Iab[b];
-	real il = 0.0;
-
-	saveToFile_diadt[0] = Ia / NUM_AGENTS;
-	saveToFile_dildt[0] = il;
-	bool end = false;
-	++outputSize;
-
-	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
-	//bool stationary = false;
-	for (uint s = 1; s < largerDetailUntil; ++s) {
-		real prevIA = Ia;
-		step(h, Ia, v_Iab, v_Sab);
-		if (Ia < epsilon) {
-			saveToFile_diadt[outputSize] = 0;
-			end = true;
-			++outputSize;
-			break;
-		}
-		if (Ia == prevIA) {
-			while (s < largerDetailUntil) {
-				saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-				++s;
-				++outputSize;
-			}
-			end = true;
-			break;
-		}
-		saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-
-#ifdef NORM_SITE_PER_AG
-		saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
-#else
-		saveToFile_dildt[s] = il;
+	Solver::setParams(nT, nL, nG, NUM_AGENTS);
+	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA);
+	//Solver::setParams(TAU_aa, LAMBDA, GAMMA_a);
 #endif
-		++outputSize;
-	}
-	if (end) return;
-
-	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
-	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		real prevIA = Ia;
-		step(h, Ia, v_Iab, v_Sab);
-		if (Ia < epsilon) {
-			saveToFile_diadt[outputSize] = 0;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
-			++outputSize;
-			break;
-		}
-		if (Ia == prevIA) {
-			while (s < totalSteps) {
-				if (s % outputGranularity == 0) {
-					saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-					++outputSize;
-				}
-				++s;
-			}
-			break;
-		}
-		if (s % outputGranularity == 0) {
-			saveToFile_diadt[outputSize] = Ia / NUM_AGENTS;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / NUM_AGENTS);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
-			++outputSize;
-		}
-	}
-}
-#endif //CLIQUE
-
-
-
-
-
-
-//real sim::diadt(const real& Ia, const real& il) {
-real sim::diadt(const real& Ia, const double& sumSbIb) {
-	//return graph::Graph::psi * TAU_aa * sumSbIb - GAMMA_a * Ia;
-	return - GAMMA_a * Ia;
-}
-real sim::dildt(const real& Ia, const real& il) {
-	return  beta_al * (1.0 - il) * Ia - GAMMA_l * il;
 }
 
-#endif //SOLVE_NUMERICALLY
 
 void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _where) {
 	currentNode[ag] = v;
@@ -694,12 +272,12 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 		real delta;
 		for (uint i = numI; i > 0; --i) {
 			delta = EXPTau_aa();
-			agJob[ag].emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]], ag);
+			myEvents[ag].emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]], ag);
 		}
 
 		//The most recent event is copied to the main queue and deleted from the agent's:
-		schedule.emplace(agJob[ag].top());
-		agJob[ag].pop();
+		schedule.emplace(myEvents[ag].top());
+		myEvents[ag].pop();
 	}
 	//if (isInfectedSite[v]) {
 	//	const real delta = EXPTau_la();
@@ -722,12 +300,12 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		real delta;
 		for (uint i = numS; i > 0; --i) {
 			delta = EXPTau_aa();
-			agJob[ag].emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag], ag);
+			myEvents[ag].emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag], ag);
 		}
 
 		//The most recent event is copied to the main queue and deleted from the agent's:
-		schedule.emplace(agJob[ag].top());
-		agJob[ag].pop();
+		schedule.emplace(myEvents[ag].top());
+		myEvents[ag].pop();
 	}
 	//if (!isInfectedSite[v]) {
 	//	const real delta = EXPTau_al();
@@ -736,14 +314,14 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 }
 void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	agJob[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
+	myEvents[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
 	check_out(ag, v, iAgents);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
-	agJob[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
+	myEvents[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
@@ -765,7 +343,7 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 	++saTotal;
 	--iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, "Ra", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	Stats::bufferizeIFrac(ag, now, "Ra", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
@@ -776,15 +354,15 @@ void sim::recoverSite	(const uint& v, const real& now) {
 	isInfectedSite[v] = false;
 	--ilTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(v, now, "Rl", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	Stats::bufferizeIFrac(v, now, "Rl", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	++snapshot_l[v];
 }
 
 void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I, const uint& streamer) {
-	if (!agJob[streamer].empty()) {
-		schedule.emplace(agJob[streamer].top());
-		agJob[streamer].pop();
+	if (!myEvents[streamer].empty()) {
+		schedule.emplace(myEvents[streamer].top());
+		myEvents[streamer].pop();
 	}
 	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective])
 		return;	// ----> Event became obsolete.
@@ -793,7 +371,7 @@ void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective,
 	--saTotal;
 	++iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
@@ -807,7 +385,7 @@ void sim::agFate_fromSite(const agent& ag, const real& now, const uint& infectiv
 	--saTotal;
 	++iaTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
@@ -820,7 +398,7 @@ void sim::siteFate(const uint& v, const real& now, const uint& infective, const 
 	isInfectedSite[v] = true;
 	++ilTotal;
 #ifdef INFECTED_FRACTION
-	stat::Stats::bufferizeIFrac(v, now, "Il", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
+	Stats::bufferizeIFrac(v, now, "Il", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
 	schedule.emplace(v, now + EXPGamma_l(), action::recoverSite); // ----> 'Recover' event is scheduled.
 	const uint& numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
@@ -873,7 +451,7 @@ void sim::resetVariables() {
 	for (node v = 0; v < Graph::n; ++v) iInNode[v] = 0;
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
-	using graph::Graph; using graph::node; using stat::Stats; 
+	using graph::Graph; using graph::node; 
 #ifdef CLIQUE
 	Graph::n = N;
 	Graph::g.resize(Graph::n);
@@ -930,11 +508,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		
 		//Initializing the applicable stats:
 #ifdef INFECTED_FRACTION
-		Stats::initStream(stat::streamType::infFrac);
+		Stats::initStream(streamType::infFrac);
 #endif
-		Stats::initStream(stat::streamType::avDuration);
+		Stats::initStream(streamType::avDuration);
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
-		Reporter::simulationInfo(iaTotal);
+		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA);
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
@@ -1021,7 +599,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			std::cout << std::fixed;
 			std::cout << std::setprecision(1);
 			std::cout << "\r0% complete...";
-#ifdef ONLY_NUMERIC
+#ifdef BYPASS_SIMULATION
 			while (false) {
 #else
 			while (now < timeLimit) {
@@ -1067,13 +645,13 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef INFECTED_FRACTION
 			Reporter::startChronometer(" Saving To File...");	
 			Stats::iFracToFile(OVERLOOK);
-			Stats::endStream(stat::streamType::infFrac);
+			Stats::endStream(streamType::infFrac);
 			Reporter::stopChronometer(" done");
 #endif
 		} // ** for (uint round = 0; round < ROUNDS; ++round)
 
-		Stats::writeToFile(stat::streamType::avDuration, Ws, Wi, _numAgents);
-		Stats::endStream  (stat::streamType::avDuration);
+		Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
+		Stats::endStream  (streamType::avDuration);
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell(" All rounds completed.\n");
 #endif
@@ -1086,7 +664,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.00001;
+	constexpr real stepSize = 0.000001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;
@@ -1097,8 +675,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	name << SHORT_LABEL 
 		<< "_N"		<< N 
 		<< "_AG"	<< NUM_AGENTS 
-		<< "_T"	<< TAU_aa 
-		<< "_G"	<< GAMMA_a 
+		<< "_T"		<< TAU_aa 
+		<< "_G"		<< GAMMA_a 
 		<< "_L"		<< LAMBDA 
 		<< "_STime" << T 
 		<< "_R"		<< ROUNDS;
@@ -1109,15 +687,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 #ifdef CLIQUE
 #ifdef PER_BLOCK
-	rungeKutta4thOrder(0, Ia, Sa, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Solver::rungeKutta4thOrder(0, Ia, Sa, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #else
-	rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #endif
 #else //CLIQUE
 #ifdef PER_BLOCK
-	rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #else
-	rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #endif
 #endif //CLIQUE
 	//Saving to file:

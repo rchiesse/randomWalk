@@ -61,7 +61,7 @@ public:
 	static real psi;
 	static vector<real> block_prob;
 	//static real avSelfLoop;
-	static void set2ndMoment();
+	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
 #ifdef PROTECTION_FX

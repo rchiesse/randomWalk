@@ -26,6 +26,11 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	const double b = N;
 	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
 	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
+	const double K = Ia + Sa;
+	const double p = b / (2.0 * graph::Graph::m - N);
+	const double E_X = K * p;
+	const double E_X2 = K*K * p*p;
+	const double Var_X = E_X * (1.0 - p);
 	//const double Sa = (double)NUM_AGENTS - Ia;
 
 	//RONALD (BEST SO FAR):
@@ -44,13 +49,22 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0 * nL));
 	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0 * nL));
 	const double infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
+	const double sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	const double ve = Var_X / E_X;
+	const double ev = E_X / Var_X;
+	//const double dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
+	const double dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
 	return
+		//POR NÓ:
 		nb * (
 			(Ia - ibnb) * nL / (nb - 1.0)
 			- ibnb * nL
-			+ ibnb * sbnb * nT
+			+ ibnb * pow(dimm, 2) * sbnb * nT
 			- (nG * ibnb)
 		);
+
+		//EQUIVALENTE MASTER:
+		//((nL * nT * Sa * Ia) / (N)) - nG * Ia;
 }
 
 real Solver::dsabdt(const real& Ia, const real& Sa) {
@@ -63,8 +77,12 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	const double b = N;
 	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
 	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
+	const double K = Ia + Sa;
+	const double p = b / (2.0 * graph::Graph::m - N);
+	const double E_X = K * p;
+	const double E_X2 = K * K * p * p;
+	const double Var_X = E_X * (1.0 - p);
 	//const double Sa = (double)NUM_AGENTS - Ia;
-
 	//BEST SO FAR:
 	if (Sa == 0.0) {
 		return
@@ -81,15 +99,25 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0*nL));
 	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0*nL));
 	const double infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
+	const double sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	const double ve = Var_X / E_X;
+	const double ev = E_X / Var_X;
+	const double rel = (E_X * E_X) / E_X2;
+	//const double dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
+	const double dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
 	return
+		//POR NÓ:
 		//-Ia * sbnb * prob_inf * nT
 		nb * (
 			(Sa - sbnb) * nL / (nb - 1.0)
 			- sbnb * nL 
-			- ibnb * sbnb * nT
+			- ibnb * pow(dimm, 2) * sbnb * nT
 			+ (nG * ibnb)
 		);
+
+		//EQUIVALENTE MASTER:
+		//-((nL * nT * Sa * Ia) / (N)) + nG * Ia;
 }
 
 void Solver::step(const real& h, real& Ia, real& Sa) {

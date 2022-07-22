@@ -178,13 +178,13 @@ static const real sim::EXPGamma_l()	{ return NEG_RECIPR_GAMMA_l	* log(U()); }
 static const real sim::EXPLambda()	{ return NEG_RECIPR_LAMBDA	* log(U()); }
 
 void sim::setEnvironment() {
-	T					= 1.0;											// ----> Simulation time.
-	NUM_AGENTS			= 15000;										// ----> Total number of agents in a simulation.
+	T					= 0.02;											// ----> Simulation time.
+	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
 	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
-	TAU_aa				= 3.0;										// ----> Agent-to-agent transmissibility rate.
-	GAMMA_a				= 140.0;										// ----> Recovery rate. 
+	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
+	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
@@ -193,6 +193,21 @@ void sim::setEnvironment() {
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
 	
+	////Pre-built scenarios:
+	//// CL N100:
+	//T = 0.02; NUM_AGENTS = 20000; TAU_aa = 100.0; GAMMA_a = 15000.0; LAMBDA = 1.0;
+	
+	//// CL N4:
+	//T = 3; NUM_AGENTS = 800; TAU_aa = 10.0; GAMMA_a = 1500.0; LAMBDA = 1.0;
+
+	//// CL N200:
+	//T = 2; NUM_AGENTS = 15000; TAU_aa = 10.0; GAMMA_a = 500.0; LAMBDA = 1.0;
+
+	//// CL N200: (CASO 2)
+	T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0;
+
+
+	//Other parameters:
 	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
 	LIST_INI_SZ			= (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3.0 * N))));
 	
@@ -664,7 +679,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.00001;
+	constexpr real stepSize = 0.000001;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

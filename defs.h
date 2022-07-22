@@ -192,7 +192,7 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 
 // * NUMERICAL SOLUTION *
 #define SOLVE_NUMERICALLY
-//#define BYPASS_SIMULATION
+#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 } //namespace sim

@@ -122,7 +122,7 @@ namespace sim {
 
 		//Average Duration (AD) partials. It simply assigns the informed 'duration' to the 'averageDuration' accumulator. The actual average is later computed by calling 'avDuration()', which divides the sum by the total number of ROUNDS.
 		static void partialsAvDur(const real& duration);
-		static const double& avDuration();
+		static const real& avDuration();
 		static void resetAvDur();
 
 #ifdef ESTIMATE_PROBS

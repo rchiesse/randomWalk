@@ -28,7 +28,7 @@ namespace sim {
 #define uint uint32_t
 #define ulong uint64_t
 #define ushort uint16_t
-#define real double
+#define real long double
 //#define real float
 typedef uint32_t agent;
 namespace graph {
@@ -66,7 +66,7 @@ static constexpr uint N = 12008;
 #endif
 
 #ifdef CLIQUE
-static constexpr uint N = 200;										// ----> Network size
+static constexpr uint N = 10;										// ----> Network size
 #define NWTK_LABEL "Clique"
 #define SHORT_LABEL "CL"
 #endif
@@ -192,7 +192,7 @@ static constexpr real _r  = 1000.0;		// Rejection force.
 
 // * NUMERICAL SOLUTION *
 #define SOLVE_NUMERICALLY
-#define BYPASS_SIMULATION
+//#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 } //namespace sim

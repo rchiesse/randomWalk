@@ -17,20 +17,20 @@ void Solver::setParams(const real& tau, const real& lambda, const real& gamma, c
 
 #ifdef CLIQUE
 real Solver::diabdt(const real& Ia, const real& Sa) {
-	const double pb = 1.0;
-	const double nb = graph::Graph::n;
-	const double qb = 1.0;
-	const double ibnb = Ia / nb;
-	const double sbnb = Sa / nb;
-	const double kbnb = ibnb + sbnb;
-	const double b = N;
-	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
-	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
-	const double K = Ia + Sa;
-	const double p = b / (2.0 * graph::Graph::m - N);
-	const double E_X = K * p;
-	const double E_X2 = K*K * p*p;
-	const double Var_X = E_X * (1.0 - p);
+	const real pb = 1.0;
+	const real nb = graph::Graph::n;
+	const real qb = 1.0;
+	const real ibnb = Ia / nb;
+	const real sbnb = Sa / nb;
+	const real kbnb = ibnb + sbnb;
+	const real b = N;
+	const real pIn  = (b - 1) / (2.0 * graph::Graph::m);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
+	const real pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
+	const real K = Ia + Sa;
+	const real p = b / (2.0 * graph::Graph::m - N);
+	const real E_X = K * p;
+	const real E_X2 = K*K * p*p;
+	const real Var_X = E_X * (1.0 - p);
 	//const double Sa = (double)NUM_AGENTS - Ia;
 
 	//RONALD (BEST SO FAR):
@@ -46,20 +46,23 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//long double ii = ibnb + 1.0;
 	//const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
-	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0 * nL));
-	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0 * nL));
-	const double infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
-	const double sigma = (ibnb * nT) / (nL + (ibnb * nT));
-	const double ve = Var_X / E_X;
-	const double ev = E_X / Var_X;
-	//const double dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
-	const double dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
+	real Hs = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0 * nL));
+	real Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0 * nL));
+	const real infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
+	const real sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	const real ve = Var_X / E_X;
+	const real ev = E_X / Var_X;
+	//const real dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
+	const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
 	return
 		//POR NÓ:
 		nb * (
-			(Ia - ibnb) * nL / (nb - 1.0)
-			- ibnb * nL
-			+ ibnb * pow(dimm, 2) * sbnb * nT
+			//(Ia - ibnb) * nL / (nb - 1.0)
+			//- ibnb * nL
+			// Equivalentes:
+			(Ia - ibnb) * nL / nb
+			- ibnb * nL * (b-1)/b
+			+ ((ibnb * sbnb) - 2.0*Var_X) * nT
 			- (nG * ibnb)
 		);
 
@@ -68,51 +71,56 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 }
 
 real Solver::dsabdt(const real& Ia, const real& Sa) {
-	const double pb = 1.0;
-	const double nb = graph::Graph::n;
-	const double qb = 1.0;
-	const double ibnb = Ia / nb;
-	const double sbnb = Sa / nb;
-	const double kbnb = ibnb + sbnb;
-	const double b = N;
-	const double pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
-	const double pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
-	const double K = Ia + Sa;
-	const double p = b / (2.0 * graph::Graph::m - N);
-	const double E_X = K * p;
-	const double E_X2 = K * K * p * p;
-	const double Var_X = E_X * (1.0 - p);
-	//const double Sa = (double)NUM_AGENTS - Ia;
+	const real pb = 1.0;
+	const real nb = graph::Graph::n;
+	const real qb = 1.0;
+	const real ibnb = Ia / nb;
+	const real sbnb = Sa / nb;
+	const real kbnb = ibnb + sbnb;
+	const real b = N;
+	const real pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
+	const real pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
+	const real K = Ia + Sa;
+	const real p = b / (2.0 * graph::Graph::m - N);
+	const real E_X = K * p;
+	const real E_X2 = K * K * p * p;
+	const real Var_X = E_X * (1.0 - p);
+	//const real Sa = (double)NUM_AGENTS - Ia;
 	//BEST SO FAR:
 	if (Sa == 0.0) {
 		return
 			nG * Ia;
 	}
-	//long double H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
-	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
-	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
-	//long double H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
-	//long double H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
-	//long double H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
-	//long double ii = ibnb + 1.0;
-	//const double prob_inf = ii / (H + ii);
-	real Hs = std::max(1.0, EULER * log((sbnb)+1.0) / (2.0*nL));
-	real Hi = std::max(1.0, EULER * log((ibnb)+1.0) / (2.0*nL));
-	const double infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
-	const double sigma = (ibnb * nT) / (nL + (ibnb * nT));
-	const double ve = Var_X / E_X;
-	const double ev = E_X / Var_X;
-	const double rel = (E_X * E_X) / E_X2;
-	//const double dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
-	const double dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
-	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
+	//long real H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
+	//long real H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//long real dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
+	//long real H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
+	//long real H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
+	//long real H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
+	//long real ii = ibnb + 1.0;
+	//const real prob_inf = ii / (H + ii);
+	real Hs = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0*nL));
+	real Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0*nL));
+	const real infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
+	const real sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	const real ve = Var_X / E_X;
+	const real ev = E_X / Var_X;
+	const real rel = (E_X * E_X) / E_X2;
+	//const real dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
+	const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
+	//const real p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
 	return
 		//POR NÓ:
 		//-Ia * sbnb * prob_inf * nT
 		nb * (
-			(Sa - sbnb) * nL / (nb - 1.0)
-			- sbnb * nL 
-			- ibnb * pow(dimm, 2) * sbnb * nT
+			//(Sa - sbnb) * nL / (nb - 1.0)
+			//- sbnb * nL 
+			// 
+			// Equivalentes:
+			(Sa - sbnb) * nL / nb
+			- sbnb * nL * (b - 1) / b
+			//- ibnb * sbnb * nT * (Var_X / E_X)
+			- ((ibnb * sbnb) - 2.0*Var_X) * nT
 			+ (nG * ibnb)
 		);
 
@@ -139,7 +147,7 @@ void Solver::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& tar
 	target[1] = h * dsabdt(Ia, Sa);
 }
 
-void Solver::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
+void Solver::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target, std::vector<real>& base, const real& fraction) {
 	target[0] = h * diabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
 	target[1] = h * dsabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
 }
@@ -513,7 +521,7 @@ void Solver::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::v
 #endif //CLIQUE
 
 //real sim::diadt(const real& Ia, const real& il) {
-real Solver::diadt(const real& Ia, const double& sumSbIb) {
+real Solver::diadt(const real& Ia, const real& sumSbIb) {
 	//return graph::Graph::psi * TAU_aa * sumSbIb - GAMMA_a * Ia;
 	return -nG * Ia;
 }

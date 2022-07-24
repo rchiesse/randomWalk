@@ -200,11 +200,12 @@ void sim::setEnvironment() {
 	//// CL N4:
 	//T = 3; NUM_AGENTS = 800; TAU_aa = 10.0; GAMMA_a = 1500.0; LAMBDA = 1.0;
 
-	//// CL N200:
+	//// CL N200: 
 	//T = 2; NUM_AGENTS = 15000; TAU_aa = 10.0; GAMMA_a = 500.0; LAMBDA = 1.0;
-
-	//// CL N200: (CASO 2)
-	T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0;
+	//T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; //(CASO 2)
+	
+	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
+	T = 400.0; NUM_AGENTS = 500; TAU_aa = 1000.0; GAMMA_a = 25000.0; LAMBDA = 1.0; 
 
 
 	//Other parameters:
@@ -606,11 +607,13 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			// * MAIN LOOP *
 			bool earlyStop = false;
 			real& roundDuration = totalSimTime[round]; 
-			double timeLimit = T;
+			real timeLimit = T;
 			job j;
 			nextJob(j, now);
 			const real logInterval = 0.01 * T; // ----> Log progress to the console at one-percent increments.
 			real prevLog = 0;
+			real prevTime;
+			uint hitCount = 0;
 			std::cout << std::fixed;
 			std::cout << std::setprecision(1);
 			std::cout << "\r0% complete...";
@@ -620,6 +623,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			while (now < timeLimit) {
 #endif
 				roundDuration += (now - roundDuration);
+				prevTime = j.time;
 				switch (j.a) {
 				case action::walk:
 					walk(j.target, now);
@@ -646,12 +650,16 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					break;
 				}
 				nextJob(j, now);
+				if (prevTime == j.time) {
+					++hitCount;
+				}
 				if (now - prevLog > logInterval) {
 					prevLog = now;
 					std::cout << '\r' << std::round((now/T) * 100) << "% complete...";
 				}
 			}
-			std::cout << '\r' << "100% complete!  ";
+			std::cout << '\r' << "100% complete!    ";
+			std::cout << '\n' << "Hit Count: " << hitCount << '\n';
 			Stats::partialsAvDur(roundDuration);
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::stopChronometer((earlyStop) ? "done-IV" : "done-TL");	// ----> TL == Time Limit; IV == Infection Vanished.

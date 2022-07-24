@@ -238,9 +238,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.xlabel(\"Time\")\n" <<
 		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << t << ")\n" <<
-		"plt.ylim(0, 1)\n" <<
-		"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
-		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n";
+		"plt.ylim(0, 1)\n";
 
 	if (!numericOnly) {
 		of <<
@@ -253,6 +251,8 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	}
 
 	of <<
+		"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
+		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"#plt.xscale(\"log\")\n" <<

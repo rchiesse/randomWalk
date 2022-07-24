@@ -52,6 +52,9 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	const real sigma = (ibnb * nT) / (nL + (ibnb * nT));
 	const real ve = Var_X / E_X;
 	const real ev = E_X / Var_X;
+	const real sd = sqrt(Var_X); // ----> Standard devation.
+	const real sdi = sd * (ibnb / kbnb);
+	const real sds = sd * (sbnb / kbnb);
 	//const real dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
 	const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
 	return
@@ -62,7 +65,9 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 			// Equivalentes:
 			(Ia - ibnb) * nL / nb
 			- ibnb * nL * (b-1)/b
-			+ ((ibnb * sbnb) - 2.0*Var_X) * nT
+			//+ ibnb * sbnb * nT * (Var_X / E_X)
+			//+ ((ibnb - sdi) * (sbnb - sds) ) * nT
+			+ ibnb * sbnb * nT
 			- (nG * ibnb)
 		);
 
@@ -106,6 +111,9 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	const real ve = Var_X / E_X;
 	const real ev = E_X / Var_X;
 	const real rel = (E_X * E_X) / E_X2;
+	const real sd = sqrt(Var_X); // ----> Standard devation.
+	const real sdi = sd * (ibnb / kbnb);
+	const real sds = sd * (sbnb / kbnb);
 	//const real dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
 	const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
 	//const real p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
@@ -119,8 +127,8 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 			// Equivalentes:
 			(Sa - sbnb) * nL / nb
 			- sbnb * nL * (b - 1) / b
-			//- ibnb * sbnb * nT * (Var_X / E_X)
-			- ((ibnb * sbnb) - 2.0*Var_X) * nT
+			- ibnb * sbnb * nT
+			//- ibnb * sbnb * nT * (1.0 - sd / E_X)
 			+ (nG * ibnb)
 		);
 

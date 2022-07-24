@@ -205,7 +205,7 @@ void sim::setEnvironment() {
 	//T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; //(CASO 2)
 	
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
-	T = 400.0; NUM_AGENTS = 500; TAU_aa = 1000.0; GAMMA_a = 25000.0; LAMBDA = 1.0; 
+	T = 0.002; NUM_AGENTS = 5000; TAU_aa = 1000.0; GAMMA_a = 400000.0; LAMBDA = 1.0; 
 
 
 	//Other parameters:

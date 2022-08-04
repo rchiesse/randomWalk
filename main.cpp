@@ -155,11 +155,11 @@ const node& randomLCCNode();
 int main() {
 	sim::Reporter::logTimestamp("Simulation requested.");
 	sim::Reporter::startChronometer();
+	sim::setEnvironment();
 #ifndef CLIQUE
 	graph::Graph::readGraph(SOURCE_FILE);
 	graph::Graph::setBlockData();
 #endif
-	sim::setEnvironment();
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
 	sim::Reporter::logTimestamp("End of simulation.");
@@ -204,8 +204,12 @@ void sim::setEnvironment() {
 	//T = 2; NUM_AGENTS = 15000; TAU_aa = 10.0; GAMMA_a = 500.0; LAMBDA = 1.0;
 	//T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; //(CASO 2)
 	
+	//// CL N10: 
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
-	T = 0.002; NUM_AGENTS = 5000; TAU_aa = 1000.0; GAMMA_a = 400000.0; LAMBDA = 1.0; 
+	T = 1.0; NUM_AGENTS = 25000; TAU_aa = 1000.0; GAMMA_a = 200000.0; LAMBDA = 1.0; 
+	 
+	//G(n,p) N200:
+	//T = 30; NUM_AGENTS = 40000; TAU_aa = 3.0; GAMMA_a = 500.0; LAMBDA = 1.0; 
 
 
 	//Other parameters:
@@ -239,6 +243,9 @@ void sim::setEnvironment() {
 
 #ifdef SOLVE_NUMERICALLY
 	// * NORMALIZATION *
+	//nT = TAU_aa;
+	//nL = LAMBDA;
+	//nG = GAMMA_a;
 	if (TAU_aa <= LAMBDA) {
 		nT = 1.0;
 		nL = LAMBDA / TAU_aa;
@@ -252,8 +259,8 @@ void sim::setEnvironment() {
 
 	Solver::setParams(nT, nL, nG, NUM_AGENTS);
 	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA);
-	//Solver::setParams(TAU_aa, LAMBDA, GAMMA_a);
-#endif
+#endif //SOLVE_NUMERICALLY
+	graph::Graph::setParams(NUM_AGENTS);
 }
 
 
@@ -526,7 +533,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef INFECTED_FRACTION
 		Stats::initStream(streamType::infFrac);
 #endif
-		Stats::initStream(streamType::avDuration);
+		//Stats::initStream(streamType::avDuration);
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA);
 		for (uint round = 0; round < ROUNDS; ++round) {
@@ -587,15 +594,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef PER_BLOCK
 			//Expected number of S-/I-agents within each node from each block:
 			{
-				const double ia = (double)iaTotal / NUM_AGENTS, sa = (double)saTotal / NUM_AGENTS;
+				const real ia = (real)iaTotal / NUM_AGENTS, sa = (real)saTotal / NUM_AGENTS;
 				for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 					v_Iab[b] = ia * graph::Graph::kb[b];
 					v_Sab[b] = sa * graph::Graph::kb[b];
 				}
 #ifdef DEBUG
-				double sum = 0.0;
+				real sum = 0.0;
 				for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-					const double nb = (double)graph::Graph::n * graph::Graph::block_prob[b];
+					const real nb = (real)graph::Graph::n * graph::Graph::block_prob[b];
 					sum += nb * (ivb[b] + svb[b]);
 				}
 				assertm(abs(sum - NUM_AGENTS) < epsilon, "The computed *expected number of S-/I-agents per node* is incorrect.");
@@ -673,8 +680,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 		} // ** for (uint round = 0; round < ROUNDS; ++round)
 
-		Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
-		Stats::endStream  (streamType::avDuration);
+		//Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
+		//Stats::endStream  (streamType::avDuration);
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell(" All rounds completed.\n");
 #endif

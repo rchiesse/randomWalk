@@ -14,13 +14,11 @@
 #include <functional>	// ----> Function as an argument
 
 // * DEBUG * 
-//#define DEBUG
-#ifdef DEBUG
 namespace sim {
 	constexpr double epsilon = 1.0 / 10e7;
 }
 #define assertm(exp, msg) assert(((void)msg, exp))
-#endif 
+//#define DEBUG
 
 // ---------------------------//----------------------------- //
 
@@ -66,7 +64,7 @@ static constexpr uint N = 12008;
 #endif
 
 #ifdef CLIQUE
-static constexpr uint N = 10;										// ----> Network size
+static constexpr uint N = 100;										// ----> Network size
 #define NWTK_LABEL "Clique"
 #define SHORT_LABEL "CL"
 #endif

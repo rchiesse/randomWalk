@@ -11,6 +11,8 @@ namespace graph {
 	
 	
 class Graph {
+private:
+	static real numAgents;
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
@@ -64,6 +66,7 @@ public:
 	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
+	static void setParams(const uint& _numAgents);
 #ifdef PROTECTION_FX
 private:
 	enum class direction{raise, lower};

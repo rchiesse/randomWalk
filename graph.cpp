@@ -13,6 +13,7 @@ uint Graph::selfLoops;
 uint Graph::largestDgNode;
 uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
 real Graph::validBlocks;
+real Graph::numAgents;
 
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
@@ -262,7 +263,7 @@ void Graph::setBlockData() {
 	}
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		rho_b[b] = 1.0 - pow(1.0 - ((double)b / (2 * m)), sim::NUM_AGENTS);
+		rho_b[b] = 1.0 - pow(1.0 - ((real)b / (2 * m)), numAgents);
 	}
 	psi = 0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
@@ -288,15 +289,15 @@ void Graph::setBlockData() {
 	const double _bk_ = _2ndMmt / averageDegree;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 #ifdef AUTO_RELATION
-		q_b[b] = ((double)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
+		q_b[b] = ((real)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 #else
-		q_b[b] = ((double)b * n * block_prob[b]) / (2.0 * m);
+		q_b[b] = ((real)b * n * block_prob[b]) / (2.0 * m);
 #endif
 	}
 
 	//kb:
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		const uint& k = sim::NUM_AGENTS;
+		const uint& k = (uint)numAgents;
 		kb[b] = k * q_b[b];
 	}
 
@@ -309,17 +310,16 @@ void Graph::setBlockData() {
 	//}
 	//avSelfLoop /= n;
 	
-#ifdef DEBUG
-	double sumQB = 0, sumBP = 0, sumKB = 0.0;
+	//Validation
+	real sumQB = 0, sumBP = 0, sumKB = 0.0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		sumQB += q_b[b];
 		sumBP += block_prob[b];
 		sumKB += kb[b];
 	}
-	assertm(abs(sumQB - 1.0)			 < sim::epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
-	assertm(abs(sumBP - 1.0)			 < sim::epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");
-	assertm(abs(sumKB - sim::NUM_AGENTS) < sim::epsilon, "The sum over the expected number of agents within each block does not match the total number of agents.");
-#endif
+	assertm(abs(sumQB - 1.0)		< sim::epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
+	assertm(abs(sumBP - 1.0)		< sim::epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");
+	assertm(abs(sumKB - numAgents)	< sim::epsilon, "The sum over the expected number of agents within each block does not match the total number of agents.");
 }
 
 void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
@@ -682,7 +682,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	averageDegree = ((2.0 * m) - n) / n;	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 	++largestDegree;
 #endif //PROTECTION_FX
-	cout << "\t ---> AUTORELATION active. Self-loop added for each node. Updates:\n";
+	cout << "\n\t ---> AUTORELATION active. Self-loop added for each node. Updates:\n";
 	cout << "\t\t---> " << m << " edges.\n";
 	cout << "\t\t---> Average degree = " << averageDegree << "\n";
 	cout << "\t\t---> Largest degree = " << largestDegree;
@@ -690,3 +690,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 #endif //CLIQUE
 }
 #endif // CLIQUE
+
+void Graph::setParams(const uint& _numAgents) {
+	numAgents = _numAgents;
+}

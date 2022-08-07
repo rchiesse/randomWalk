@@ -203,13 +203,18 @@ void sim::setEnvironment() {
 	//// CL N200: 
 	//T = 2; NUM_AGENTS = 15000; TAU_aa = 10.0; GAMMA_a = 500.0; LAMBDA = 1.0;
 	//T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; //(CASO 2)
+	//T = 5.0; NUM_AGENTS = 1000; TAU_aa = 3.0; GAMMA_a = 250.0; LAMBDA = 50.0;	//EULER - BEST
+	
+	//T = 20.0; NUM_AGENTS = 100; TAU_aa = 50.0; GAMMA_a = 270.0; LAMBDA = 50.0;
+	//T = 2.0; NUM_AGENTS = 1000; TAU_aa = 50.0; GAMMA_a = 4000.0; LAMBDA = 50.0;
+	//T = 2.0; NUM_AGENTS = 2000; TAU_aa = 3.0; GAMMA_a = 545.0; LAMBDA = 11.0;
 	
 	//// CL N10: 
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
-	T = 1.0; NUM_AGENTS = 25000; TAU_aa = 1000.0; GAMMA_a = 200000.0; LAMBDA = 1.0; 
+	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
 	 
 	//G(n,p) N200:
-	//T = 30; NUM_AGENTS = 40000; TAU_aa = 3.0; GAMMA_a = 500.0; LAMBDA = 1.0; 
+	T = 20.0; NUM_AGENTS = 4000; TAU_aa = 3.0; GAMMA_a = 50.0; LAMBDA = 17.0; 
 
 
 	//Other parameters:
@@ -464,7 +469,7 @@ void sim::resetVariables() {
 	iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
 	saTotal = NUM_AGENTS - iaTotal;
 	now = 0;
-	while (!schedule.empty()) schedule.pop();	// ----> Needed from the 2nd round on.
+	schedule = {};	// ----> Needed from the 2nd round on.
 	for (agent a = 0; a < isInfectedAg.size(); ++a) isInfectedAg[a] = false;
 	snapshot_a.resize(NUM_AGENTS, 0);
 	using graph::Graph; using graph::node;
@@ -619,18 +624,18 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			nextJob(j, now);
 			const real logInterval = 0.01 * T; // ----> Log progress to the console at one-percent increments.
 			real prevLog = 0;
-			real prevTime;
-			uint hitCount = 0;
+			//real prevTime;
+			//uint hitCount = 0;
 			std::cout << std::fixed;
 			std::cout << std::setprecision(1);
-			std::cout << "\r0% complete...";
+			std::cout << '\n' << "Round " << (round + 1) << '/' << ROUNDS << ": 0% complete...     ";
 #ifdef BYPASS_SIMULATION
 			while (false) {
 #else
 			while (now < timeLimit) {
 #endif
 				roundDuration += (now - roundDuration);
-				prevTime = j.time;
+				//prevTime = j.time;
 				switch (j.a) {
 				case action::walk:
 					walk(j.target, now);
@@ -657,16 +662,16 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					break;
 				}
 				nextJob(j, now);
-				if (prevTime == j.time) {
-					++hitCount;
-				}
+				//if (prevTime == j.time) {
+				//	++hitCount;
+				//}
 				if (now - prevLog > logInterval) {
 					prevLog = now;
-					std::cout << '\r' << std::round((now/T) * 100) << "% complete...";
+					std::cout << '\r' << "Round " << (round + 1) << '/' << ROUNDS << ": " << std::round((now / T) * 100) << "% complete...";
 				}
 			}
-			std::cout << '\r' << "100% complete!    ";
-			std::cout << '\n' << "Hit Count: " << hitCount << '\n';
+			std::cout << '\r' << "Round " << round << '/' << ROUNDS << ": " << "100% complete!    ";
+			//std::cout << '\n' << "Hit Count: " << hitCount << '\n';
 			Stats::partialsAvDur(roundDuration);
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::stopChronometer((earlyStop) ? "done-IV" : "done-TL");	// ----> TL == Time Limit; IV == Infection Vanished.
@@ -683,7 +688,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		//Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
 		//Stats::endStream  (streamType::avDuration);
 #ifndef MEASURE_ROUND_EXE_TIME
-		Reporter::tell(" All rounds completed.\n");
+		Reporter::tell("\nAll rounds completed.\n");
 #endif
 		Reporter::stopChronometer("Scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + " completed");
 		Reporter::avSimTimeInfo(Stats::avDuration());
@@ -693,8 +698,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
+	constexpr real stepSize = 0.00001;
 	constexpr uint largerDetailUntil = 100;
-	constexpr real stepSize = 0.000001;
+	//const uint largerDetailUntil = (uint)(T / stepSize) + 1;
 	constexpr real epsilon = 1.0 / N ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;

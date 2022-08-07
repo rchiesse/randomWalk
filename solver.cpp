@@ -29,6 +29,8 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	const real E_X = K * p;
 	const real E_X2 = K*K * p*p;
 	const real Var_X = E_X * (1.0 - p);
+	const real stdDev = sqrt(Var_X);
+	//const real cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
 	//const real Sa = (double)NUM_AGENTS - Ia;
 
 	//RONALD (BEST SO FAR):
@@ -61,13 +63,24 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	
 	//const real prob_inf = ii / (H + ii);
 	//real H = (2.0 * nL) / EULER * log(sbnb);
-	real H = EULER * log(sbnb) / (2.0 * nL);
+	//real H = EULER * log(sbnb) / (2.0 * nL);
+	//real H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
+	//real H = EULER * log(sbnb);
+	//real ii = std::max(ibnb, 1.0l);
+	//real H = EULER * log(sbnb+1.0) / (nL);
+	//real H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
+	//const real prob_inf = (ii * nT) / (H + (ii * nT));	//RON (figura plot) (aqui a presença de nT e nL n faz diferença. Avaliar outros cenários!)
+	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL); //INTERESSANTE...
+	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
+	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+
 	real ii = ibnb;
 	const real prob_inf = (ii ) / (H + (ii ));
+	//const real prob_inf = 1.0;
 	return
 		//E-M:
-		+ Ia * sbnb * prob_inf * nT
-		- (nG * Ia);
+		//+ Ia * sbnb * prob_inf * nT
+		//- (nG * Ia);
 
 		//POR NÓ:
 		//nb * (
@@ -78,7 +91,7 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 		//);
 
 		//EQUIVALENTE MASTER:
-		//((nT * Sa * Ia) / (N)) - nG * Ia;
+		((nT * Sa * Ia * prob_inf) / (N)) - nG * Ia;
 }
 
 real Solver::dsabdt(const real& Ia, const real& Sa) {
@@ -96,6 +109,8 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	const real E_X = K * p;
 	const real E_X2 = K * K * p * p;
 	const real Var_X = E_X * (1.0 - p);
+	const real stdDev = sqrt(Var_X);
+	//const real cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
 	//const real Sa = (double)NUM_AGENTS - Ia;
 	//BEST SO FAR:
 	if (Sa == 0.0) 
@@ -118,16 +133,29 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	//const real prob_inf = ii / (H + ii);
 
 	//real H = (2.0 * nL) / EULER * log(sbnb);
-	real H = EULER * log(sbnb) / (2.0 * nL);
+	//real H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
+	//real H = EULER * log(sbnb);
+	//real H = EULER * log(sbnb) / (2.0 * nL);
+	//real ii = std::max(ibnb, 1.0l);
+	//real H = EULER * log(sbnb+1.0) / (nL);	//Ótimo qnd LAMBDA >> TAU; SUPERESTIMA C.C (e H = 1.0 acaba sendo melhor)
+	//real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//real H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
+	//real H = EULER * log(ibnb) / (2.0 * nL);
+	//const real prob_inf = (ii * nT) / (H + (ii * nT));
+	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL);	// INTERESSANTE...
+	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
+	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
 	real ii = ibnb;
 	const real prob_inf = (ii ) / (H + (ii ));
+	//const real prob_inf = (ii) / (1.0 + (ii));	//Ótimo qnd TAU == LAMBDA; SUPERESTIMA qnd LAMBDA >> TAU (e EULER acaba sendo melhor)
+	//const real prob_inf = 1.0;
 	return
 		//POR NÓ:
 		//-Ia * sbnb * prob_inf * nT
 
 		//E-M:
-		- Ia * sbnb * prob_inf * nT
-		+ (nG * Ia);
+		//-Ia * sbnb * prob_inf * nT
+		//+ (nG * Ia);
 
 		//OFFICIAL:
 		//nb * (
@@ -138,7 +166,7 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 		//);
 
 		//EQUIVALENTE MASTER:
-		//-((nT * Sa * Ia) / (N)) + nG * Ia;
+		-((nT * Sa * Ia * prob_inf) / (N)) + nG * Ia;
 }
 
 void Solver::step(const real& h, real& Ia, real& Sa) {
@@ -173,10 +201,12 @@ void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& 
 	bool end = false;
 	++outputSize;
 
+	real sumH = 0;
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
 		real prevIA = Ia;
 		step(h, Ia, Sa);
+		sumH += h;
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
 			end = true;
@@ -201,6 +231,7 @@ void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& 
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
 		real prevIA = Ia;
 		step(h, Ia, Sa);
+		sumH += h;
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
 			++outputSize;
@@ -240,7 +271,8 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//	return Ia * nL * qb - Iab * nL
 	//		- (nG * Iab);
 	//}
-	real H = EULER * log(sbnb) / (2.0 * nL);
+	//real H = EULER * log(sbnb) / (2.0 * nL);
+	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
 	real ii = ibnb;
 	const real prob_inf = ii / (H + ii);
 	return //Ia * nL * qb - Iab * nL
@@ -324,7 +356,8 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//	return Sa * nL * qb - Sab * nL
 	//		+ (nG * Iab);
 	//}
-	real H = EULER * log(sbnb) / (2.0 * nL);
+	//real H = EULER * log(sbnb) / (2.0 * nL);
+	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
 	real ii = ibnb;
 	const real prob_inf = ii / (H + ii);
 	return //Sa * nL * qb - Sab * nL

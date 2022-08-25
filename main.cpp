@@ -87,6 +87,12 @@ uint iaTotal;															// ----> Up-to-date number of INFECTED AGENTS during
 uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime;											// ----> Total simulation time at each round, to average upon.
+vector<real> v_avIb;
+vector<real> v_probesIb;
+//vector<real> v_avSb;
+//vector<real> v_probesSb;
+
+
 
 //Agent control variables
 using std::vector; using graph::node;
@@ -206,15 +212,15 @@ void sim::setEnvironment() {
 	//T = 5.0; NUM_AGENTS = 1000; TAU_aa = 3.0; GAMMA_a = 250.0; LAMBDA = 50.0;	//EULER - BEST
 	
 	//T = 20.0; NUM_AGENTS = 100; TAU_aa = 50.0; GAMMA_a = 270.0; LAMBDA = 50.0;
-	//T = 2.0; NUM_AGENTS = 1000; TAU_aa = 50.0; GAMMA_a = 4000.0; LAMBDA = 50.0;
-	//T = 2.0; NUM_AGENTS = 2000; TAU_aa = 3.0; GAMMA_a = 545.0; LAMBDA = 11.0;
+	//T = 2.0; NUM_AGENTS = 10000; TAU_aa = 5.0; GAMMA_a = 4200.0; LAMBDA = 2.0;
+	//T = 2.0; NUM_AGENTS = 2000; TAU_aa = 3.0; GAMMA_a = 540.0; LAMBDA = 11.0;
 	
 	//// CL N10: 
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
 	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
 	 
 	//G(n,p) N200:
-	T = 20.0; NUM_AGENTS = 4000; TAU_aa = 3.0; GAMMA_a = 50.0; LAMBDA = 17.0; 
+	T = 3.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
 
 
 	//Other parameters:
@@ -295,6 +301,10 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
 	
+	const uint b = (uint)graph::Graph::g[v].size();
+	v_avIb[b] += (double)numI / (numI + numS);
+	++v_probesIb[b];
+
 	if (numI > 0) {
 		const vector<uint>& list = iAgents[v];
 		real delta;
@@ -323,6 +333,10 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
 
+	const uint b = (uint)graph::Graph::g[v].size();
+	v_avIb[b] += (double)numI / (numI + numS);
+	++v_probesIb[b];
+
 	if (numS > 0) {
 		const vector<uint>& list = sAgents[v];
 		real delta;
@@ -346,6 +360,11 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	check_out(ag, v, iAgents);
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
+
+	uint& numS = sInNode[v];
+	const uint b = (uint)graph::Graph::g[v].size();
+	v_avIb[b] += (double)numI / (numI + numS);
+	++v_probesIb[b];
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
@@ -353,6 +372,11 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
+
+	uint& numI = iInNode[v];
+	const uint b = (uint)graph::Graph::g[v].size();
+	v_avIb[b] += (double)numI / (numI + numS);
+	++v_probesIb[b];
 }
 void sim::walk(const agent& ag, const real& now) {
 	node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
@@ -477,6 +501,11 @@ void sim::resetVariables() {
 	for (node v = 0; v < Graph::n; ++v) sAgents[v][ELEMS] = 0;
 	for (node v = 0; v < Graph::n; ++v) sInNode[v] = 0;
 	for (node v = 0; v < Graph::n; ++v) iInNode[v] = 0;
+
+	v_avIb		.resize(Graph::block_prob.size(), 0.0);
+	v_probesIb	.resize(Graph::block_prob.size(), 0.0);
+	//v_avSb		.resize(Graph::block_prob.size(), 0.0);
+	//v_probesSb	.resize(Graph::block_prob.size(), 0.0);
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	using graph::Graph; using graph::node; 
@@ -690,6 +719,25 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell("\nAll rounds completed.\n");
 #endif
+
+		//Average number of infectives per block:
+		real minAv = UINT_MAX, maxAv = 0.0;
+		uint blockMin, blockMax;
+		for (uint b = 1; b < v_avIb.size(); ++b){
+			v_avIb[b] /= v_probesIb[b];
+			if (v_avIb[b] < minAv&& v_avIb[b] > 0.0) {
+				minAv = v_avIb[b];
+				blockMin = b;
+			}
+			else if (v_avIb[b] > maxAv) {
+				maxAv = v_avIb[b];
+				blockMax = b;
+			}
+		}
+		Reporter::tell("\nAverages: \n");
+		std::cout << "\tMin = " << minAv << " at block " << blockMin << " \n";
+		std::cout << "\tMax = " << maxAv << " at block " << blockMax << " \n\n";
+
 		Reporter::stopChronometer("Scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + " completed");
 		Reporter::avSimTimeInfo(Stats::avDuration());
 		++scenario;

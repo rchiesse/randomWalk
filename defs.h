@@ -57,8 +57,8 @@ namespace sim {
 //#define STAR
 
 #ifdef STAR
-static constexpr uint N = 12008;
-#define SOURCE_FILE "", 12008
+static constexpr uint N = 200;
+#define SOURCE_FILE "", 200
 #define NWTK_LABEL "Star"
 #define SHORT_LABEL "star"
 #endif

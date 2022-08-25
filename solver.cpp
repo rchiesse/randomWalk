@@ -37,6 +37,15 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	if (Sa == 0.0)
 		return -(nG * Ia);
 
+	//RONALD v2 (ótimo em regime esparso):
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
+	//	- (GAMMA_a * Iab);
+	real sigma = nT / (2.0 * nL + nT);
+	return
+		2.0 * ((Sa * Ia) / nb) * nL * sigma
+		- (nG * Ia);
+
 	//long double H = EULER * log(sbnb + 1.0) / (2.0 * nL);
 	//long double H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
 	//long double dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
@@ -72,26 +81,30 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//const real prob_inf = (ii * nT) / (H + (ii * nT));	//RON (figura plot) (aqui a presença de nT e nL n faz diferença. Avaliar outros cenários!)
 	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL); //INTERESSANTE...
 	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
-	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-
-	real ii = ibnb;
-	const real prob_inf = (ii ) / (H + (ii ));
-	//const real prob_inf = 1.0;
-	return
-		//E-M:
-		//+ Ia * sbnb * prob_inf * nT
-		//- (nG * Ia);
-
-		//POR NÓ:
-		//nb * (
-		//	(Ia - ibnb) * nL / nb
-		//	- ibnb * nL * (b - 1) / b
-		//	+ ibnb * sbnb * nT
-		//	- (nG * ibnb)
-		//);
-
-		//EQUIVALENTE MASTER:
-		((nT * Sa * Ia * prob_inf) / (N)) - nG * Ia;
+	
+	//REGIME DENSO:
+	////real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	////real H = EULER * ((log(sbnb) / (2.0 * nL)) + (log(ibnb) / (2.0 * nL)));
+	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	//real ii = ibnb * nT;
+	////real ii = ibnb;
+	//const real prob_inf = (ii ) / (H + (ii ));
+	////const real prob_inf = 1.0;
+	//return
+	//	//E-M:
+	//	//+ Ia * sbnb * prob_inf * nT
+	//	//- (nG * Ia);
+	//
+	//	//POR NÓ:
+	//	//nb * (
+	//	//	(Ia - ibnb) * nL / nb
+	//	//	- ibnb * nL * (b - 1) / b
+	//	//	+ ibnb * sbnb * nT
+	//	//	- (nG * ibnb)
+	//	//);
+	//
+	//	//EQUIVALENTE MASTER:
+	//	((nT * Sa * Ia ) / (N)) - nG * Ia;
 }
 
 real Solver::dsabdt(const real& Ia, const real& Sa) {
@@ -144,29 +157,46 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	//const real prob_inf = (ii * nT) / (H + (ii * nT));
 	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL);	// INTERESSANTE...
 	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
-	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	real ii = ibnb;
-	const real prob_inf = (ii ) / (H + (ii ));
-	//const real prob_inf = (ii) / (1.0 + (ii));	//Ótimo qnd TAU == LAMBDA; SUPERESTIMA qnd LAMBDA >> TAU (e EULER acaba sendo melhor)
-	//const real prob_inf = 1.0;
-	return
-		//POR NÓ:
-		//-Ia * sbnb * prob_inf * nT
+	
+	//RON
+	//real H = EULER * log(kbnb) / (2.0 * nL);
+	//real ii = ibnb;
+	
+	//RONALD v2 (ótimo em regime esparso):
+	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
+	//	+ 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
+	//	- (GAMMA_a * Iab);
+	real sigma = nT / (2.0 * nL + nT);
+	return 
+		- 2.0 * ((Sa * Ia)/nb) * nL * sigma
+		+ (nG * Ia);
 
-		//E-M:
-		//-Ia * sbnb * prob_inf * nT
-		//+ (nG * Ia);
-
-		//OFFICIAL:
-		//nb * (
-		//	(Sa - sbnb) * nL / nb
-		//	- sbnb * nL * (b - 1) / b
-		//	- ibnb * sbnb * nT
-		//	+ (nG * ibnb)
-		//);
-
-		//EQUIVALENTE MASTER:
-		-((nT * Sa * Ia * prob_inf) / (N)) + nG * Ia;
+	////ALTA DENSIDADE:
+	////Muito preciso em alta densidade:
+	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	//real ii = ibnb * nT;
+	//
+	//const real prob_inf = (ii ) / (H + (ii ));
+	////const real prob_inf = (ii) / (1.0 + (ii));	//Ótimo qnd TAU == LAMBDA; SUPERESTIMA qnd LAMBDA >> TAU (e EULER acaba sendo melhor)
+	////const real prob_inf = 1.0;
+	//return
+	//	//POR NÓ:
+	//	//-Ia * sbnb * prob_inf * nT
+	//
+	//	//E-M:
+	//	//-Ia * sbnb * prob_inf * nT
+	//	//+ (nG * Ia);
+	//
+	//	//OFFICIAL:
+	//	//nb * (
+	//	//	(Sa - sbnb) * nL / nb
+	//	//	- sbnb * nL * (b - 1) / b
+	//	//	- ibnb * sbnb * nT
+	//	//	+ (nG * ibnb)
+	//	//);
+	//
+	//	//EQUIVALENTE MASTER:
+	//	-((nT * Sa * Ia ) / (N)) + nG * Ia;
 }
 
 void Solver::step(const real& h, real& Ia, real& Sa) {
@@ -264,38 +294,53 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real sbnb = Sab / nb;
 	const real kbnb = ibnb + sbnb;
 	const real Sa = (real)numAgents - Ia;
-	const real l = ((real)b - 1) / ((real)b);
+	//const real l = ((real)b - 1) / ((real)b);
 
 	//RONALD (BEST SO FAR):
-	//if (Sab == 0.0) {
-	//	return Ia * nL * qb - Iab * nL
-	//		- (nG * Iab);
-	//}
-	//real H = EULER * log(sbnb) / (2.0 * nL);
-	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	real ii = ibnb;
-	const real prob_inf = ii / (H + ii);
-	return //Ia * nL * qb - Iab * nL
-		+ Iab * sbnb * prob_inf * nT
+	if (Sa == 0.0)
+		return -(nG * Ia);
+
+	//RONALD v2 (ótimo em regime esparso):
+	real sigma = nT / (2.0 * nL + nT);
+	return (Ia - Iab) * nL * qb - Iab * nL * (1.0 - qb)
+		+ 2.0 * ((Sab * Iab)/nb) * nL * sigma
 		- (nG * Iab);
+	
 
-	//NOVO TESTE (denso):
-	//VERSÃO DE BLOCO EQUIVALENTE AO DE NÓ:
-	//return nb * (
-	//	(Ia - ibnb) * nL * (((real)b - 1.0) / (2.0 * graph::Graph::m - N - (b - 1))) - ibnb * nL * l
-	//	+ ibnb * sbnb * nT
-	//	- (nG * ibnb)
-	//);
-	//VERSÃO DE NÓ EQUIVALENTE AO DE BLOCO:
-	//return Ia * nL * qb - Iab * nL
-	//	+ Iab * sbnb * nT
+
+	////DENSO:
+	////RONALD (BEST SO FAR):
+	////if (Sab == 0.0) {
+	////	return Ia * nL * qb - Iab * nL
+	////		- (nG * Iab);
+	////} 
+	////real H = EULER * log(sbnb) / (2.0 * nL);
+	////real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	////real H = EULER * log(sbnb * ibnb) / nL;	
+	//real ii = ibnb;
+	//const real prob_inf = (ii) / (H + ii);
+	//return //Ia * nL * qb - Iab * nL
+	//	+ Iab * sbnb * prob_inf * nT
 	//	- (nG * Iab);
-
-	//ISOLANDO CADA BLOCO:
-	//return nb * (
-	//	+ ibnb * sbnb * nT
-	//	- (nG * ibnb)
-	//);
+	//
+	////NOVO TESTE (denso):
+	////VERSÃO DE BLOCO EQUIVALENTE AO DE NÓ:
+	////return nb * (
+	////	(Ia - ibnb) * nL * (((real)b - 1.0) / (2.0 * graph::Graph::m - N - (b - 1))) - ibnb * nL * l
+	////	+ ibnb * sbnb * nT
+	////	- (nG * ibnb)
+	////);
+	////VERSÃO DE NÓ EQUIVALENTE AO DE BLOCO:
+	////return Ia * nL * qb - Iab * nL
+	////	+ Iab * sbnb * nT
+	////	- (nG * Iab);
+	//
+	////ISOLANDO CADA BLOCO:
+	////return nb * (
+	////	+ ibnb * sbnb * nT
+	////	- (nG * ibnb)
+	////);
 }
 
 real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
@@ -306,7 +351,7 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real sbnb = Sab / nb;
 	const real kbnb = ibnb + sbnb;
 	const real Sa = (real)numAgents - Ia;
-	const real l = ((real)b - 1) / ((real)b);
+	//const real l = ((real)b - 1) / ((real)b);
 
 	//DON 2:
 	//return nb * (
@@ -357,7 +402,8 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//		+ (nG * Iab);
 	//}
 	//real H = EULER * log(sbnb) / (2.0 * nL);
-	real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
 	real ii = ibnb;
 	const real prob_inf = ii / (H + ii);
 	return //Sa * nL * qb - Sab * nL

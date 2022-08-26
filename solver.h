@@ -5,6 +5,7 @@ namespace sim {
 	{
 	private:
 		static real nT, nL, nG;
+		static real sigma;
 		static real EULER;													// ----> The Euler–Mascheroni constant.
 		static uint numAgents;
 	public:
@@ -42,6 +43,12 @@ namespace sim {
 		static void lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target, std::vector<real>& base, const double& fraction = 1.0);
 		static void rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 #endif //CLIQUE
+
+		static real dIdt(const real& Ia);
+		static void rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
+		static void stepMaster(const real& h, real& Ia);
+		static void lookAheadMaster(const real& h, real& Ia, real& target);
+		static void lookAheadMaster(const real& h, real& Ia, real& target, real& base, const double& fraction = 1.0);
 	};
 } //namespace sim
 

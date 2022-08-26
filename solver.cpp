@@ -13,6 +13,7 @@ void Solver::setParams(const real& tau, const real& lambda, const real& gamma, c
 	nL = lambda;
 	nG = gamma;
 	numAgents = NUM_AGENTS;
+	sigma = nT / (2.0 * nL + nT); 
 }
 
 #ifdef CLIQUE
@@ -294,6 +295,7 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real sbnb = Sab / nb;
 	const real kbnb = ibnb + sbnb;
 	const real Sa = (real)numAgents - Ia;
+	const real& _k_b = graph::Graph::kb[b];
 	//const real l = ((real)b - 1) / ((real)b);
 
 	//RONALD (BEST SO FAR):
@@ -654,4 +656,118 @@ real Solver::diadt(const real& Ia, const real& sumSbIb) {
 real Solver::dildt(const real& Ia, const real& il) {
 	//return  beta_al * (1.0 - il) * Ia - GAMMA_l * il;
 	return 0.0;
+}
+
+real Solver::dIdt(const real& Ia) {
+	const real Sa = (real)numAgents - Ia;
+	
+	return 
+}
+
+void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+	uint totalSteps = (uint)((t - t0) / h) + 1;
+	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+
+	real Ia = 0;
+	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
+		Ia += v_Iab[b];
+	real il = 0.0;
+
+	saveToFile_diadt[0] = Ia / numAgents;
+	saveToFile_dildt[0] = il;
+	bool end = false;
+	++outputSize;
+
+	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
+	//bool stationary = false;
+	for (uint s = 1; s < largerDetailUntil; ++s) {
+		real prevIA = Ia;
+		stepMaster(h, Ia);
+		if (Ia < epsilon) {
+			saveToFile_diadt[outputSize] = 0;
+			end = true;
+			++outputSize;
+			break;
+		}
+		if (Ia == prevIA) {
+			while (s < largerDetailUntil) {
+				saveToFile_diadt[outputSize] = Ia / numAgents;
+				++s;
+				++outputSize;
+			}
+			end = true;
+			break;
+		}
+		saveToFile_diadt[outputSize] = Ia / numAgents;
+
+#ifdef NORM_SITE_PER_AG
+		saveToFile_dildt[outputSize] = il * (N / numAgents);
+#else
+		saveToFile_dildt[s] = il;
+#endif
+		++outputSize;
+	}
+	if (end) return;
+
+	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
+	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
+		real prevIA = Ia;
+		stepMaster(h, Ia);
+		if (Ia < epsilon) {
+			saveToFile_diadt[outputSize] = 0;
+#ifdef NORM_SITE_PER_AG
+			saveToFile_dildt[outputSize] = il * (N / numAgents);
+#else
+			saveToFile_dildt[outputSize] = il;
+#endif
+			++outputSize;
+			break;
+		}
+		if (Ia == prevIA) {
+			while (s < totalSteps) {
+				if (s % outputGranularity == 0) {
+					saveToFile_diadt[outputSize] = Ia / numAgents;
+					++outputSize;
+				}
+				++s;
+			}
+			break;
+		}
+		if (s % outputGranularity == 0) {
+			saveToFile_diadt[outputSize] = Ia / numAgents;
+#ifdef NORM_SITE_PER_AG
+			saveToFile_dildt[outputSize] = il * (N / numAgents);
+#else
+			saveToFile_dildt[outputSize] = il;
+#endif
+			++outputSize;
+		}
+	}
+}
+
+void Solver::stepMaster(const real& h, real& Ia) {
+	constexpr real one_sixth = 1.0 / 6.0;
+	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
+	real k1(0), k2(0), k3(0), k4(0);
+
+	lookAheadMaster(h, Ia, k1);
+	lookAheadMaster(h, Ia, k2, k1, 0.5);
+	lookAheadMaster(h, Ia, k3, k2, 0.5);
+	lookAheadMaster(h, Ia, k4, k3);
+
+	//Take step:
+	Ia += one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
+	//v_Sab[b] += one_sixth * (k1[2 * b + 1] + 2 * k2[2 * b + 1] + 2 * k3[2 * b + 1] + k4[2 * b + 1]);
+}
+
+void Solver::lookAheadMaster(const real& h, real& Ia, real& target) {
+	//update_Ia(Ia, v_Iab);
+	target = h * dIdt(Ia);
+}
+
+void Solver::lookAheadMaster(const real& h, real& Ia, real& target, real& base, const double& fraction) {
+	//update_Ia(Ia, v_Iab, base, fraction);
+	//target = h * dsabdt(Ia, v_Iab[b] + fraction * base[2 * b], v_Sab[b] + fraction * base[2 * b + 1], b);
+	target = h * dIdt(Ia + fraction * base);
 }

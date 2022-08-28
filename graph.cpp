@@ -239,6 +239,7 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #ifndef CLIQUE
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::_2ndMmt;
+uint Graph::B;
 vector<real> Graph::block_prob;
 vector<real> Graph::q_b;
 vector<real> Graph::kb;
@@ -255,11 +256,20 @@ void Graph::setBlockData() {
 
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i)
+#ifdef PROTECTION_FX
+		++(block_prob[gs[lcc[i]].size()]);
+#else
 		++(block_prob[g[lcc[i]].size()]);
-
+#endif
 	//Probabilities:
 	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
+	}
+	
+	B = 0;
+	for (uint b = 1; b < graph::Graph::block_prob.size(); ++b) {
+		if (graph::Graph::block_prob[b] > 0.0)
+			B += b;
 	}
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {

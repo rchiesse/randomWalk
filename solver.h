@@ -47,8 +47,8 @@ namespace sim {
 		static real dIdt(const real& Ia);
 		static void rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity = 50, const real& largerDetailUntil = 1000);
 		static void stepMaster(const real& h, real& Ia);
-		static void lookAheadMaster(const real& h, real& Ia, real& target);
-		static void lookAheadMaster(const real& h, real& Ia, real& target, real& base, const double& fraction = 1.0);
+		//static void lookAheadMaster(const real& h, real& Ia, real& target);
+		//static void lookAheadMaster(const real& h, real& Ia, real& target, real& base, const double& fraction = 1.0);
 	};
 } //namespace sim
 

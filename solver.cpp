@@ -5,6 +5,7 @@ using namespace sim;
 real Solver::nT = 0;
 real Solver::nL = 0;
 real Solver::nG = 0;
+real Solver::sigma = 0;
 real Solver::EULER = 0.57721566490153286060651209008240243104215933593992;		// ----> The Euler–Mascheroni constant.
 uint Solver::numAgents = 0;
 
@@ -299,16 +300,22 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//const real l = ((real)b - 1) / ((real)b);
 
 	//RONALD (BEST SO FAR):
-	if (Sa == 0.0)
-		return -(nG * Ia);
+	if (Sab == 0.0 || Iab == 0.0)
+		return -(nG * Iab);
 
-	//RONALD v2 (ótimo em regime esparso):
-	real sigma = nT / (2.0 * nL + nT);
-	return (Ia - Iab) * nL * qb - Iab * nL * (1.0 - qb)
-		+ 2.0 * ((Sab * Iab)/nb) * nL * sigma
-		- (nG * Iab);
+	////RONALD v2 (ótimo em regime esparso):
+	//real sigma = nT / (2.0 * nL + nT);
+	//return (Ia - Iab) * nL * qb - Iab * nL * (1.0 - qb)
+	//	+ 2.0 * ((Sab * Iab)/nb) * nL * sigma
+	//	- (nG * Iab);
 	
-
+	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
+	real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
+	real ii = ibnb;
+	const real prob_inf = ii / (H + ii);
+	return //Sa * nL * qb - Sab * nL
+		Iab * sbnb * prob_inf * nT
+		- (nG * Iab);
 
 	////DENSO:
 	////RONALD (BEST SO FAR):
@@ -405,7 +412,11 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//}
 	//real H = EULER * log(sbnb) / (2.0 * nL);
 	//real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	
+	if (Sab == 0.0 || Iab == 0.0)
+		return (nG * Iab);
+
+	real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
 	real ii = ibnb;
 	const real prob_inf = ii / (H + ii);
 	return //Sa * nL * qb - Sab * nL
@@ -660,8 +671,26 @@ real Solver::dildt(const real& Ia, const real& il) {
 
 real Solver::dIdt(const real& Ia) {
 	const real Sa = (real)numAgents - Ia;
+	const real _b_ = (real)graph::Graph::averageDegree;
+	const real& _b2_ = graph::Graph::_2ndMmt;
+	//const uint& B = graph::Graph::B;
+
+	real avKB = 0;
+	for (uint b = 0; b < graph::Graph::kb.size(); ++b){
+		const real& pb = graph::Graph::block_prob[b];
+		const real& qb = graph::Graph::q_b[b];
+		const real& kb = graph::Graph::kb[b];
+		if (pb == 0)
+			continue;
+		avKB += (kb*qb)/(N*pb) ;
+	}
+	//avKB /= graph::Graph::validBlocks;
+	avKB /= graph::Graph::largestDegree;
+	if (avKB < 2.0)
+		avKB = 2.0;
 	
-	return 
+	return (2.0 * nL * sigma * _b2_ * Sa * Ia) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
+	//return (avKB * nL * sigma * _b2_ * Sa * Ia) / (N * pow(_b_, 2.0)) - nG * Ia;
 }
 
 void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
@@ -751,23 +780,13 @@ void Solver::stepMaster(const real& h, real& Ia) {
 	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
 	real k1(0), k2(0), k3(0), k4(0);
 
-	lookAheadMaster(h, Ia, k1);
-	lookAheadMaster(h, Ia, k2, k1, 0.5);
-	lookAheadMaster(h, Ia, k3, k2, 0.5);
-	lookAheadMaster(h, Ia, k4, k3);
+	//lookAheadMaster(h, Ia, k1);
+	k1 = h * dIdt(Ia);
+	k2 = h * dIdt(Ia + 0.5 * k1);
+	k3 = h * dIdt(Ia + 0.5 * k2);
+	k4 = h * dIdt(Ia + k3);
 
 	//Take step:
-	Ia += one_sixth * (k1 + 2 * k2 + 2 * k3 + k4);
+	Ia += one_sixth * (k1 + 2.0l * k2 + 2.0l * k3 + k4);
 	//v_Sab[b] += one_sixth * (k1[2 * b + 1] + 2 * k2[2 * b + 1] + 2 * k3[2 * b + 1] + k4[2 * b + 1]);
-}
-
-void Solver::lookAheadMaster(const real& h, real& Ia, real& target) {
-	//update_Ia(Ia, v_Iab);
-	target = h * dIdt(Ia);
-}
-
-void Solver::lookAheadMaster(const real& h, real& Ia, real& target, real& base, const double& fraction) {
-	//update_Ia(Ia, v_Iab, base, fraction);
-	//target = h * dsabdt(Ia, v_Iab[b] + fraction * base[2 * b], v_Sab[b] + fraction * base[2 * b + 1], b);
-	target = h * dIdt(Ia + fraction * base);
 }

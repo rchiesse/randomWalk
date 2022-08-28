@@ -87,11 +87,13 @@ uint iaTotal;															// ----> Up-to-date number of INFECTED AGENTS during
 uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES during the simulation.
 real now;
 std::vector<real> totalSimTime;											// ----> Total simulation time at each round, to average upon.
+
+#ifdef SI_PROPORTION
 vector<real> v_avIb;
 vector<real> v_probesIb;
 //vector<real> v_avSb;
 //vector<real> v_probesSb;
-
+#endif
 
 
 //Agent control variables
@@ -220,8 +222,11 @@ void sim::setEnvironment() {
 	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
 	 
 	//G(n,p) N200:
-	T = 3.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
+	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
+	//T = 10000.0; NUM_AGENTS = 100; TAU_aa = 3.0; GAMMA_a = 0.60; LAMBDA = 2.0; 
 
+	//BA:
+	T = 1000.0; NUM_AGENTS = 100; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0;
 
 	//Other parameters:
 	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
@@ -267,7 +272,6 @@ void sim::setEnvironment() {
 		nT = TAU_aa / LAMBDA;
 		nG = GAMMA_a / LAMBDA;
 	}
-
 	Solver::setParams(nT, nL, nG, NUM_AGENTS);
 	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA);
 #endif //SOLVE_NUMERICALLY
@@ -301,9 +305,15 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
 	
+#ifdef SI_PROPORTION
+#ifdef PROTECTION_FX
+	const uint b = (uint)graph::Graph::gs[v].size();
+#else
 	const uint b = (uint)graph::Graph::g[v].size();
-	v_avIb[b] += (double)numI / (numI + numS);
+#endif
+	v_avIb[b] += (real)numI / (numI + numS);
 	++v_probesIb[b];
+#endif
 
 	if (numI > 0) {
 		const vector<uint>& list = iAgents[v];
@@ -333,9 +343,15 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
 
+#ifdef SI_PROPORTION
+#ifdef PROTECTION_FX
+	const uint b = (uint)graph::Graph::gs[v].size();
+#else
 	const uint b = (uint)graph::Graph::g[v].size();
-	v_avIb[b] += (double)numI / (numI + numS);
+#endif
+	v_avIb[b] += (real)numI / (numI + numS);
 	++v_probesIb[b];
+#endif
 
 	if (numS > 0) {
 		const vector<uint>& list = sAgents[v];
@@ -361,10 +377,16 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 
+#ifdef SI_PROPORTION
 	uint& numS = sInNode[v];
+#ifdef PROTECTION_FX
+	const uint b = (uint)graph::Graph::gs[v].size();
+#else
 	const uint b = (uint)graph::Graph::g[v].size();
-	v_avIb[b] += (double)numI / (numI + numS);
+#endif
+	v_avIb[b] += (numI + numS) > 0 ? (real)numI / (numI + numS) : 0.0;
 	++v_probesIb[b];
+#endif
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
@@ -373,10 +395,16 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
 
+#ifdef SI_PROPORTION
 	uint& numI = iInNode[v];
+#ifdef PROTECTION_FX
+	const uint b = (uint)graph::Graph::gs[v].size();
+#else
 	const uint b = (uint)graph::Graph::g[v].size();
-	v_avIb[b] += (double)numI / (numI + numS);
+#endif
+	v_avIb[b] += (numI + numS) > 0 ? (real)numI / (numI + numS) : 0.0;
 	++v_probesIb[b];
+#endif
 }
 void sim::walk(const agent& ag, const real& now) {
 	node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
@@ -462,19 +490,35 @@ void sim::siteFate(const uint& v, const real& now, const uint& infective, const 
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
+#ifdef PROTECTION_FX
+#ifdef CLIQUE
+	return Graph::gs[randomInt(graph::Graph::n)];
+#else
+	return Graph::gs[_currNode][randomInt((uint)Graph::gs[_currNode].size())];
+#endif //CLIQUE	
+#else
 #ifdef CLIQUE
 	return Graph::g[randomInt(graph::Graph::n)];
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
-#endif //CLIQUE
+#endif //CLIQUE	
+#endif //PROTECTION_FX
 }
 const graph::node& sim::nextNodeForInf(const node& _currNode) {
 	using graph::Graph;
+#ifdef PROTECTION_FX
 #ifdef CLIQUE
-	return Graph::g[randomInt(Graph::n)];
+	return Graph::gs[randomInt(graph::Graph::n)];
+#else
+	return Graph::gs[_currNode][randomInt((uint)Graph::gs[_currNode].size())];
+#endif //CLIQUE	
+#else
+#ifdef CLIQUE
+	return Graph::g[randomInt(graph::Graph::n)];
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
-#endif //CLIQUE
+#endif //CLIQUE	
+#endif //PROTECTION_FX
 }
 #ifndef CLIQUE
 const graph::node& sim::randomLCCNode() { 
@@ -502,10 +546,10 @@ void sim::resetVariables() {
 	for (node v = 0; v < Graph::n; ++v) sInNode[v] = 0;
 	for (node v = 0; v < Graph::n; ++v) iInNode[v] = 0;
 
+#ifdef SI_PROPORTION
 	v_avIb		.resize(Graph::block_prob.size(), 0.0);
 	v_probesIb	.resize(Graph::block_prob.size(), 0.0);
-	//v_avSb		.resize(Graph::block_prob.size(), 0.0);
-	//v_probesSb	.resize(Graph::block_prob.size(), 0.0);
+#endif
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	using graph::Graph; using graph::node; 
@@ -720,12 +764,13 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Reporter::tell("\nAll rounds completed.\n");
 #endif
 
+#ifdef SI_PROPORTION
 		//Average number of infectives per block:
 		real minAv = UINT_MAX, maxAv = 0.0;
 		uint blockMin, blockMax;
 		for (uint b = 1; b < v_avIb.size(); ++b){
 			v_avIb[b] /= v_probesIb[b];
-			if (v_avIb[b] < minAv&& v_avIb[b] > 0.0) {
+			if (v_avIb[b] < minAv && v_avIb[b] > 0.0) {
 				minAv = v_avIb[b];
 				blockMin = b;
 			}
@@ -734,9 +779,20 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				blockMax = b;
 			}
 		}
-		Reporter::tell("\nAverages: \n");
+		//<b_k>:
+		real _b_k_ = 0;
+		for (uint b = 1; b < v_avIb.size(); ++b){
+			if (graph::Graph::block_prob[b] > 0.0) {
+				_b_k_ += (graph::Graph::kb[b] / NUM_AGENTS) * b;
+			}
+		}
+		//const real _47 = graph::Graph::kb[47] / (N * graph::Graph::block_prob[47]);
+		const real nb = (N * graph::Graph::block_prob[graph::Graph::largestDegree]);
+		//std::cout << "\nAverages for <Kb> = " << maxKB / szMaxB << ": \n";
+		std::cout << "\nAverages for <K>_bMAX = " << graph::Graph::kb[graph::Graph::kb.size() - 1] / nb << " and <b_K> = " << _b_k_ << ": \n";
 		std::cout << "\tMin = " << minAv << " at block " << blockMin << " \n";
 		std::cout << "\tMax = " << maxAv << " at block " << blockMax << " \n\n";
+#endif //SI_PROPORTION
 
 		Reporter::stopChronometer("Scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + " completed");
 		Reporter::avSimTimeInfo(Stats::avDuration());
@@ -746,7 +802,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
-	constexpr real stepSize = 0.00001;
+	constexpr real stepSize = 0.01;
 	constexpr uint largerDetailUntil = 100;
 	//const uint largerDetailUntil = (uint)(T / stepSize) + 1;
 	constexpr real epsilon = 1.0 / N ;
@@ -777,7 +833,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 #else //CLIQUE
 #ifdef PER_BLOCK
-	Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	//Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Solver::rkMaster(0, v_Iab, v_Sab, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #else
 	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 #endif

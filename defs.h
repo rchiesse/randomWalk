@@ -52,8 +52,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-//#define READ_NTWK_FROM_FILE
-#define GNP
+#define READ_NTWK_FROM_FILE
+//#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -93,9 +93,9 @@ static constexpr uint N = 200;
 //#define SHORT_LABEL "hep"
 //
 static constexpr uint N = 12008;										// ----> Network size
-#define SOURCE_FILE std::string(".\\synthetic\\BA.txt"), 12008
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
 #define NWTK_LABEL "BA"
-#define SHORT_LABEL "BA"
+#define SHORT_LABEL "BA" 
 //
 //static constexpr uint N = 15233;										// ----> Network size
 //#define SOURCE_FILE std::string(".\\redes\\netHEPT.txt"), 15233
@@ -147,7 +147,7 @@ static constexpr uint N = 12008;										// ----> Network size
 
 // * AGENTS' BEHAVIOR *
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-//#define PROTECTION_FX
+#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -158,6 +158,7 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 
 // * STATS * 
 #define INFECTED_FRACTION
+#define SI_PROPORTION
 //#define OCCUPANCY
 //#define ESTIMATE_PROBS
 
@@ -182,7 +183,6 @@ static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to
 static constexpr real _r  = 1000.0;		// Rejection force.
 #endif //PROPORTIONAL
 #endif //PROTECTION_FX
-
 
 
 // ---------------------------//----------------------------- //

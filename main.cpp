@@ -490,35 +490,43 @@ void sim::siteFate(const uint& v, const real& now, const uint& infective, const 
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
+#ifdef CLIQUE
 #ifdef PROTECTION_FX
-#ifdef CLIQUE
-	return Graph::gs[randomInt(graph::Graph::n)];
+#ifdef PROPORTIONAL
+	return Graph::nextNodeForS(U(), itotal, stotal);
 #else
-	return Graph::gs[_currNode][randomInt((uint)Graph::gs[_currNode].size())];
-#endif //CLIQUE	
+	return Graph::nextNodeForS(U());
+#endif //PROPORTIONAL
 #else
-#ifdef CLIQUE
 	return Graph::g[randomInt(graph::Graph::n)];
+#endif //PROTECTION_FX
+#else
+#ifdef PROTECTION_FX
+	return Graph::nextNodeForS(_currNode, U());
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
-#endif //CLIQUE	
 #endif //PROTECTION_FX
+#endif //CLIQUE
 }
 const graph::node& sim::nextNodeForInf(const node& _currNode) {
 	using graph::Graph;
+#ifdef CLIQUE
 #ifdef PROTECTION_FX
-#ifdef CLIQUE
-	return Graph::gs[randomInt(graph::Graph::n)];
+#ifdef PROPORTIONAL
+	return Graph::nextNodeForI(U(), itotal, stotal);
 #else
-	return Graph::gs[_currNode][randomInt((uint)Graph::gs[_currNode].size())];
-#endif //CLIQUE	
+	return Graph::nextNodeForI(U());
+#endif //PROPORTIONAL
 #else
-#ifdef CLIQUE
-	return Graph::g[randomInt(graph::Graph::n)];
+	return Graph::g[randomInt(Graph::n)];
+#endif //PROTECTION_FX
+#else
+#ifdef PROTECTION_FX
+	return Graph::nextNodeForI(_currNode, U());
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
-#endif //CLIQUE	
 #endif //PROTECTION_FX
+#endif //CLIQUE
 }
 #ifndef CLIQUE
 const graph::node& sim::randomLCCNode() { 

@@ -7,7 +7,7 @@ import numpy as np
 import csv
 
 #Import CSV data
-with open("./stats/fractionInfected_BA_N12008_AG500_T10_G0.02_L30_STime10_R1.csv", "r") as i :
+with open("./stats/fractionInfected_BA_N12008_AG50_T10_G0.02_L30_STime5000_R1.csv", "r") as i :
 	rawdata = list(csv.reader(i, delimiter = "\t"))
 
 myData = np.array(rawdata[1:], dtype = np.float64)
@@ -20,7 +20,7 @@ cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)
 #cumSumSites = np.cumsum(infSiteSimul)
 #cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)
 
-with open("./stats/Runge-Kutta_BA_N12008_AG500_T10_G0.02_L30_STime10_R1.csv", "r") as j :
+with open("./stats/Runge-Kutta_BA_N12008_AG50_T10_G0.02_L30_STime5000_R1.csv", "r") as j :
 	rawRK = list(csv.reader(j, delimiter = "\t"))
 
 rkData = np.array(rawRK[1:], dtype = np.float64)
@@ -32,7 +32,7 @@ plt.figure(1, dpi = 120)
 plt.title("Fraction of Infected Agents/Sites over Time")
 plt.xlabel("Time")
 plt.ylabel("Infected Fraction")
-plt.xlim(0, 10)
+plt.xlim(0, 5000)
 plt.ylim(0, 1)
 plt.plot(timeData, infAgSimul, label = "Simulation")
 #plt.plot(timeData, infSiteSimul, label = "InfSites")
@@ -47,5 +47,5 @@ plt.grid()
 #plt.xscale("log")
 #plt.yscale("log")
 
-plt.savefig("./plots/fractionInfected_BA_N12008_AG500_T10_G0.02_L30_STime10_R1.pdf")
+plt.savefig("./plots/fractionInfected_BA_N12008_AG50_T10_G0.02_L30_STime5000_R1.pdf")
 #plt.show()

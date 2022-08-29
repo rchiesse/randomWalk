@@ -23,6 +23,18 @@ real FRAC_AG_INFECTED;													// ----> Fraction of AGENTS initially infecte
 real FRAC_ST_INFECTED;													// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 uint ABS_INFECTED;														// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 
+#ifdef PROTECTION_FX
+real Ws = 1.0;															// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
+real Wi = 1.0;															// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
+
+//#define PROPORTIONAL													// ----> Promotes risk-tolerance proportional to the current number of infectives, according to the function w(i) = (1-i)^r, for some "rejection force" r.
+#ifdef PROPORTIONAL
+//If defined, we consider that the risk-tolerance is proportional to the number of infectives: w(i) = (1-i)^r, for some "rejection force" r.
+static constexpr real _r = 1000.0;		// Rejection force.
+#endif //PROPORTIONAL
+#endif //PROTECTION_FX
+
+
 // Auxiliary constants
 uint I_0;
 real i_0;
@@ -226,7 +238,9 @@ void sim::setEnvironment() {
 	//T = 10000.0; NUM_AGENTS = 100; TAU_aa = 3.0; GAMMA_a = 0.60; LAMBDA = 2.0; 
 
 	//BA:
-	T = 1000.0; NUM_AGENTS = 100; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0;
+	T = 5000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
+	Ws = 0.3; 
+	Wi = 0.3;
 
 	//Other parameters:
 	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
@@ -275,7 +289,7 @@ void sim::setEnvironment() {
 	Solver::setParams(nT, nL, nG, NUM_AGENTS);
 	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA);
 #endif //SOLVE_NUMERICALLY
-	graph::Graph::setParams(NUM_AGENTS);
+	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);
 }
 
 

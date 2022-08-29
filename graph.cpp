@@ -14,6 +14,8 @@ uint Graph::largestDgNode;
 uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
 real Graph::validBlocks;
 real Graph::numAgents;
+real Graph::Ws;
+real Graph::Wi;
 
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
@@ -78,12 +80,12 @@ void Graph::setProbs() {
 		real sumW = 0;
 		for (uint schema = 0; schema < vProbsS.size(); ++schema) {
 			vProbsS[schema] = sumW / (vDegree - schema + sumW);
-			sumW += sim::Ws;
+			sumW += Ws;
 		}
 		sumW = 0;
 		for (uint schema = 0; schema < vProbsI.size(); ++schema) {
 			vProbsI[schema] = sumW / (vDegree - schema + sumW);
-			sumW += sim::Wi;
+			sumW += Wi;
 		}
 	}
 #endif //#ifdef CLIQUE
@@ -239,7 +241,6 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #ifndef CLIQUE
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::_2ndMmt;
-uint Graph::B;
 vector<real> Graph::block_prob;
 vector<real> Graph::q_b;
 vector<real> Graph::kb;
@@ -264,12 +265,6 @@ void Graph::setBlockData() {
 	//Probabilities:
 	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
-	}
-	
-	B = 0;
-	for (uint b = 1; b < graph::Graph::block_prob.size(); ++b) {
-		if (graph::Graph::block_prob[b] > 0.0)
-			B += b;
 	}
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
@@ -701,6 +696,8 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 }
 #endif // CLIQUE
 
-void Graph::setParams(const uint& _numAgents) {
+void Graph::setParams(const uint& _numAgents, const real& _Ws, const real& _Wi) {
 	numAgents = _numAgents;
+	Ws = _Ws;
+	Wi = _Wi;
 }

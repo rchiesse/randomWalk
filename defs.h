@@ -171,24 +171,8 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 // ---------------------------//----------------------------- //
 
 
-// * SIMULATION PARAMETERS *
-namespace sim{		// ----> Simulator's namespace.
-#ifdef PROTECTION_FX
-static constexpr real Ws  = 1.0;										// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
-static constexpr real Wi  = 1.0;										// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
-
-//#define PROPORTIONAL													// ----> Promotes risk-tolerance proportional to the current number of infectives, according to the function w(i) = (1-i)^r, for some "rejection force" r.
-#ifdef PROPORTIONAL
-//If defined, we consider that the risk-tolerance is proportional to the number of infectives: w(i) = (1-i)^r, for some "rejection force" r.
-static constexpr real _r  = 1000.0;		// Rejection force.
-#endif //PROPORTIONAL
-#endif //PROTECTION_FX
-
-
-// ---------------------------//----------------------------- //
-
-
 // * NUMERICAL SOLUTION *
+namespace sim{		// ----> Simulator's namespace.
 #define SOLVE_NUMERICALLY
 //#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG

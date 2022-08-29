@@ -13,6 +13,8 @@ namespace graph {
 class Graph {
 private:
 	static real numAgents;
+	static real Ws;
+	static real Wi;
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
@@ -57,7 +59,6 @@ public:
 #endif // PROTECTION_FX
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real _2ndMmt;
-	static uint B;
 	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
 	static vector<real> kb;											// ----> Expected number of agents in each block b.
 	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
@@ -67,7 +68,7 @@ public:
 	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
-	static void setParams(const uint& _numAgents);
+	static void setParams(const uint& _numAgents, const real& _Ws, const real& _Wi);
 #ifdef PROTECTION_FX
 private:
 	enum class direction{raise, lower};

@@ -305,16 +305,6 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
 	
-#ifdef SI_PROPORTION
-#ifdef PROTECTION_FX
-	const uint b = (uint)graph::Graph::gs[v].size();
-#else
-	const uint b = (uint)graph::Graph::g[v].size();
-#endif
-	v_avIb[b] += (real)numI / (numI + numS);
-	++v_probesIb[b];
-#endif
-
 	if (numI > 0) {
 		const vector<uint>& list = iAgents[v];
 		real delta;
@@ -335,6 +325,16 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const real& now) {
 	if (numS == 1)
 		graph::Graph::updateHasS(v);
 #endif
+
+#ifdef SI_PROPORTION
+#ifdef PROTECTION_FX
+	const uint b = (uint)graph::Graph::gs[v].size();
+#else
+	const uint b = (uint)graph::Graph::g[v].size();
+#endif
+	v_avIb[b] += (real)numI / (numI + numS);
+	++v_probesIb[b];
+#endif //SI_PROPORTION
 }
 void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 	++snapshot_a[ag];
@@ -365,6 +365,10 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 		schedule.emplace(myEvents[ag].top());
 		myEvents[ag].pop();
 	}
+#ifdef PROTECTION_FX
+	if (numI == 1)
+		graph::Graph::updateHasI(v);
+#endif
 	//if (!isInfectedSite[v]) {
 	//	const real delta = EXPTau_al();
 	//	schedule.emplace(v, now + delta, action::agInfectSite, ag, snapshot_l[v], snapshot_a[ag]);
@@ -377,6 +381,10 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const real& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	--numI;
 
+#ifdef PROTECTION_FX
+	if (numI == 0)
+		graph::Graph::updateNoI(v);
+#endif
 #ifdef SI_PROPORTION
 	uint& numS = sInNode[v];
 #ifdef PROTECTION_FX
@@ -394,6 +402,11 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
+
+#ifdef PROTECTION_FX
+	if (numS == 0)
+		graph::Graph::updateNoS(v);
+#endif
 
 #ifdef SI_PROPORTION
 	uint& numI = iInNode[v];

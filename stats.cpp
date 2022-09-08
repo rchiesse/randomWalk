@@ -7,6 +7,8 @@ uint Stats::rounds		= 0;
 real Stats::tau			= 0;
 real Stats::gamma		= 0;
 real Stats::lambda		= 0;
+real Stats::Wi			= 0;
+real Stats::Ws			= 0;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
@@ -70,13 +72,15 @@ void Stats::probsToFile() {
 		<< siMeetingRate << std::endl;
 }
 #endif
-void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda) {
+void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda, const real& _Wi, const real& _Ws) {
 	t			= time;
 	numAgents	= _numAgents;
 	rounds		= _rounds;
 	tau			= _tau;
 	gamma		= _gamma;
 	lambda		= _lambda;
+	Wi			= _Wi;
+	Ws			= _Ws;	
 }
 
 //void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
@@ -332,6 +336,8 @@ void Stats::setBasename() {
 		<< "_T"		<< tau 
 		<< "_G"		<< gamma 
 		<< "_L"		<< lambda 
+		<< "_Wi"	<< Wi 
+		<< "_Ws"	<< Ws 
 		<< "_STime" << t 
 		<< "_R"		<< rounds;
 		//<< "_Tal"	<< TAU_al 

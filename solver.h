@@ -5,11 +5,12 @@ namespace sim {
 	{
 	private:
 		static real nT, nL, nG;
+		static real Wi, Ws;
 		static real sigma;
 		static real EULER;													// ----> The Euler–Mascheroni constant.
 		static uint numAgents;
 	public:
-		static void setParams(const real& tau, const real& lambda, const real& gamma, const uint& NUM_AGENTS);
+		static void setParams(const real& tau, const real& lambda, const real& gamma, const uint& NUM_AGENTS, const real& _Wi = 1.0, const real& _Ws = 1.0);
 
 		static real diadt(const real& ia, const real& sumSbIb);
 		static real dildt(const real& ia, const real& il);

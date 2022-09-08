@@ -52,8 +52,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -71,8 +71,8 @@ static constexpr uint N = 10;										// ----> Network size
 
 #ifdef GNP
 //static constexpr uint N = 12008;
-static constexpr uint N = 200;
-#define SOURCE_FILE "", 200
+static constexpr uint N = 1000;
+#define SOURCE_FILE "", 1000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif
@@ -146,7 +146,7 @@ static constexpr uint N = 12008;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
+//#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
 #define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.

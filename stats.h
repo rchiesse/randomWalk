@@ -11,6 +11,8 @@ namespace sim {
 		static real tau;
 		static real gamma;
 		static real lambda;
+		static real Wi;
+		static real Ws;
 		static std::ofstream infFracData;
 #ifdef INFECTED_FRACTION
 	private:
@@ -142,7 +144,7 @@ namespace sim {
 #endif
 
 //Utils
-		static void setParams(const real& _t, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda);
+		static void setParams(const real& _t, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda, const real& _Wi = 1.0, const real& _Ws = 1.0);
 		static void initStream(const streamType& s);
 		static void endStream(const streamType& s);
 		static void writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAgents);

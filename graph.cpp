@@ -190,7 +190,7 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 		const node w = g[v][idxW];
 		vector<node>& wNeighbors = g[w];
 		const uint wSchema = schema[w];
-		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' is exchanged with 'v' (and the reference would then be to 'v' instead of 'u').
+		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' will be exchanged with 'v' (and the reference would then be linked to 'v' instead of 'u').
 #ifdef AUTO_RELATION
 		if (w == v && u != v) {
 			const uint w_index_in_u = foreignIdx[w][wSchema];

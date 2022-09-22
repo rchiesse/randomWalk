@@ -235,14 +235,16 @@ void sim::setEnvironment() {
 	 
 	//G(n,p) N200:
 	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
-	T = 10000.0; NUM_AGENTS = 100; TAU_aa = 3.0; GAMMA_a = 0.065; LAMBDA = 2.0; 
+	T = 2000.0; NUM_AGENTS = 5000; TAU_aa = 0.10; GAMMA_a = 0.05; LAMBDA = 20.0; 
 
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
-
-	Wi = 1.0;
-	Ws = 1.0; 
-
+#ifdef PROTECTION_FX
+	Wi = 0.6;
+	Ws = 0.6; 
+#else
+	Wi = Ws = 1.0;	// ----> Do not change this line.
+#endif
 	//Other parameters:
 	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
 	LIST_INI_SZ			= (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3.0 * N))));

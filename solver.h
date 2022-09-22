@@ -5,7 +5,7 @@ namespace sim {
 	{
 	private:
 		static real nT, nL, nG;
-		static real Wi, Ws;
+		static real Wi, Ws, w;
 		static real sigma;
 		static real EULER;													// ----> The Euler–Mascheroni constant.
 		static uint numAgents;

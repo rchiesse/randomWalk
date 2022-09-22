@@ -194,7 +194,27 @@ void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& ac
 	}
 }
 void Stats::iFracToFile(const uint& overlook) {
+	uint pos = 0;
+	uint remainder = _bufferPos % overlook;
+	if (remainder == _bufferPos) {
+		//The entire buffer must be printed:
+		while (pos < _bufferPos) {
+			infFracData << agentBuffer[pos] << "\t" << timestampBuffer[pos] << "\t" << infectedAgFractionBuffer[pos] << "\t" << infectedSiteFractionBuffer[pos] << '\n';
+			++pos;
+		}
+		return;
+	}
+
+	//For each 'overlook' number of events, only one gets printed:
+	pos = 0;
 	for (uint i = 0; i < _bufferPos; ++i) {
+		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
+		i += overlook;
+		++pos;
+	}
+
+	//Remainder:
+	for (uint i = _bufferPos - remainder - 1; i < _bufferPos; ++i) {
 		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
 		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 		i += overlook;

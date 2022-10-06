@@ -206,19 +206,24 @@ void Stats::iFracToFile(const uint& overlook) {
 	}
 
 	//For each 'overlook' number of events, only one gets printed:
-	pos = 0;
+	//pos = 0;
 	for (uint i = 0; i < _bufferPos; ++i) {
 		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
 		i += overlook;
-		++pos;
+		//pos += overlook;
+		//++pos;
 	}
 
 	//Remainder:
-	for (uint i = _bufferPos - remainder - 1; i < _bufferPos; ++i) {
-		//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
-		infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
-		i += overlook;
-	}
+	//for (uint i = _bufferPos - remainder - 1; i < _bufferPos; ++i) {
+	//for (uint i = _bufferPos; i < agentBuffer.size(); ++i) {
+	//	//infFracData << agentBuffer[i] << "\t" << actionBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedFractionBuffer[i] << "\t" << sim::i_t(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt_naive(timestampBuffer[i]) << "\t" << sim::i_t_2ndMmt(timestampBuffer[i]) << '\n';
+	//	
+	//	//infFracData << agentBuffer[i] << "\t" << timestampBuffer[i] << "\t" << infectedAgFractionBuffer[i] << "\t" << infectedSiteFractionBuffer[i] << '\n';
+	//	infFracData << agentBuffer[pos] << "\t" << timestampBuffer[pos] << "\t" << infectedAgFractionBuffer[pos] << "\t" << infectedSiteFractionBuffer[pos] << '\n';
+	//	//++pos;
+	//	//i += overlook;
+	//}
 }
 void Stats::genPlotScript(const std::string& referenceFile, const bool&& numericOnly) {
 	std::string fileName(std::string("./genplot.py"));

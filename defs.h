@@ -52,8 +52,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -71,8 +71,8 @@ static constexpr uint N = 10;										// ----> Network size
 
 #ifdef GNP
 //static constexpr uint N = 12008;
-static constexpr uint N = 100;
-#define SOURCE_FILE "", 100
+static constexpr uint N = 1000;
+#define SOURCE_FILE "", 1000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif
@@ -92,6 +92,16 @@ static constexpr uint N = 100;
 //#define NWTK_LABEL "HepPh"
 //#define SHORT_LABEL "hep"
 //
+//static constexpr uint N = 120;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-120-3.txt")), 120
+//#define NWTK_LABEL "BA-120-3"
+//#define SHORT_LABEL "BA-120-3" 
+
+//static constexpr uint N = 1200;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1200-3.txt")), 1200
+//#define NWTK_LABEL "BA-1200-3"
+//#define SHORT_LABEL "BA-1200-3" 
+
 static constexpr uint N = 12008;										// ----> Network size
 #define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
 #define NWTK_LABEL "BA-12k-10"
@@ -152,8 +162,8 @@ static constexpr uint N = 12008;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-//#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-//#define PROTECTION_FX
+#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
+#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.

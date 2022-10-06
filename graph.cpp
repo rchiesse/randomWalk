@@ -186,43 +186,75 @@ void Graph::updateNoS(const node& v) {
 }
 void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<vector<uint>>& foreignIdx, const vector<uint>& schema) {
 	//For each node w, swaps v and u in w's list of neighbors. Note that u is the node at w's schema bound. Nodes v and u must exchange their indexes accordingly, thus their respective 'myForeignIdx' lists are also updated.
+	uint vPos = 0;
 	for (size_t idxW = 0; idxW < g[v].size(); ++idxW) {
 		const node w = g[v][idxW];
-		vector<node>& wNeighbors = g[w];
-		const uint wSchema = schema[w];
-		const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' will be exchanged with 'v' (and the reference would then be linked to 'v' instead of 'u').
-#ifdef AUTO_RELATION
-		if (w == v && u != v) {
-			const uint w_index_in_u = foreignIdx[w][wSchema];
-			std::swap(wNeighbors[idxW], wNeighbors[wSchema]);
-			foreignIdx[u][w_index_in_u] = (uint)idxW;
-			std::swap(foreignIdx[w][idxW], foreignIdx[w][wSchema]);
+
+		if (w == v) {
+			//Self-loop edge. Must be dealt with differently. Errors would be raised otherwise.
+			vPos = (uint)idxW;
 		}
-		else if (u != v && u != w) {
-#else
-		if (u != v) {
-#endif
-			const uint w_index_in_u = foreignIdx[w][wSchema];
-			uint& u_index_in_w = foreignIdx[u][w_index_in_u];
-			uint& v_index_in_w = foreignIdx[v][idxW];
+		else {
+			vector<node>& wNeighbors = g[w];
+			const uint wSchema = schema[w];
+			const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' will be exchanged with 'v' (and the reference would then be linked to 'v' instead of 'u').
+	//#ifdef AUTO_RELATION
+			//if (w == v && u != v) {
+			//	const uint w_index_in_u = foreignIdx[w][wSchema];
+			//	std::swap(wNeighbors[idxW], wNeighbors[wSchema]);
+			//	foreignIdx[u][w_index_in_u] = (uint)idxW;
+			//	std::swap(foreignIdx[w][idxW], foreignIdx[w][wSchema]);
+			//}
+			//else if (u != v && u != w) {
+	//#else
+			if (u != v) {
+				if (u != w) {
+					//#endif
+					const uint w_index_in_u = foreignIdx[w][wSchema];
+					uint& u_index_in_w = foreignIdx[u][w_index_in_u];
+					uint& v_index_in_w = foreignIdx[v][idxW];
 #ifdef DEBUG
-			std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
-			assertm(u_index_in_w == wSchema, message);
+					std::string message = "The index of 'u' in the neighborhood list of 'w' is " + std::to_string(u_index_in_w) + " but should be equal to w's schema (which is " + std::to_string(wSchema) + " at the moment).";
+					assertm(u_index_in_w == wSchema, message);
 #endif
-			std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
-			std::swap(foreignIdx[w][v_index_in_w], foreignIdx[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
-			std::swap(v_index_in_w, u_index_in_w);
+					std::swap(wNeighbors[v_index_in_w], wNeighbors[u_index_in_w]);
+					std::swap(foreignIdx[w][v_index_in_w], foreignIdx[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
+					std::swap(v_index_in_w, u_index_in_w);
+				}
+#ifdef AUTO_RELATION
+				else {
+					uint& v_index_in_w = foreignIdx[v][idxW];
+					std::swap(wNeighbors[v_index_in_w], wNeighbors[wSchema]);
+					std::swap(foreignIdx[w][v_index_in_w], foreignIdx[w][wSchema]);
+					foreignIdx[v][idxW] = wSchema;
+				}
+#endif
+			}
+			
 		}
 	}
+#ifdef AUTO_RELATION
+	//Self-loop treatment:
+	vector<node>& vNeighbors = g[v];
+	const uint vSchema = schema[v];
+	const node u = vNeighbors[vSchema];
+	if (u != v) {
+		const uint v_index_in_u = foreignIdx[v][vSchema];
+		uint u_index_in_v = vSchema;
+		uint v_index_in_v = vPos;
+
+		std::swap(vNeighbors[u_index_in_v], vNeighbors[v_index_in_v]);
+		std::swap(foreignIdx[v][u_index_in_v], foreignIdx[v][v_index_in_v]);
+		foreignIdx[u][v_index_in_u] = vPos;
+	}
+#endif
 }
 void Graph::raiseSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
-	const uint vNeighbSz = (uint)neighbors.size();
-	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)
+	for (int idxW = (int)neighbors.size() - 1; idxW >= 0; --idxW)
 		++(schema[neighbors[idxW]]);
 }
 void Graph::lowerSchema(const node& v, vector<uint>& schema, const vector<node>& neighbors) {
-	const uint vNeighbSz = (uint)neighbors.size();
-	for (uint idxW = 0; idxW < vNeighbSz; ++idxW)
+	for (int idxW = (int)neighbors.size() - 1; idxW >= 0; --idxW)
 		--(schema[neighbors[idxW]]);
 }
 const node& Graph::nextNodeForS(const node& _currNode, const real& p) {
@@ -677,7 +709,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	for (node v = 0; v < n; ++v) gi[v].emplace_back(v);
 	m += n;
 	++largestDegree;
-	averageDegree = (2.0 * m) / n;
+	averageDegree = ((2.0 * m) - n) / n;
 
 	for (node v = 0; v < n; ++v) myForeignIdx_s[v].emplace_back((uint)(gs[v].size() - 1));
 	for (node v = 0; v < n; ++v) myForeignIdx_i[v].emplace_back((uint)(gi[v].size() - 1));

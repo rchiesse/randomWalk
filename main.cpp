@@ -54,7 +54,7 @@ uint K;
 uint LIST_INI_SZ;														// ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 
 // Output control:
-constexpr real OVERLOOK_RATE = 1.0;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+const real OVERLOOK_RATE = (real)1.0 / NUM_AGENTS;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 uint OVERLOOK;
 
 //Main structures
@@ -232,21 +232,22 @@ void sim::setEnvironment() {
 	//// CL N10: 
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
 	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
-	 
+	
 	//G(n,p) N200:
 	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
-	T = 2000.0; NUM_AGENTS = 5000; TAU_aa = 0.10; GAMMA_a = 0.05; LAMBDA = 20.0; 
+	T = 500000.0; NUM_AGENTS = 100; TAU_aa = 0.003; GAMMA_a = 0.00006; LAMBDA = 1.0; 
 
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.6;
-	Ws = 0.6; 
+	Wi = 0.3;
+	Ws = 0.3; 
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
-	OVERLOOK			= (uint)((NUM_AGENTS * OVERLOOK_RATE) / 1);
+	OVERLOOK			= 1;
+	//OVERLOOK			= (uint)((long double)NUM_AGENTS * OVERLOOK_RATE);
 	LIST_INI_SZ			= (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3.0 * N))));
 	
 	I_0					= (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((real)NUM_AGENTS * FRAC_AG_INFECTED);
@@ -827,7 +828,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		//const real _47 = graph::Graph::kb[47] / (N * graph::Graph::block_prob[47]);
 		const real nb = (N * graph::Graph::block_prob[graph::Graph::largestDegree]);
 		//std::cout << "\nAverages for <Kb> = " << maxKB / szMaxB << ": \n";
-		std::cout << "\nAverages for <K>_bMAX = " << graph::Graph::kb[graph::Graph::kb.size() - 1] / nb << " and <b_K> = " << _b_k_ << ": \n";
+		std::cout << "\nAverages for <K>_bMAX = " << graph::Graph::kb[graph::Graph::kb.size() - 1] / nb << " and <b>_K = " << _b_k_ << ": \n";
 		std::cout << "\tMin = " << minAv << " at block " << blockMin << " \n";
 		std::cout << "\tMax = " << maxAv << " at block " << blockMax << " \n\n";
 #endif //SI_PROPORTION

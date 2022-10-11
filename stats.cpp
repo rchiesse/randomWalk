@@ -263,7 +263,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 
 		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
-		"plt.title(\"Fraction of Infected Agents/Sites over Time\")\n" <<
+		"plt.title(\"Fraction of Infected Agents over Time\")\n" <<
 		"plt.xlabel(\"Time\")\n" <<
 		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << t << ")\n" <<

@@ -54,7 +54,7 @@ uint K;
 uint LIST_INI_SZ;														// ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 
 // Output control:
-const real OVERLOOK_RATE = (real)1.0 / NUM_AGENTS;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
+//const real OVERLOOK_RATE = (real)1.0 / NUM_AGENTS;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 uint OVERLOOK;
 
 //Main structures
@@ -125,6 +125,14 @@ vector<agent> iInNode;													// ----> Keeps track, for each node v, of how
 vector<vector<agent>> sAgents;											// ----> Up-to-date list of susceptible agents within each node v.
 vector<vector<agent>> iAgents;											// ----> Up-to-date list of infected agents within each node v.
 
+//Average number of hops until changing status:
+vector<real> IavNumHops;
+vector<real> SavNumHops;
+vector<uint> ITransitions;
+vector<uint> STransitions;
+vector<uint> hopsUntilI;
+vector<uint> hopsUntilS;
+
 
 // * GLOBAL UNIFORM(0,1) RANDOM-NUMBER GENERATOR * 
 std::random_device rd;
@@ -182,6 +190,41 @@ int main() {
 #endif
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
+
+
+
+	//=============================================================
+	//Temp:
+	real IgeneralHops = 0;
+	real SgeneralHops = 0;
+	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i){
+		sim::IavNumHops[i] /= sim::ITransitions[i];
+		sim::SavNumHops[i] /= sim::STransitions[i];
+	}
+	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i) {
+		IgeneralHops += sim::IavNumHops[i];
+		SgeneralHops += sim::SavNumHops[i];
+	}
+	IgeneralHops /= sim::NUM_AGENTS;
+	SgeneralHops /= sim::NUM_AGENTS;
+
+	std::cout << "\n\nAv. num. hops as I-agent: " << IgeneralHops;
+	std::cout << "\nAv. num. hops as S-agent: " << SgeneralHops;
+
+	std::sort(sim::hopsUntilI.begin(), sim::hopsUntilI.end());
+	std::cout << "\n\n10 minimum #hops until becoming infected: \n";
+	for (size_t i = 0; i < 10; ++i) {
+		std::cout << sim::hopsUntilI[i] << " ";
+	}
+	std::cout << "\n\n10 maximum #hops until becoming infected: \n";
+	for (size_t i = 0; i < 10; ++i){
+		std::cout << sim::hopsUntilI[sim::hopsUntilI.size() - 1 - i] << " ";
+	}
+	std::cout << '\n';
+	//=============================================================
+
+
+
 	sim::Reporter::logTimestamp("End of simulation.");
 	return 0;
 }
@@ -233,9 +276,20 @@ void sim::setEnvironment() {
 	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
 	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
 	
-	//G(n,p) N200:
+	//G(n,p):
 	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
-	T = 500000.0; NUM_AGENTS = 100; TAU_aa = 0.003; GAMMA_a = 0.00006; LAMBDA = 1.0; 
+	
+	
+	//T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
+	//T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
+	//T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.06; LAMBDA = 1.0; 
+	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
+	T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
+
+	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
+
+
+
 
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
@@ -247,6 +301,7 @@ void sim::setEnvironment() {
 #endif
 	//Other parameters:
 	OVERLOOK			= 1;
+	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));
 	//OVERLOOK			= (uint)((long double)NUM_AGENTS * OVERLOOK_RATE);
 	LIST_INI_SZ			= (uint)(round(std::max((real)2.0, (real)NUM_AGENTS / (3.0 * N))));
 	
@@ -444,9 +499,17 @@ void sim::walk(const agent& ag, const real& now) {
 	if (isInfectedAg[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
 		enterNodeAsInf(ag, v, now);
+
+		//Temp:
+		++IavNumHops[ag];
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
 		enterNodeAsSus(ag, v, now);
+
+		//Temp:
+		++SavNumHops[ag];
+		if (ag == 0)
+			++hopsUntilI[hopsUntilI.size() - 1];
 	}
 }
 void sim::recoverAg		 (const agent& ag, const real& now) {
@@ -459,6 +522,9 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
+
+	//Temp:
+	++STransitions[ag];
 }
 
 void sim::recoverSite	(const uint& v, const real& now) {
@@ -487,6 +553,11 @@ void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective,
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
 	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+
+	//Temp:
+	++ITransitions[ag];
+	if(ag == 0)
+		hopsUntilI.emplace_back(0);
 }
 void sim::agFate_fromSite(const agent& ag, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) 
@@ -610,6 +681,17 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	iAgents.resize(Graph::n);									// ----> Up-to-date list of infected agents within each node v.
 	for (node v = 0; v < Graph::n; ++v) sAgents[v].resize((size_t)LIST_INI_SZ + 1);	// ----> The extra spot is to store the actual number of elements in the list, which may differ from the container size.
 	for (node v = 0; v < Graph::n; ++v) iAgents[v].resize((size_t)LIST_INI_SZ + 1);	// ----> The extra spot is to store the actual number of elements in the list, which may differ from the container size.
+
+	//Temp:
+	IavNumHops.resize(NUM_AGENTS, 0);
+	SavNumHops.resize(NUM_AGENTS, 0);
+	ITransitions.resize(NUM_AGENTS, 0);
+	STransitions.resize(NUM_AGENTS, 0);
+
+	hopsUntilI.reserve((size_t)(T * nL));
+	hopsUntilS.reserve((size_t)(T * nL));
+	hopsUntilI.emplace_back(0);
+	hopsUntilS.emplace_back(0);
 
 #ifdef PROTECTION_FX
 	Graph::setProbs();
@@ -841,7 +923,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
-	constexpr real stepSize = 0.01;
+	constexpr real stepSize = 0.001;
 	constexpr uint largerDetailUntil = 100;
 	//const uint largerDetailUntil = (uint)(T / stepSize) + 1;
 	constexpr real epsilon = 1.0 / N ;

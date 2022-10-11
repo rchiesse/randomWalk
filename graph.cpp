@@ -381,21 +381,23 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 		std::mt19937_64 _gen(_rd());										// ----> Generator.
 		std::uniform_real_distribution<real> _U(0, 1);
 
-		constexpr real _avDegree = 10.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
-		constexpr uint _n = N;
-		constexpr real _p = _avDegree / (_n - 1);
+		//constexpr uint _n = N;
+		//constexpr real _avDegree = 10.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
+		//const real _avDegree = 2.0 * log10(N)/N;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold value for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
+		//const real _p = _avDegree / (N - 1);
+		const real _p = 4.0 * log10(N) / N;
 		const real log_q = log(1 - _p);
 
 		int v = 1, w = -1;
 		real r;
-		while (v < _n) {
+		while (v < N) {
 			r = _U(_gen);													// ----> Random number uniformly drawn from the interval (0,1).
 			w = w + 1 + (int)std::floor(log(1 - r) / log_q);
-			while (w >= v && v < _n) {
+			while (w >= v && v < N) {
 				w -= v;
 				++v;
 			}
-			if (v < _n) {
+			if (v < N) {
 #ifdef PROTECTION_FX
 				gs[v].emplace_back(w);
 				gs[w].emplace_back(v);
@@ -412,7 +414,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 				++m;
 			}
 		}
-		n = _n;
+		n = N;
 	} //Extra scope.
 #endif
 

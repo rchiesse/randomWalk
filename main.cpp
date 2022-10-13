@@ -231,7 +231,7 @@ int main() {
 
 
 /* IMPLEMENTATION */
-static const uint sim::randomInt(const uint& openRange) { return (uint)(floor(openRange * U())); }
+static const uint sim::randomInt(const uint& openRange) { return (uint)(floor((double)openRange * U())); }
 static const real sim::EXP(const real& param) { return -(1.0 / param) * log(U()); }
 static const real sim::EXPTau_aa()	{ return NEG_RECIPR_TAU_aa	* log(U()); }
 static const real sim::EXPTau_al()	{ return NEG_RECIPR_TAU_al	* log(U()); }
@@ -245,7 +245,7 @@ void sim::setEnvironment() {
 	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
-	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
+	ROUNDS				= 5;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
@@ -493,21 +493,28 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 #endif
 }
 void sim::walk(const agent& ag, const real& now) {
-	node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
+	//node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
+	node v;
+	if (isInfectedAg[ag]) {
+		v = nextNodeForInf(currentNode[ag]);
+		//Temp:
+		++IavNumHops[ag];
+	}
+	else {
+		v = nextNodeForSus(currentNode[ag]);
+		//Temp:
+		++SavNumHops[ag];
+	}
 	if (v == currentNode[ag])
 		return;
 	if (isInfectedAg[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
 		enterNodeAsInf(ag, v, now);
 
-		//Temp:
-		++IavNumHops[ag];
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
 		enterNodeAsSus(ag, v, now);
 
-		//Temp:
-		++SavNumHops[ag];
 		if (ag == 0)
 			++hopsUntilI[hopsUntilI.size() - 1];
 	}
@@ -732,7 +739,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef INFECTED_FRACTION
 		Stats::initStream(streamType::infFrac);
 #endif
-		//Stats::initStream(streamType::avDuration);
+		Stats::initStream(streamType::avDuration);
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA);
 		for (uint round = 0; round < ROUNDS; ++round) {
@@ -864,7 +871,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					std::cout << '\r' << "Round " << (round + 1) << '/' << ROUNDS << ": " << std::round((now / T) * 100) << "% complete...";
 				}
 			}
-			std::cout << '\r' << "Round " << round << '/' << ROUNDS << ": " << "100% complete!    ";
+			std::cout << '\r' << "Round " << (round + 1)  << '/' << ROUNDS << ": " << "100% complete!    ";
 			//std::cout << '\n' << "Hit Count: " << hitCount << '\n';
 			Stats::partialsAvDur(roundDuration);
 #ifdef MEASURE_ROUND_EXE_TIME
@@ -879,8 +886,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 		} // ** for (uint round = 0; round < ROUNDS; ++round)
 
-		//Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
-		//Stats::endStream  (streamType::avDuration);
+		Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
+		Stats::endStream  (streamType::avDuration);
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell("\nAll rounds completed.\n");
 #endif

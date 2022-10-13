@@ -182,7 +182,7 @@ static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 he
 
 
 // * REPORTER * 
-//#define MEASURE_ROUND_EXE_TIME
+#define MEASURE_ROUND_EXE_TIME
 
 // ---------------------------//----------------------------- //
 

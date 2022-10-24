@@ -54,8 +54,7 @@ real Stats::avDur = 0;
 real Stats::lastRoundDuration = 0;
 uint Stats::partials = 0;
 bool Stats::avDurComputed = false;
-std::ofstream Stats::avDurData_w;
-std::ofstream Stats::avDurData_lambda;
+std::ofstream Stats::avDurData;
 
 #ifdef ESTIMATE_PROBS
 void Stats::probsToFile() {
@@ -145,26 +144,19 @@ void Stats::initStream(const streamType& s) {
 #endif //OCCUPANCY
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
-		ss << "./stats/duration_per_w_" << baseName << ".csv";
+		ss << "./stats/duration_" << avDurBaseName << ".csv";
 		fileName = ss.str();
-		avDurData_w.open(fileName, std::ios::app);
-		ss.str("");
-		ss << "./stats/duration_per_lambda_" << baseName << ".csv";
-		fileName = ss.str();
-		avDurData_lambda.open(fileName, std::ios::app);
+		avDurData.open(fileName, std::ios::app);
 		//Header
-		if (isEmpty(avDurData_lambda))
-			avDurData_lambda << "lambda,duration\n";
-		if (isEmpty(avDurData_w))
-			avDurData_w << "w,duration\n";
+		if (isEmpty(avDurData))
+			avDurData << "lambda,w,duration,n,k\n";
 	default:;
 	}
 }
 void Stats::endStream(const streamType& s) {
 	switch (s) {
 	case streamType::avDuration:
-		avDurData_lambda.close();
-		avDurData_w.close();
+		avDurData.close();
 		break;
 #ifdef ESTIMATE_PROBS
 	case streamType::probs:
@@ -232,6 +224,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"import numpy as np\n" <<
 		"import csv\n\n";
 
+	//"INFECTED FRACTION X SIMULATION TIME":
 	if (!numericOnly) {
 		of <<
 			"#Import CSV data\n" <<
@@ -283,15 +276,32 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 
 		"plt.savefig(" << "\"./plots/" << referenceFile << ".pdf\"" << ")\n" <<
 		"#plt.show()\n";
+
+
+	//"AVERAGE DURATION X LAMBDA" & "AVERAGE DURATION X W":
+	of <<
+		"with open(\"./stats/duration_" << baseName << ".csv\", \"r\") as j :\n" <<
+		"\trawAvDurW = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
+
+		"AvDurWData = np.array(rawAvDurW[1:], dtype = np.float64)\n" <<
+		"w = AvDurWData[:, 0]\n" <<
+		"duration = AvDurWData[:, 1]\n" <<
+
+		"\n#Plot\n" <<
+		"plt.figure(1, dpi = 120)\n" <<
+		"plt.title(\"Average Duration over W\")\n" <<
+		"plt.xlabel(\"w\")\n" <<
+		"plt.ylabel(\"Average duration\")\n" <<
+		"plt.xlim(0, " << t << ")\n" <<
+		"plt.ylim(0, 1)\n";
 	of.close();
 }
 #endif //INFECTED_FRACTION
 void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAg) {
 	switch (s) {
 	case streamType::avDuration:
-		avDurData_lambda << lambda << ',' << lastRoundDuration << '\n';
 		real w = (Wi + Ws) / 2.0;
-		avDurData_w << w << ',' << lastRoundDuration << '\n';
+		avDurData << lambda << ',' << w << ',' << lastRoundDuration << ',' << N << ',' << numAgents << ',' << '\n';
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
 		break;
 #ifdef OCCUPANCY
@@ -367,6 +377,15 @@ void Stats::setBasename() {
 		//<< "_Tla"	<< TAU_la 
 		//<< "_Gl"	<< GAMMA_l 
 	baseName = name.str();
+	
+	name.str() = "";
+	name << SHORT_LABEL
+		<< "_T" << tau
+		<< "_G" << gamma
+		<< "_L" << lambda
+		<< "_STime" << t
+		<< "_R" << rounds;
+	avDurBaseName = name.str();
 }
 void Stats::resetStats() {
 #ifdef OCCUPANCY

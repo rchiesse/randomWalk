@@ -121,8 +121,7 @@ namespace sim {
 		static uint partials;									// ----> Total number of values to average upon.
 		static bool avDurComputed;
 	public:
-		static std::ofstream avDurData_w;
-		static std::ofstream avDurData_lambda;
+		static std::ofstream avDurData;
 
 		//Average Duration (AD) partials. It simply assigns the informed 'duration' to the 'averageDuration' accumulator. The actual average is later computed by calling 'avDuration()', which divides the sum by the total number of ROUNDS.
 		static void partialsAvDur(const real& duration);

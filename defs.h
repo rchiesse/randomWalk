@@ -39,6 +39,7 @@ namespace graph {
 #define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 namespace sim {
 	static std::string baseName;
+	static std::string avDurBaseName;
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
 	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
 	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent

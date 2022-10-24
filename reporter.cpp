@@ -72,16 +72,26 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 		<< "\t ---> Smallest degree: "	<< smallestDegree	<< '\n'
 		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)";
 }
-void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA) {
+void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA, const real& Wi, const real& Ws, const real& avDegree, const real& _2ndMoment) {
+	real w = (Wi + Ws) / 2.0;
+	real sigma = TAU_aa / (2.0 * LAMBDA + TAU_aa);
+	//real sigma = 1;
+	real _2sl = 2.0 * sigma * LAMBDA;
+	//real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / (N * pow(avDegree, 2.0));
+	real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / ( pow(avDegree, 2.0));
+	
 	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
 		<< "\tNUM_AGENTS: "							<< NUM_AGENTS	<< '\n'
 		<< "\tInitially infected: "					<< itotal		<< '\n'
-		<< "\tN: "									<< N			<< '\n'
+		<< "\tWi: "									<< Wi			<< '\n'
+		<< "\tWs: "									<< Ws			<< '\n'
 		<< "\tTAU (Infect): "						<< TAU_aa		<< '\n'
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
+		<< "\tBETA (Infection force): "				<< beta			<< '\n'
+		<< "\tR0 (BETA/GAMMA): "					<< beta/GAMMA_a	<< '\n'
 		//<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
 		//<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
 		//<< "\tGAMMA_l (Recover): "				<< GAMMA_l		<< '\n'

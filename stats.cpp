@@ -51,9 +51,11 @@ std::ofstream Stats::occData;
 std::ofstream Stats::netOccData;
 #endif //OCCUPANCY
 real Stats::avDur = 0;
+real Stats::lastRoundDuration = 0;
 uint Stats::partials = 0;
 bool Stats::avDurComputed = false;
-std::ofstream Stats::avDurData;
+std::ofstream Stats::avDurData_w;
+std::ofstream Stats::avDurData_lambda;
 
 #ifdef ESTIMATE_PROBS
 void Stats::probsToFile() {
@@ -143,19 +145,26 @@ void Stats::initStream(const streamType& s) {
 #endif //OCCUPANCY
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
-		ss << "./stats/averageDuration_" << baseName << ".csv";
+		ss << "./stats/duration_per_w_" << baseName << ".csv";
 		fileName = ss.str();
-		avDurData.open(fileName, std::ios::app);
+		avDurData_w.open(fileName, std::ios::app);
+		ss.str("");
+		ss << "./stats/duration_per_lambda_" << baseName << ".csv";
+		fileName = ss.str();
+		avDurData_lambda.open(fileName, std::ios::app);
 		//Header
-		if (isEmpty(avDurData))
-			avDurData << "numAgents\tWs\tWi\tavDuration\n";
+		if (isEmpty(avDurData_lambda))
+			avDurData_lambda << "lambda,duration\n";
+		if (isEmpty(avDurData_w))
+			avDurData_w << "w,duration\n";
 	default:;
 	}
 }
 void Stats::endStream(const streamType& s) {
 	switch (s) {
 	case streamType::avDuration:
-		avDurData.close();
+		avDurData_lambda.close();
+		avDurData_w.close();
 		break;
 #ifdef ESTIMATE_PROBS
 	case streamType::probs:
@@ -280,7 +289,10 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAg) {
 	switch (s) {
 	case streamType::avDuration:
-		avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
+		avDurData_lambda << lambda << ',' << lastRoundDuration << '\n';
+		real w = (Wi + Ws) / 2.0;
+		avDurData_w << w << ',' << lastRoundDuration << '\n';
+		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
 		break;
 #ifdef OCCUPANCY
 	case streamType::occupancy:
@@ -319,6 +331,7 @@ void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, con
 	}
 }
 void Stats::partialsAvDur(const real& duration) {
+	lastRoundDuration = duration;
 	avDur += duration;
 	++partials;
 }

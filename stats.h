@@ -117,10 +117,12 @@ namespace sim {
 		//Structures to measure the epidemic's average duration, over the number of ROUNDS provided:
 	private:
 		static real avDur;										// ----> Epidemics average duration;
+		static real lastRoundDuration;							// ----> Stores the simulation time for only the most recent round;
 		static uint partials;									// ----> Total number of values to average upon.
 		static bool avDurComputed;
 	public:
-		static std::ofstream avDurData;
+		static std::ofstream avDurData_w;
+		static std::ofstream avDurData_lambda;
 
 		//Average Duration (AD) partials. It simply assigns the informed 'duration' to the 'averageDuration' accumulator. The actual average is later computed by calling 'avDuration()', which divides the sum by the total number of ROUNDS.
 		static void partialsAvDur(const real& duration);

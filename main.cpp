@@ -245,7 +245,7 @@ void sim::setEnvironment() {
 	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
-	ROUNDS				= 5;											// ----> Number of simulation runs for a given setup. 
+	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
@@ -280,11 +280,13 @@ void sim::setEnvironment() {
 	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
 	
 	
-	//T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
-	//T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
-	//T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.06; LAMBDA = 1.0; 
-	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
-	T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
+	//1)T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
+	//2) T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
+	//3) T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.06; LAMBDA = 1.0; 
+	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
+	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
+	
+	T = 20000.0; NUM_AGENTS = 1000; TAU_aa = 0.01; GAMMA_a = 0.017; LAMBDA = 2.0; 
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -741,7 +743,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 		Stats::initStream(streamType::avDuration);
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
-		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA);
+		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");

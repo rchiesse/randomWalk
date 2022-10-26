@@ -54,7 +54,8 @@ real Stats::avDur = 0;
 real Stats::lastRoundDuration = 0;
 uint Stats::partials = 0;
 bool Stats::avDurComputed = false;
-std::ofstream Stats::avDurData;
+std::ofstream Stats::avDurDataK;
+std::ofstream Stats::avDurDataL;
 
 #ifdef ESTIMATE_PROBS
 void Stats::probsToFile() {
@@ -144,19 +145,29 @@ void Stats::initStream(const streamType& s) {
 #endif //OCCUPANCY
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
-		ss << "./stats/duration_" << avDurBaseName << ".csv";
+		ss.clear();
+		ss << "./stats/duration_" << avDurKBaseName << ".csv";
 		fileName = ss.str();
-		avDurData.open(fileName, std::ios::app);
+		avDurDataK.open(fileName, std::ios::app);
+
+		ss.str("");
+		ss.clear();
+		ss << "./stats/duration_" << avDurLBaseName << ".csv";
+		fileName = ss.str();
+		avDurDataL.open(fileName, std::ios::app);
 		//Header
-		if (isEmpty(avDurData))
-			avDurData << "lambda,w,duration,n,k\n";
+		if (isEmpty(avDurDataK))
+			avDurDataK << "duration,k,type\n";
+		if (isEmpty(avDurDataL))
+			avDurDataL << "duration,lambda,type\n";
 	default:;
 	}
 }
 void Stats::endStream(const streamType& s) {
 	switch (s) {
 	case streamType::avDuration:
-		avDurData.close();
+		avDurDataK.close();
+		avDurDataL.close();
 		break;
 #ifdef ESTIMATE_PROBS
 	case streamType::probs:
@@ -278,15 +289,30 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"#plt.show()\n";
 
 
+	//while()...
+	//std::ifstream arq__G(fileName);
+	//string line;
+	//if (!arq__G.is_open()) {
+	//	sim::Reporter::errorOpening(fileName);
+	//	return;
+	//}
+	//sim::Reporter::openedWithSuccess(fileName);
+	//
+	//do {
+	//	getline(arq__G, line);
+	//} while (line.at(0) == COMMENTARY && arq__G.good());
+
+
 	//"AVERAGE DURATION X LAMBDA" & "AVERAGE DURATION X W":
 	of <<
-		"with open(\"./stats/duration_" << baseName << ".csv\", \"r\") as j :\n" <<
-		"\trawAvDurW = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
-
-		"AvDurWData = np.array(rawAvDurW[1:], dtype = np.float64)\n" <<
-		"w = AvDurWData[:, 0]\n" <<
-		"duration = AvDurWData[:, 1]\n" <<
-
+		"with open(\"./stats/averages/duration_" << baseName << ".csv\", \"r\") as j :\n" <<
+		"\trawAvDur = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
+	
+		"AvDurData = np.array(rawAvDur[1:], dtype = np.float64)\n" <<
+		"lambda = AvDurWData[:, 0]\n" <<
+		"w = AvDurWData[:, 1]\n" <<
+		"duration = AvDurWData[:, 2]\n" <<
+	
 		"\n#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
 		"plt.title(\"Average Duration over W\")\n" <<
@@ -294,6 +320,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.ylabel(\"Average duration\")\n" <<
 		"plt.xlim(0, " << t << ")\n" <<
 		"plt.ylim(0, 1)\n";
+	
 	of.close();
 }
 #endif //INFECTED_FRACTION
@@ -301,8 +328,14 @@ void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, con
 	switch (s) {
 	case streamType::avDuration:
 		real w = (Wi + Ws) / 2.0;
-		avDurData << lambda << ',' << w << ',' << lastRoundDuration << ',' << N << ',' << numAgents << ',' << '\n';
+		std::stringstream sstype;
+		sstype.precision(1);
+		sstype << w;
+		std::string type("N" + std::to_string(N) + "_w" + sstype.str());
+
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
+		avDurDataK << numAg  << ',' << avDuration() << ',' << type << '\n';
+		avDurDataL << lambda << ',' << avDuration() << ',' << type << '\n';
 		break;
 #ifdef OCCUPANCY
 	case streamType::occupancy:
@@ -362,30 +395,47 @@ bool Stats::isEmpty(std::ofstream& s) {
 	return s.tellp() == 0;
 }
 void Stats::setBasename() {
-	std::stringstream name;
-	name << SHORT_LABEL 
-		<< "_N"		<< N 
-		<< "_AG"	<< numAgents 
-		<< "_T"		<< tau 
-		<< "_G"		<< gamma 
-		<< "_L"		<< lambda 
-		<< "_Wi"	<< Wi 
-		<< "_Ws"	<< Ws 
-		<< "_STime" << t 
-		<< "_R"		<< rounds;
+	{
+		std::stringstream name;
+		name << SHORT_LABEL
+			<< "_N" << N
+			<< "_AG" << numAgents
+			<< "_T" << tau
+			<< "_G" << gamma
+			<< "_L" << lambda
+			<< "_Wi" << Wi
+			<< "_Ws" << Ws
+			<< "_STime" << t
+			<< "_R" << rounds;
 		//<< "_Tal"	<< TAU_al 
 		//<< "_Tla"	<< TAU_la 
 		//<< "_Gl"	<< GAMMA_l 
-	baseName = name.str();
-	
-	name.str() = "";
-	name << SHORT_LABEL
-		<< "_T" << tau
-		<< "_G" << gamma
-		<< "_L" << lambda
-		<< "_STime" << t
-		<< "_R" << rounds;
-	avDurBaseName = name.str();
+		baseName = name.str();
+	}
+	{
+		std::stringstream name;
+		name.clear();
+		name.str() = "";
+		name << SHORT_LABEL
+			<< "_T" << tau
+			<< "_G" << gamma
+			<< "_L" << lambda
+			<< "_STime" << t
+			<< "_R" << rounds;
+		avDurKBaseName = name.str();
+	}
+	{
+		std::stringstream name;
+		name.clear();
+		name.str() = "";
+		name << SHORT_LABEL
+			<< "_T" << tau
+			<< "_G" << gamma
+			<< "_AG" << numAgents
+			<< "_STime" << t
+			<< "_R" << rounds;
+		avDurLBaseName = name.str();
+	}
 }
 void Stats::resetStats() {
 #ifdef OCCUPANCY

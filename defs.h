@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <fstream>
@@ -39,7 +40,8 @@ namespace graph {
 #define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 namespace sim {
 	static std::string baseName;
-	static std::string avDurBaseName;
+	static std::string avDurKBaseName;
+	static std::string avDurLBaseName;
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
 	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
 	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent
@@ -53,8 +55,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -164,7 +166,7 @@ static constexpr uint N = 1200;										// ----> Network size
 
 // * AGENTS' BEHAVIOR *
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
-//#define PROTECTION_FX
+#define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.

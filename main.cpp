@@ -245,7 +245,7 @@ void sim::setEnvironment() {
 	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
-	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
+	ROUNDS				= 3;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 20000.0; NUM_AGENTS = 1000; TAU_aa = 0.01; GAMMA_a = 0.017; LAMBDA = 2.0; 
+	T = 2000.0; NUM_AGENTS = 1000; TAU_aa = 0.1; GAMMA_a = 0.017; LAMBDA = 2.0; 
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -296,8 +296,8 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.3;
-	Ws = 0.3; 
+	Wi = 0.6;
+	Ws = 0.6; 
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
@@ -665,6 +665,9 @@ void sim::resetVariables() {
 	for (node v = 0; v < Graph::n; ++v) sInNode[v] = 0;
 	for (node v = 0; v < Graph::n; ++v) iInNode[v] = 0;
 
+#ifdef PROTECTION_FX
+	graph::Graph::resetSchema();
+#endif
 #ifdef SI_PROPORTION
 	v_avIb		.resize(Graph::block_prob.size(), 0.0);
 	v_probesIb	.resize(Graph::block_prob.size(), 0.0);
@@ -883,13 +886,13 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef INFECTED_FRACTION
 			Reporter::startChronometer(" Saving To File...");	
 			Stats::iFracToFile(OVERLOOK);
+			Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
 			Stats::endStream(streamType::infFrac);
 			Reporter::stopChronometer(" done");
 #endif
 		} // ** for (uint round = 0; round < ROUNDS; ++round)
+		Stats::endStream(streamType::avDuration);
 
-		Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
-		Stats::endStream  (streamType::avDuration);
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell("\nAll rounds completed.\n");
 #endif

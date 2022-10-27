@@ -156,7 +156,6 @@ namespace sim {
 		static void initStream(const streamType& s);
 		static void endStream(const streamType& s);
 		static void writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAgents);
-		static bool isEmpty(std::ofstream& s);
 		static void resetStats();
 		static void setBasename();
 #ifdef INFECTED_FRACTION

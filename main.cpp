@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 2000.0; NUM_AGENTS = 1000; TAU_aa = 0.1; GAMMA_a = 0.017; LAMBDA = 2.0; 
+	T = 2000.0; NUM_AGENTS = 1000; TAU_aa = 0.1; GAMMA_a = 0.022; LAMBDA = 2.0; 
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -349,8 +349,9 @@ void sim::setEnvironment() {
 	}
 	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
 #endif //SOLVE_NUMERICALLY
-	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
 	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);
+	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
+	Stats::setBasename();
 	Stats::initAvDur();
 }
 
@@ -887,11 +888,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef INFECTED_FRACTION
 			Reporter::startChronometer(" Saving To File...");	
 			Stats::iFracToFile(OVERLOOK);
-			Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
 			Stats::endStream(streamType::infFrac);
 			Reporter::stopChronometer(" done");
 #endif
 		} // ** for (uint round = 0; round < ROUNDS; ++round)
+		Stats::writeToFile(streamType::avDuration, Ws, Wi, _numAgents);
 		Stats::endStream(streamType::avDuration);
 
 #ifndef MEASURE_ROUND_EXE_TIME
@@ -944,7 +945,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	vector<real> saveToFile_diadt;
 	vector<real> saveToFile_dildt;
 	uint outputSize = 0;
-	//Stats::setBasename();
 	std::stringstream name;
 	name << SHORT_LABEL 
 		<< "_N"		<< N 

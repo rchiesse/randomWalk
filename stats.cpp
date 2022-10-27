@@ -92,7 +92,7 @@ void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rou
 
 //void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
 void Stats::initStream(const streamType& s) {
-	setBasename();
+	//setBasename();
 	std::stringstream ss;
 	ss.precision(2);
 	std::string fileName;
@@ -151,20 +151,19 @@ void Stats::initStream(const streamType& s) {
 	case streamType::avDuration:
 		ss.str("");			// ----> Clear content.
 		ss.clear();
-		ss << "./stats/duration_" << avDurKBaseName << ".csv";
+		ss << "./stats/averages/" << avDurKBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataK.open(fileName, std::ios::app);
+		if (sim::utils::isEmpty(avDurDataK))
+			avDurDataK << "k,duration\n";	//Header
 
 		ss.str("");
 		ss.clear();
-		ss << "./stats/duration_" << avDurLBaseName << ".csv";
+		ss << "./stats/averages/" << avDurLBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataL.open(fileName, std::ios::app);
-		//Header
-		if (isEmpty(avDurDataK))
-			avDurDataK << "duration,k,type\n";
-		if (isEmpty(avDurDataL))
-			avDurDataL << "duration,lambda,type\n";
+		if (sim::utils::isEmpty(avDurDataL))
+			avDurDataL << "lambda,duration\n";
 	default:;
 	}
 }
@@ -310,27 +309,28 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		getline(arq__avL, instanceName);
 		of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
 		
-		vector<std::string> varNames = utils::split(instanceName, '-');
-		std::string var = varNames[0];
-		std::string label = varNames[1];
+		std::string label = utils::split(instanceName, '-')[1];
 		std::replace(instanceName.begin(), instanceName.end(), '.', '_');
 		of <<
-			"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
+			"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \",\"))\n\n" <<
 
-			instanceName << " = np.array(rawAvDur[1:], dtype = np.float64)\n" <<
+			instanceName << " = np.array(raw_"  << instanceName << "[1:], dtype = np.float64)\n" <<
 			"lambda_"  << instanceName << " = " << instanceName << "[:, 0]\n" <<
-			"duration_"<< instanceName << " = " << instanceName << "[:, 2]\n" <<
-			"plt.plot(timeRK, infAgRK, label = \"Model\")\n";
+			"duration_"<< instanceName << " = " << instanceName << "[:, 1]\n" <<
+			"plt.plot(lambda_"  << instanceName << ", duration_" << instanceName << ", label = \"" << label << "\")\n\n";
 	} while (arq__avL.good());
 	arq__avL.close();
 
 	of << "\n#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
-		"plt.title(\"Average Duration over W\")\n" <<
-		"plt.xlabel(\"w\")\n" <<
+		"plt.title(\"Average Duration over Walk Rate\")\n" <<
+		"plt.xlabel(\"Walk Rate\")\n" <<
 		"plt.ylabel(\"Average duration\")\n" <<
-		"plt.xlim(0, " << t << ")\n" <<
-		"plt.ylim(0, 1)\n";
+		"plt.xlim(0, 10)\n" <<
+		"plt.ylim(0, " << t << ")\n"
+		"plt.legend()\n" <<
+		"plt.grid()\n" <<
+		"plt.savefig(" << "\"./plots/averages/" << referenceFile << ".pdf\"" << ")\n";
 	
 	of.close();
 }
@@ -344,8 +344,8 @@ void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, con
 		std::string type("N" + std::to_string(N) + "_w" + sstype.str());
 
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
-		avDurDataK << numAg  << ',' << avDuration() << ',' << type << '\n';
-		avDurDataL << lambda << ',' << avDuration() << ',' << type << '\n';
+		avDurDataK << numAg  << ',' << avDuration() << '\n';
+		avDurDataL << lambda << ',' << avDuration() << '\n';
 		break;
 #ifdef OCCUPANCY
 	case streamType::occupancy:
@@ -416,10 +416,7 @@ const real& Stats::avDuration() {
 	avDurComputed = true;
 	return avDur;
 }
-bool Stats::isEmpty(std::ofstream& s) {
-	s.seekp(0, std::ios::end);
-	return s.tellp() == 0;
-}
+
 void Stats::setBasename() {
 	{
 		std::stringstream name;

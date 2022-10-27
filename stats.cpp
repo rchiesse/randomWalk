@@ -60,6 +60,10 @@ std::ofstream Stats::avDurDataGroupL;
 std::ofstream Stats::avDurDataGroupK;
 std::ofstream Stats::avDurDataK;
 std::ofstream Stats::avDurDataL;
+std::string Stats::avDurSetNameL;
+std::string Stats::avDurSetNameK;
+std::string Stats::avDurKBaseName;
+std::string Stats::avDurLBaseName;
 
 #ifdef ESTIMATE_PROBS
 void Stats::probsToFile() {
@@ -154,10 +158,10 @@ void Stats::initStream(const streamType& s) {
 		ss << "./stats/averages/" << avDurKBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataK.open(fileName, std::ios::app);
-		if (!avDurDataK.is_open()) {
-			sim::Reporter::errorOpening(fileName);
-			return;
-		}
+		//if (!avDurDataK.is_open()) {
+		//	sim::Reporter::errorOpening(fileName);
+		//	return;
+		//}
 		if (sim::utils::isEmpty(avDurDataK))
 			avDurDataK << "k,duration\n";	//Header
 
@@ -166,10 +170,10 @@ void Stats::initStream(const streamType& s) {
 		ss << "./stats/averages/" << avDurLBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataL.open(fileName, std::ios::app);
-		if (!avDurDataL.is_open()) {
-			sim::Reporter::errorOpening(fileName);
-			return;
-		}
+		//if (!avDurDataL.is_open()) {
+		//	sim::Reporter::errorOpening(fileName);
+		//	return;
+		//}
 		if (sim::utils::isEmpty(avDurDataL))
 			avDurDataL << "lambda,duration\n";
 	default:;
@@ -241,10 +245,11 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	of <<
 		"import matplotlib\n" <<
 		"#Prevents the plot from being shown in the screen when saving it to file\n" <<
-		"matplotlib.use('Agg')\n\n" <<
+		"#matplotlib.use('Agg')\n\n" <<
 
 		"import matplotlib.pyplot as plt\n" <<
 		"import numpy as np\n" <<
+		//"from IPython.display import clear_output\n" <<
 		"import csv\n\n";
 
 	//"INFECTED FRACTION X SIMULATION TIME":
@@ -306,19 +311,36 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	//"AVERAGE DURATION X LAMBDA" & "AVERAGE DURATION X K":
 	std::stringstream avLTxt;
 	avLTxt << "./stats/averages/" << avDurSetNameL << ".csv";
-	std::ifstream arq__avL(avLTxt.str());
-	if (!arq__avL.is_open()) {
-		sim::Reporter::errorOpening(avDurSetNameL);
-		return;
-	}
+	std::string avlName = avLTxt.str();
+	std::ifstream arq__avL(avlName);
+	//if (!arq__avL.is_open()) {
+	//	std::cout << "DOOH!";
+	//	sim::Reporter::errorOpening(avDurSetNameL);
+	//	return;
+	//}
 	
+	of << "\n#Plot\n" <<
+		"plt.pause(0.001)\n" <<
+		"plt.clf()\n" <<
+		//"clear_output(wait=True)\n" <<
+		"plt.figure(1, dpi = 120)\n" <<
+		"plt.title(\"Average Duration over Walk Rate\")\n" <<
+		"plt.xlabel(\"Walk Rate\")\n" <<
+		"plt.ylabel(\"Average duration\")\n" <<
+		"plt.xlim(1, 10)\n" <<
+		"plt.ylim(0, " << t << ")\n";
+
 	std::string instanceName;
 	do {
 		getline(arq__avL, instanceName);
+		if (instanceName.empty())
+			break;
 		of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
-		
-		std::string label = utils::split(instanceName, '-')[1];
+		vector<std::string> labels;
+		utils::split(instanceName, '-', labels);
+		std::string label = labels[1];
 		std::replace(instanceName.begin(), instanceName.end(), '.', '_');
+		std::replace(instanceName.begin(), instanceName.end(), '-', '_');
 		of <<
 			"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \",\"))\n\n" <<
 
@@ -329,14 +351,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	} while (arq__avL.good());
 	arq__avL.close();
 
-	of << "\n#Plot\n" <<
-		"plt.figure(1, dpi = 120)\n" <<
-		"plt.title(\"Average Duration over Walk Rate\")\n" <<
-		"plt.xlabel(\"Walk Rate\")\n" <<
-		"plt.ylabel(\"Average duration\")\n" <<
-		"plt.xlim(0, 10)\n" <<
-		"plt.ylim(0, " << t << ")\n"
-		"plt.legend()\n" <<
+	of << "plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"plt.savefig(" << "\"./plots/averages/" << referenceFile << ".pdf\"" << ")\n";
 	
@@ -401,11 +416,11 @@ void Stats::initAvDur() {
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameK << ".csv";
 		avDurDataGroupK.open(ss.str(), std::ios::app);
-		if (!avDurDataGroupK.is_open()) {
-			std::cout << "DOOH!";
-			sim::Reporter::errorOpening(ss.str());
-			return;
-		}
+		//if (!avDurDataGroupK.is_open()) {
+		//	std::cout << "DOOH!";
+		//	sim::Reporter::errorOpening(ss.str());
+		//	return;
+		//}
 		avDurDataGroupK << avDurKBaseName << '\n';
 		avDurDataGroupK.close();
 	}
@@ -413,11 +428,11 @@ void Stats::initAvDur() {
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameL << ".csv";
 		avDurDataGroupL.open(ss.str(), std::ios::app);
-		if (!avDurDataGroupL.is_open()) {
-			std::cout << "DOOH!!!";
-			sim::Reporter::errorOpening(ss.str());
-			return;
-		}
+		//if (!avDurDataGroupL.is_open()) {
+		//	std::cout << "DOOH!!!";
+		//	sim::Reporter::errorOpening(ss.str());
+		//	return;
+		//}
 		avDurDataGroupL << avDurLBaseName << '\n';
 		avDurDataGroupL.close();
 	}
@@ -483,7 +498,7 @@ void Stats::setBasename() {
 			<< "_L" << lambda
 			<< "_STime" << t
 			<< "_R" << rounds
-			<< "-_N" << N
+			<< "-N" << N
 			<< "_w" << W;
 		avDurKBaseName = name.str();
 	}
@@ -497,7 +512,7 @@ void Stats::setBasename() {
 			<< "_G" << gamma
 			<< "_STime" << t
 			<< "_R" << rounds
-			<< "-_N" << N
+			<< "-N" << N
 			<< "_w" << W;
 		avDurLBaseName = name.str();
 	}

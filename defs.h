@@ -40,10 +40,6 @@ namespace graph {
 #define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 namespace sim {
 	static std::string baseName;
-	static std::string avDurSetNameL;
-	static std::string avDurSetNameK;
-	static std::string avDurKBaseName;
-	static std::string avDurLBaseName;
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
 	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
 	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent
@@ -76,8 +72,8 @@ static constexpr uint N = 10;										// ----> Network size
 
 #ifdef GNP
 //static constexpr uint N = 12008;
-static constexpr uint N = 1000;
-#define SOURCE_FILE "", 1000
+static constexpr uint N = 10000;
+#define SOURCE_FILE "", 10000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif

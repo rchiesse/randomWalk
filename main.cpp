@@ -348,9 +348,10 @@ void sim::setEnvironment() {
 		nG = GAMMA_a / LAMBDA;
 	}
 	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
-	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
 #endif //SOLVE_NUMERICALLY
+	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
 	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);
+	Stats::initAvDur();
 }
 
 

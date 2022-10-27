@@ -1,4 +1,5 @@
 #include "stats.h"
+#include "utils.h"
 using namespace sim;
 std::ofstream Stats::infFracData;
 real Stats::t			= 0;
@@ -9,6 +10,7 @@ real Stats::gamma		= 0;
 real Stats::lambda		= 0;
 real Stats::Wi			= 0;
 real Stats::Ws			= 0;
+real Stats::W			= 0;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
@@ -54,6 +56,8 @@ real Stats::avDur = 0;
 real Stats::lastRoundDuration = 0;
 uint Stats::partials = 0;
 bool Stats::avDurComputed = false;
+std::ofstream Stats::avDurDataGroupL;
+std::ofstream Stats::avDurDataGroupK;
 std::ofstream Stats::avDurDataK;
 std::ofstream Stats::avDurDataL;
 
@@ -83,6 +87,7 @@ void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rou
 	lambda		= _lambda;
 	Wi			= _Wi;
 	Ws			= _Ws;	
+	W           = (_Wi + _Ws) / 2.0;
 }
 
 //void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
@@ -289,31 +294,37 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"#plt.show()\n";
 
 
-	//while()...
-	//std::ifstream arq__G(fileName);
-	//string line;
-	//if (!arq__G.is_open()) {
-	//	sim::Reporter::errorOpening(fileName);
-	//	return;
-	//}
-	//sim::Reporter::openedWithSuccess(fileName);
-	//
-	//do {
-	//	getline(arq__G, line);
-	//} while (line.at(0) == COMMENTARY && arq__G.good());
 
 
-	//"AVERAGE DURATION X LAMBDA" & "AVERAGE DURATION X W":
-	of <<
-		"with open(\"./stats/averages/duration_" << baseName << ".csv\", \"r\") as j :\n" <<
-		"\trawAvDur = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
+	//"AVERAGE DURATION X LAMBDA" & "AVERAGE DURATION X K":
+	std::stringstream avLTxt;
+	avLTxt << "./stats/averages/" << avDurSetNameL << ".csv";
+	std::ifstream arq__avL(avLTxt.str());
+	if (!arq__avL.is_open()) {
+		sim::Reporter::errorOpening(avDurSetNameL);
+		return;
+	}
 	
-		"AvDurData = np.array(rawAvDur[1:], dtype = np.float64)\n" <<
-		"lambda = AvDurWData[:, 0]\n" <<
-		"w = AvDurWData[:, 1]\n" <<
-		"duration = AvDurWData[:, 2]\n" <<
-	
-		"\n#Plot\n" <<
+	std::string instanceName;
+	do {
+		getline(arq__avL, instanceName);
+		of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
+		
+		vector<std::string> varNames = utils::split(instanceName, '-');
+		std::string var = varNames[0];
+		std::string label = varNames[1];
+		std::replace(instanceName.begin(), instanceName.end(), '.', '_');
+		of <<
+			"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \"\,\"))\n\n" <<
+
+			instanceName << " = np.array(rawAvDur[1:], dtype = np.float64)\n" <<
+			"lambda_"  << instanceName << " = " << instanceName << "[:, 0]\n" <<
+			"duration_"<< instanceName << " = " << instanceName << "[:, 2]\n" <<
+			"plt.plot(timeRK, infAgRK, label = \"Model\")\n";
+	} while (arq__avL.good());
+	arq__avL.close();
+
+	of << "\n#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
 		"plt.title(\"Average Duration over W\")\n" <<
 		"plt.xlabel(\"w\")\n" <<
@@ -327,10 +338,9 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAg) {
 	switch (s) {
 	case streamType::avDuration:
-		real w = (Wi + Ws) / 2.0;
 		std::stringstream sstype;
 		sstype.precision(1);
-		sstype << w;
+		sstype << W;
 		std::string type("N" + std::to_string(N) + "_w" + sstype.str());
 
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
@@ -378,6 +388,22 @@ void Stats::partialsAvDur(const real& duration) {
 	avDur += duration;
 	++partials;
 }
+void Stats::initAvDur() {
+	{
+		std::stringstream ss;
+		ss << "./stats/averages/" << avDurSetNameK << ".csv";
+		avDurDataGroupK.open(ss.str(), std::ios::app);
+		avDurDataGroupK << avDurKBaseName << '\n';
+		avDurDataGroupK.close();
+	}
+	{
+		std::stringstream ss;
+		ss << "./stats/averages/" << avDurSetNameL << ".csv";
+		avDurDataGroupL.open(ss.str(), std::ios::app);
+		avDurDataGroupL << avDurLBaseName << '\n';
+		avDurDataGroupL.close();
+	}
+}
 void Stats::resetAvDur() {
 	avDur = 0;
 	partials = 0;
@@ -414,14 +440,36 @@ void Stats::setBasename() {
 	}
 	{
 		std::stringstream name;
-		name.clear();
-		name.str() = "";
-		name << SHORT_LABEL
+		name << "group_"
+			<< SHORT_LABEL
+			<< "_AG" << numAgents
+			<< "_T" << tau
+			<< "_G" << gamma
+			<< "_STime" << t
+			<< "_R" << rounds;
+		avDurSetNameL = name.str();
+	}
+	{
+		std::stringstream name;
+		name << "group_"
+			<< SHORT_LABEL
 			<< "_T" << tau
 			<< "_G" << gamma
 			<< "_L" << lambda
 			<< "_STime" << t
 			<< "_R" << rounds;
+		avDurSetNameK = name.str();
+	}
+	{
+		std::stringstream name;
+		name << SHORT_LABEL
+			<< "_T" << tau
+			<< "_G" << gamma
+			<< "_L" << lambda
+			<< "_STime" << t
+			<< "_R" << rounds
+			<< "-_N" << N
+			<< "_w" << W;
 		avDurKBaseName = name.str();
 	}
 	{
@@ -429,11 +477,13 @@ void Stats::setBasename() {
 		name.clear();
 		name.str() = "";
 		name << SHORT_LABEL
+			<< "_AG" << numAgents
 			<< "_T" << tau
 			<< "_G" << gamma
-			<< "_AG" << numAgents
 			<< "_STime" << t
-			<< "_R" << rounds;
+			<< "_R" << rounds
+			<< "-_N" << N
+			<< "_w" << W;
 		avDurLBaseName = name.str();
 	}
 }

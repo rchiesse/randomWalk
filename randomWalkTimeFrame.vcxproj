@@ -158,6 +158,7 @@
     <ClCompile Include="reporter.cpp" />
     <ClCompile Include="solver.cpp" />
     <ClCompile Include="stats.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="reporter.h" />
     <ClInclude Include="solver.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

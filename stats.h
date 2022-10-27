@@ -1,5 +1,7 @@
 #pragma once
 #include "defs.h"
+#include "reporter.h"
+
 namespace sim {
 	enum class streamType { infFrac, occupancy, avDuration, probs };
 	using std::vector;
@@ -13,6 +15,7 @@ namespace sim {
 		static real lambda;
 		static real Wi;
 		static real Ws;
+		static real W;
 		static std::ofstream infFracData;
 #ifdef INFECTED_FRACTION
 	private:
@@ -121,10 +124,13 @@ namespace sim {
 		static uint partials;									// ----> Total number of values to average upon.
 		static bool avDurComputed;
 	public:
+		static std::ofstream avDurDataGroupL;	    // Lists all the time series to be later included at the same plot.
+		static std::ofstream avDurDataGroupK;	    // Lists all the time series to be later included at the same plot.
 		static std::ofstream avDurDataK;	// For some fixed PrE, average duration of epidemics for different number of agents (K)
 		static std::ofstream avDurDataL;	// For some fixed PrE, average duration of epidemics for different values of the walk rate (\lambda)
 
-		//Average Duration (AD) partials. It simply assigns the informed 'duration' to the 'averageDuration' accumulator. The actual average is later computed by calling 'avDuration()', which divides the sum by the total number of ROUNDS.
+		//Average Duration (AD) partials. It simply assigns the informed 'duration' to the 'averageDuration' accumulator. The actual average is later computed by calling 'avDuration()'.
+		static void initAvDur();
 		static void partialsAvDur(const real& duration);
 		static const real& avDuration();
 		static void resetAvDur();

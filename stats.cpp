@@ -154,6 +154,10 @@ void Stats::initStream(const streamType& s) {
 		ss << "./stats/averages/" << avDurKBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataK.open(fileName, std::ios::app);
+		if (!avDurDataK.is_open()) {
+			sim::Reporter::errorOpening(fileName);
+			return;
+		}
 		if (sim::utils::isEmpty(avDurDataK))
 			avDurDataK << "k,duration\n";	//Header
 
@@ -162,6 +166,10 @@ void Stats::initStream(const streamType& s) {
 		ss << "./stats/averages/" << avDurLBaseName << ".csv";
 		fileName = ss.str();
 		avDurDataL.open(fileName, std::ios::app);
+		if (!avDurDataL.is_open()) {
+			sim::Reporter::errorOpening(fileName);
+			return;
+		}
 		if (sim::utils::isEmpty(avDurDataL))
 			avDurDataL << "lambda,duration\n";
 	default:;
@@ -393,6 +401,11 @@ void Stats::initAvDur() {
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameK << ".csv";
 		avDurDataGroupK.open(ss.str(), std::ios::app);
+		if (!avDurDataGroupK.is_open()) {
+			std::cout << "DOOH!";
+			sim::Reporter::errorOpening(ss.str());
+			return;
+		}
 		avDurDataGroupK << avDurKBaseName << '\n';
 		avDurDataGroupK.close();
 	}
@@ -400,6 +413,11 @@ void Stats::initAvDur() {
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameL << ".csv";
 		avDurDataGroupL.open(ss.str(), std::ios::app);
+		if (!avDurDataGroupL.is_open()) {
+			std::cout << "DOOH!!!";
+			sim::Reporter::errorOpening(ss.str());
+			return;
+		}
 		avDurDataGroupL << avDurLBaseName << '\n';
 		avDurDataGroupL.close();
 	}

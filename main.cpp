@@ -743,10 +743,10 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
 		
 		//Initializing the applicable stats:
+		Stats::initStream(streamType::avDuration);
 #ifdef INFECTED_FRACTION
 		Stats::initStream(streamType::infFrac);
 #endif
-		Stats::initStream(streamType::avDuration);
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
 		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
 		for (uint round = 0; round < ROUNDS; ++round) {

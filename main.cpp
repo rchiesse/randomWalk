@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 1000.0; NUM_AGENTS = 2000; TAU_aa = 0.005; GAMMA_a = 0.01; LAMBDA = 2.0; 
+	T = 1000.0; NUM_AGENTS = 200; TAU_aa = 0.005; GAMMA_a = 0.01; LAMBDA = 10.0; 
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -296,8 +296,8 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.6;
-	Ws = 0.6; 
+	Wi = 1.0;
+	Ws = 1.0; 
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif

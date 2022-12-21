@@ -319,7 +319,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	//	return;
 	//}
 	
-	of << "\n#Plot\n" <<
+	of << "\n\n#AVERAGE DURATION X LAMBDA & AVERAGE DURATION X K\n" <<
 		"plt.pause(0.001)\n" <<
 		"plt.clf()\n" <<
 		//"clear_output(wait=True)\n" <<
@@ -415,26 +415,22 @@ void Stats::initAvDur() {
 	{
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameK << ".csv";
-		avDurDataGroupK.open(ss.str(), std::ios::app);
-		//if (!avDurDataGroupK.is_open()) {
-		//	std::cout << "DOOH!";
-		//	sim::Reporter::errorOpening(ss.str());
-		//	return;
-		//}
-		avDurDataGroupK << avDurKBaseName << '\n';
-		avDurDataGroupK.close();
+		const std::string streamName = ss.str();
+		if (!utils::containsLine(streamName, avDurKBaseName)) {
+			avDurDataGroupK.open(streamName, std::ios::app);
+			avDurDataGroupK << avDurKBaseName << '\n';
+			avDurDataGroupK.close();
+		}
 	}
 	{
 		std::stringstream ss;
 		ss << "./stats/averages/" << avDurSetNameL << ".csv";
-		avDurDataGroupL.open(ss.str(), std::ios::app);
-		//if (!avDurDataGroupL.is_open()) {
-		//	std::cout << "DOOH!!!";
-		//	sim::Reporter::errorOpening(ss.str());
-		//	return;
-		//}
-		avDurDataGroupL << avDurLBaseName << '\n';
-		avDurDataGroupL.close();
+		const std::string streamName = ss.str();
+		if (!utils::containsLine(streamName, avDurLBaseName)) {
+			avDurDataGroupL.open(streamName, std::ios::app);
+			avDurDataGroupL << avDurLBaseName << '\n';
+			avDurDataGroupL.close();
+		}
 	}
 }
 void Stats::resetAvDur() {

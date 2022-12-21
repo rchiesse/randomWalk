@@ -72,8 +72,8 @@ static constexpr uint N = 10;										// ----> Network size
 
 #ifdef GNP
 //static constexpr uint N = 12008;
-static constexpr uint N = 10000;
-#define SOURCE_FILE "", 10000
+static constexpr uint N = 1000;
+#define SOURCE_FILE "", 1000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif

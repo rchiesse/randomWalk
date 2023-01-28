@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 1000.0; NUM_AGENTS = 200; TAU_aa = 0.005; GAMMA_a = 0.01; LAMBDA = 10.0; 
+	T = 30000.0; NUM_AGENTS = 200; TAU_aa = 0.05; GAMMA_a = 0.002; LAMBDA = 10.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -296,8 +296,8 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 1.0;
-	Ws = 1.0; 
+	Wi = 0.21;
+	Ws = 0.21; 
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
@@ -334,19 +334,19 @@ void sim::setEnvironment() {
 
 #ifdef SOLVE_NUMERICALLY
 	// * NORMALIZATION *
-	//nT = TAU_aa;
-	//nL = LAMBDA;
-	//nG = GAMMA_a;
-	if (TAU_aa <= LAMBDA) {
-		nT = 1.0;
-		nL = LAMBDA / TAU_aa;
-		nG = GAMMA_a / TAU_aa;
-	}
-	else {
-		nL = 1.0;
-		nT = TAU_aa / LAMBDA;
-		nG = GAMMA_a / LAMBDA;
-	}
+	nT = TAU_aa;
+	nL = LAMBDA;
+	nG = GAMMA_a;
+	//if (TAU_aa <= LAMBDA) {
+	//	nT = 1.0;
+	//	nL = LAMBDA / TAU_aa;
+	//	nG = GAMMA_a / TAU_aa;
+	//}
+	//else {
+	//	nL = 1.0;
+	//	nT = TAU_aa / LAMBDA;
+	//	nG = GAMMA_a / LAMBDA;
+	//}
 	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
 #endif //SOLVE_NUMERICALLY
 	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);

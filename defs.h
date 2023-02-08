@@ -29,7 +29,7 @@ namespace sim {
 #define ushort uint16_t
 #define real long double
 //#define real float
-typedef uint32_t agent;
+typedef uint agent;
 namespace graph {
 	typedef uint32_t node;
 }
@@ -53,8 +53,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-//#define READ_NTWK_FROM_FILE
-#define GNP
+#define READ_NTWK_FROM_FILE
+//define GNP
 //#define STAR
 
 #ifdef STAR
@@ -72,8 +72,8 @@ static constexpr uint N = 10;										// ----> Network size
 
 #ifdef GNP
 //static constexpr uint N = 12008;
-static constexpr uint N = 1000;
-#define SOURCE_FILE "", 1000
+static constexpr uint N = 4000;
+#define SOURCE_FILE "", 4000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif
@@ -98,10 +98,20 @@ static constexpr uint N = 1000;
 //#define NWTK_LABEL "BA-120-3"
 //#define SHORT_LABEL "BA-120-3" 
 
-static constexpr uint N = 1200;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1200-3.txt")), 1200
-#define NWTK_LABEL "BA-1200-3"
-#define SHORT_LABEL "BA-1200-3" 
+//static constexpr uint N = 1200;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1200-3.txt")), 1200
+//#define NWTK_LABEL "BA-1200-3"
+//#define SHORT_LABEL "BA-1200-3" 
+
+//static constexpr uint N = 2000;											// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n2000.txt")), 2000
+//#define NWTK_LABEL "GNP-2000"
+//#define SHORT_LABEL "GNP-2000" 
+
+static constexpr uint N = 4000;											// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
+#define NWTK_LABEL "GNP-4000"
+#define SHORT_LABEL "GNP-4000" 
 
 //static constexpr uint N = 12008;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008

@@ -328,7 +328,8 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.xlabel(\"Walk Rate\")\n" <<
 		"plt.ylabel(\"Average duration\")\n" <<
 		"plt.xlim(1, 10)\n" <<
-		"plt.ylim(0, " << t << ")\n";
+		"plt.ylim(0, " << t << ")\n" << 
+		"plt.xscale(\"log\")\n";
 
 	std::string instanceName;
 	do {

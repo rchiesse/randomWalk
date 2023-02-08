@@ -245,7 +245,7 @@ void sim::setEnvironment() {
 	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
-	ROUNDS				= 3;											// ----> Number of simulation runs for a given setup. 
+	ROUNDS				= 10;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 30000.0; NUM_AGENTS = 200; TAU_aa = 0.05; GAMMA_a = 0.002; LAMBDA = 10.0;
+	T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.07; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -296,8 +296,10 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.21;
-	Ws = 0.21; 
+	Wi = 1.0;
+	Ws = 1.0;
+	//Wi = 0.65;
+	//Ws = 0.65; 
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
@@ -369,7 +371,7 @@ void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _wher
 void sim::check_out  (const agent& ag, const node& v, vector<vector<agent>>& _where) {
 	vector<agent>& list = _where[v];
 	uint& lastPos = list[ELEMS];
-	if (lastPos > 1) {	// ----> "Is it still going to remain any susceptible agent at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
+	if (lastPos > 1) {	// ----> "Is any susceptible agent still going to remain at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
 		list[indexWithinNode[ag]] = list[lastPos];
 		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
 	}

@@ -245,7 +245,7 @@ void sim::setEnvironment() {
 	NUM_AGENTS			= 20000;										// ----> Total number of agents in a simulation.
 	STARTING_NUM_AG		= 1000000;
 	GRAN_NUM_AG			= 1;
-	ROUNDS				= 10;											// ----> Number of simulation runs for a given setup. 
+	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
 	LAMBDA				= 1.0;											// ----> Walking speed. 
@@ -286,7 +286,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.07; LAMBDA = 1.0;
+	T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.03; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 

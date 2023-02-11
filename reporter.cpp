@@ -78,7 +78,7 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 	//real sigma = 1;
 	real _2sl = 2.0 * sigma * LAMBDA;
 	//real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / (N * pow(avDegree, 2.0));
-	real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / ( pow(avDegree, 2.0));
+	//real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / ( pow(avDegree, 2.0));
 	real beta_ronald = (2.0 * sigma * NUM_AGENTS * LAMBDA * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
 	real w_bound = (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment);
 	real w_asym_lambda = (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment);
@@ -92,15 +92,10 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 		<< "\tTAU (Infect): "						<< TAU_aa		<< '\n'
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-		<< "\tBETA (Infection force): "				<< beta			<< '\n'
-		<< "\tBETA Ronald: "						<< beta_ronald	<< '\n'
-		<< "\tR0 (BETA/GAMMA): "					<< beta/GAMMA_a	<< '\n'
-		<< "\tR0_ron (BETA_ron/GAMMA): "			<< beta_ronald/GAMMA_a	<< '\n'
+		<< "\tBETA (Infection force): "				<< beta_ronald << '\n'
+		<< "\tR0 (BETA/GAMMA): "			<< beta_ronald/GAMMA_a	<< '\n'
 		<< "\tw_bound: "							<< w_bound		<< '\n'
 		<< "\tw_asym_lambda: "						<< w_asym_lambda << '\n'
-		//<< "\tTAU_al (Infect): "					<< TAU_al		<< '\n'
-		//<< "\tTAU_la (Infect): "					<< TAU_la		<< '\n'
-		//<< "\tGAMMA_l (Recover): "				<< GAMMA_l		<< '\n'
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

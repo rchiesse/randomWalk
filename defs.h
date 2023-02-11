@@ -37,7 +37,8 @@ namespace graph {
 // ---------------------------//----------------------------- //
 
 // * BASE DIRECTORY AND FILE NAME * 
-#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
+//#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
+#define EXE_DIR "."
 namespace sim {
 	static std::string baseName;
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
@@ -110,8 +111,8 @@ static constexpr uint N = 4000;
 
 static constexpr uint N = 4000;											// ----> Network size
 #define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
-#define NWTK_LABEL "GNP-4000"
-#define SHORT_LABEL "GNP-4000" 
+#define NWTK_LABEL "GNP_4000"
+#define SHORT_LABEL "GNP_4000" 
 
 //static constexpr uint N = 12008;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008

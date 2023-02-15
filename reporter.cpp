@@ -93,9 +93,13 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
 		<< "\tBETA (Infection force): "				<< beta_ronald << '\n'
-		<< "\tR0 (BETA/GAMMA): "			<< beta_ronald/GAMMA_a	<< '\n'
+		<< "\tR0 (BETA/GAMMA): "					<< beta_ronald/GAMMA_a	<< '\n'
 		<< "\tw_bound: "							<< w_bound		<< '\n'
 		<< "\tw_asym_lambda: "						<< w_asym_lambda << '\n'
+		<< "\tE[#Ag] per Node: "					<< NUM_AGENTS / N << '\n'
+		<< "\tAv. #hops as I: "						<< LAMBDA / GAMMA_a << '\n'
+		<< "\tEarly mixing (2.0 lambda/gamma): "	<< (2.0 * LAMBDA) / GAMMA_a << '\n'
+
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

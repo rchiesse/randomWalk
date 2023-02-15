@@ -22,6 +22,8 @@ real LAMBDA;															// ----> Walking speed.
 real FRAC_AG_INFECTED;													// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 real FRAC_ST_INFECTED;													// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 uint ABS_INFECTED;														// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+real EARLY_MIXING;														// ----> Time dedicated for agents to freely walk through the network so that they get closer to their mixing times prior to the epidemic to start.
+
 
 real Ws = 1.0;															// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
 real Wi = 1.0;															// ----> Infected-agents' tolerance to enter nodes that contain susceptible agents, such that 0 <= Wi <= 1. This is the "i-protection-effect" single parameter.
@@ -156,6 +158,7 @@ void resetVariables();
 void readParams();
 void runSimulation	(const uint& startingNumAg = 0, const uint& granularity = 5);
 void walk		    (const agent& ag, const real& now);
+void infectAg	    (const agent& ag, const real& now);
 void recoverAg	    (const agent& ag, const real& now);
 void recoverSite    (const uint& site, const real& now);
 
@@ -252,7 +255,7 @@ void sim::setEnvironment() {
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 	ABS_INFECTED		= 0;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
-	//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
+																		//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
 	
@@ -286,7 +289,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.03; LAMBDA = 1.0;
+	T = 300.0; NUM_AGENTS = 1000; TAU_aa = 10.0; GAMMA_a = 0.004; LAMBDA = 0.1;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -304,6 +307,7 @@ void sim::setEnvironment() {
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
+	EARLY_MIXING = (2000.0 * LAMBDA) / GAMMA_a;
 	OVERLOOK			= 1;
 	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));
 	//OVERLOOK			= (uint)((long double)NUM_AGENTS * OVERLOOK_RATE);
@@ -525,6 +529,16 @@ void sim::walk(const agent& ag, const real& now) {
 			++hopsUntilI[hopsUntilI.size() - 1];
 	}
 }
+
+void sim::infectAg(const agent& ag, const real& now) {
+	isInfectedAg[ag] = true;
+	--saTotal;
+	++iaTotal;
+	leaveNodeAsSus(ag, currentNode[ag], now);
+	enterNodeAsInf(ag, currentNode[ag], now);
+	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+}
+
 void sim::recoverAg		 (const agent& ag, const real& now) {
 	isInfectedAg[ag] = false;
 	++saTotal;
@@ -557,16 +571,11 @@ void sim::agFate_fromAg(const agent& ag, const real& now, const uint& infective,
 	if (validity_S != snapshot_a[ag] || validity_I != snapshot_a[infective])
 		return;	// ----> Event became obsolete.
 	
-	isInfectedAg[ag] = true;
-	--saTotal;
-	++iaTotal;
+	infectAg(ag, now);
+
 #ifdef INFECTED_FRACTION
 	Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
-	leaveNodeAsSus(ag, currentNode[ag], now);
-	enterNodeAsInf(ag, currentNode[ag], now);
-	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
-
 	//Temp:
 	++ITransitions[ag];
 	if(ag == 0)
@@ -576,15 +585,11 @@ void sim::agFate_fromSite(const agent& ag, const real& now, const uint& infectiv
 	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) 
 		return;	// ----> Event became obsolete.
 	
-	isInfectedAg[ag] = true;
-	--saTotal;
-	++iaTotal;
+	infectAg(ag, now);
+
 #ifdef INFECTED_FRACTION
 	Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
-	leaveNodeAsSus(ag, currentNode[ag], now);
-	enterNodeAsInf(ag, currentNode[ag], now);
-	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
 }
 void sim::siteFate(const uint& v, const real& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 	if (validity_S != snapshot_l[v] || validity_I != snapshot_a[infective]) 
@@ -657,8 +662,10 @@ void sim::readParams() {
 	//TODO
 }
 void sim::resetVariables() {
-	iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
-	saTotal = NUM_AGENTS - iaTotal;
+	iaTotal = 0;
+	saTotal = NUM_AGENTS;
+	//iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
+	//saTotal = NUM_AGENTS - iaTotal;
 	now = 0;
 	schedule = {};	// ----> Needed from the 2nd round on.
 	for (agent a = 0; a < isInfectedAg.size(); ++a) isInfectedAg[a] = false;
@@ -742,15 +749,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif //CLIQUE
 		Stats::resetAvDur();
 		for (uint r = 0; r < ROUNDS; ++r) totalSimTime[r] = 0;
-		iaTotal = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
+		I_0 = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
 		
-		//Initializing the applicable stats:
+		//Initializing applicable stats:
 		Stats::initStream(streamType::avDuration);
 #ifdef INFECTED_FRACTION
 		Stats::initStream(streamType::infFrac);
 #endif
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
-		Reporter::simulationInfo(iaTotal, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
+		Reporter::simulationInfo(I_0, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
@@ -760,56 +767,77 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			//Round-wise reset:
 			resetVariables();
 
-			//Initially, we schedule a single 'walk' event for each agent. A new 'walk' job will then be created and scheduled for an agent the moment its current 'walk' job is processed.
-			for (agent i = 0; i < _numAgents; ++i)
-				schedule.emplace(i, EXPLambda(), action::walk);
-
-			//Now we must define which agents are infected from the start, and then schedule their 'recover' event.
-			//It is not a problem to always infect the first 'itotal' agents, since the starting node for each of them will be randomly set.
-			for (agent i = 0; i < iaTotal; ++i) {
-				isInfectedAg[i] = true;
-				schedule.emplace(i, EXPGamma_a(), action::recoverAg);
-			}
 
 			// * DISTRIBUTING THE AGENTS ACROSS THE NETWORK *
-			//Random distribution of the INFECTED agents:
+			//Random distribution of agents (initially susceptible):
 #ifdef CLIQUE
-			for (agent i = 0; i < iaTotal; ++i)
-				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
-#else //CLIQUE
-			for (agent i = 0; i < iaTotal; ++i) {
-				const node v = randomLCCNode();
-				enterNodeAsInf(i, v, TIME_ZERO);
-#ifndef PER_BLOCK
-				++v_Iv[v];
-#endif
-			}
-#endif //CLIQUE
-
-			//Random distribution of the SUSCEPTIBLE agents:
-#ifdef CLIQUE
-			for (agent i = iaTotal; i < _numAgents; ++i)
+			for (agent i = I_0; i < _numAgents; ++i)
 				enterNodeAsSus(i, randomInt(Graph::n), TIME_ZERO);
 #else //CLIQUE
-			for (agent i = iaTotal; i < _numAgents; ++i) {
+			for (agent i = 0; i < _numAgents; ++i) {
 				const node v = randomLCCNode();
-				enterNodeAsSus(i, v, TIME_ZERO);
+				enterNodeAsSus(i, v, -EARLY_MIXING);
 #ifndef PER_BLOCK
 				++v_Sv[v];
 #endif
 			}
 #endif //CLIQUE
 
+			//EARLY MIXING:
+			//Initially, we schedule a single 'walk' event for each agent. A new 'walk' job will then be created and scheduled for an agent the moment its current 'walk' job is processed.
+			{
+				for (agent i = 0; i < _numAgents; ++i)
+					schedule.emplace(i, EXPLambda() - EARLY_MIXING, action::walk);
+				//Now, all agents are put to walk for a certain time window, so they can get somewhat mixed in the network:
+
+				job j;
+				real _now;
+				do {
+					nextJob(j, _now);
+					walk(j.target, _now);
+					schedule.emplace(j.target, _now + EXPLambda(), action::walk);
+				} while (_now < TIME_ZERO);
+
+
+				//---------------------------------------
+				//---------------------------------------
+
+				//Now we must define which agents are infected from the start, and then schedule their 'recover' event.
+				//It is not a problem to always infect the first 'itotal' agents, since the starting node for each of them will be randomly set.
+				for (agent ag = 0; ag < I_0; ++ag) {
+
+					infectAg(ag, TIME_ZERO);
+					//isInfectedAg[ag] = true;
+					//leaveNodeAsSus(ag, currentNode[ag], TIME_ZERO);
+					//enterNodeAsInf(ag, currentNode[ag], TIME_ZERO);
+					//schedule.emplace(ag, TIME_ZERO + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+				}
+			} //EARLY MIXING
+//			//Random distribution of the INFECTED agents:
+//#ifdef CLIQUE
+//			for (agent i = 0; i < iaTotal; ++i)
+//				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
+//#else //CLIQUE
+//			for (agent i = 0; i < iaTotal; ++i) {
+//				const node v = randomLCCNode();
+//				enterNodeAsInf(i, v, TIME_ZERO);
+//#ifndef PER_BLOCK
+//				++v_Iv[v];
+//#endif
+//			}
+//#endif //CLIQUE
+
+
 #ifdef CLIQUE
 #ifdef PER_BLOCK
-			Ia = iaTotal;
-			Sa = saTotal;
+			Ia = I_0;
+			Sa = NUM_AGENTS - I_0;
 #endif //PER_BLOCK
 #else
 #ifdef PER_BLOCK
 			//Expected number of S-/I-agents within each node from each block:
 			{
-				const real ia = (real)iaTotal / NUM_AGENTS, sa = (real)saTotal / NUM_AGENTS;
+				const real ia = (real)I_0 / NUM_AGENTS, sa = (real)(NUM_AGENTS - I_0) / NUM_AGENTS;
 				for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 					v_Iab[b] = ia * graph::Graph::kb[b];
 					v_Sab[b] = sa * graph::Graph::kb[b];
@@ -971,12 +999,12 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 #else //CLIQUE
 #ifdef PER_BLOCK
-	//Reporter::startChronometer("\nSolving at block level...");
-	//Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
-	//Reporter::stopChronometer(" done");
-	Reporter::startChronometer("\nSolving at network level...");
-	Solver::rkMaster(0, v_Iab, v_Sab, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	Reporter::startChronometer("\nSolving at block level...");
+	Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 	Reporter::stopChronometer(" done");
+	//Reporter::startChronometer("\nSolving at network level...");
+	//Solver::rkMaster(0, v_Iab, v_Sab, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	//Reporter::stopChronometer(" done");
 	
 #else
 	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);

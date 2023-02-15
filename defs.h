@@ -38,7 +38,7 @@ namespace graph {
 
 // * BASE DIRECTORY AND FILE NAME * 
 //#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
-#define EXE_DIR "."
+#define EXE_DIR "C:/Users/rchie/source/repos/randomWalk2/x64/Release"
 namespace sim {
 	static std::string baseName;
 	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
@@ -55,7 +55,7 @@ namespace sim {
 // * NETWORK *
 //#define CLIQUE
 #define READ_NTWK_FROM_FILE
-//define GNP
+//#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -109,15 +109,15 @@ static constexpr uint N = 4000;
 //#define NWTK_LABEL "GNP-2000"
 //#define SHORT_LABEL "GNP-2000" 
 
-static constexpr uint N = 4000;											// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
-#define NWTK_LABEL "GNP_4000"
-#define SHORT_LABEL "GNP_4000" 
+//static constexpr uint N = 4000;											// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
+//#define NWTK_LABEL "GNP_4000"
+//#define SHORT_LABEL "GNP_4000" 
 
-//static constexpr uint N = 12008;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
-//#define NWTK_LABEL "BA-12k-10"
-//#define SHORT_LABEL "BA-12k-10" 
+static constexpr uint N = 12008;										// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
+#define NWTK_LABEL "BA-12k-10"
+#define SHORT_LABEL "BA-12k-10" 
 
 //static constexpr uint N = 500;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-500-3.txt")), 500

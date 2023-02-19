@@ -98,7 +98,7 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 		<< "\tw_asym_lambda: "						<< w_asym_lambda << '\n'
 		<< "\tE[#Ag] per Node: "					<< NUM_AGENTS / N << '\n'
 		<< "\tAv. #hops as I: "						<< LAMBDA / GAMMA_a << '\n'
-		<< "\tEarly mixing (2.0 lambda/gamma): "	<< (2.0 * LAMBDA) / GAMMA_a << '\n'
+		<< "\tEarly mobility (100.0 lambda/gamma): "<< (100.0 * LAMBDA) / GAMMA_a << '\n'
 
 		;
 }

@@ -18,7 +18,7 @@ void Solver::setParams(const real& tau, const real& lambda, const real& gamma, c
 	nG = gamma;
 #ifdef PROTECTION_FX
 	Wi = _Wi;
-	Ws = _Wi;
+	Ws = _Ws;
 #else
 	Wi = 1.0;
 	Ws = 1.0;
@@ -310,17 +310,17 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real& _k_b = graph::Graph::kb[b];
 	const real _kvb_ = _k_b / nb;
 	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
-
-	//RONALD (BEST SO FAR):
-	if (Sab == 0.0 || Iab == 0.0)
-		return -(nG * Iab);
-
-	//RONALD v2 (ótimo em regime esparso):
 	real sigma = nT / (2.0 * nL + nT);
-	return (Ia - Iab) * nL * qb - Iab * nL * (1.0 - qb)
-		+ 2.0 * ((Sab * Iab)/nb) * nL * sigma * w
-		- (nG * Iab);
+
 	
+	//if (Sab == 0.0 || Iab == 0.0)
+	//	return -(nG * Iab);
+
+	
+	//RONALD PER BLOCK (BEST SO FAR):
+	return nL * (Ia * qb - Iab)
+		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+
 	////real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
 	//real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
 	//real ii = ibnb;
@@ -375,16 +375,15 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real& _k_b = graph::Graph::kb[b];
 	const real _kvb_ = _k_b / nb;
 	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
-
-	//RONALD (BEST SO FAR):
-	if (Sab == 0.0 || Iab == 0.0)
-		return -(nG * Iab);
-
-	//RONALD v2 (ótimo em regime esparso):
 	real sigma = nT / (2.0 * nL + nT);
-	return (Sa - Sab) * nL * qb - Sab * nL * (1.0 - qb)
-		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w
-		+ (nG * Iab);
+
+	//if (Sab == 0.0 || Iab == 0.0)
+	//	return -(nG * Iab);
+
+	
+	//RONALD PER BLOCK (BEST SO FAR):
+	return nL * (Sa * qb - Sab)
+		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
 
 	//DON 2:
 	//return nb * (

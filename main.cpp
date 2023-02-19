@@ -22,7 +22,7 @@ real LAMBDA;															// ----> Walking speed.
 real FRAC_AG_INFECTED;													// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 real FRAC_ST_INFECTED;													// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 uint ABS_INFECTED;														// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
-real EARLY_MIXING;														// ----> Time dedicated for agents to freely walk through the network so that they get closer to their mixing times prior to the epidemic to start.
+real EARLY_MOBILITY;													// ----> Time dedicated for agents to freely walk through the network before the epidemic starts.
 
 
 real Ws = 1.0;															// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
@@ -158,6 +158,7 @@ void resetVariables();
 void readParams();
 void runSimulation	(const uint& startingNumAg = 0, const uint& granularity = 5);
 void walk		    (const agent& ag, const real& now);
+void quietWalk		(const agent& ag, const real& now);
 void infectAg	    (const agent& ag, const real& now);
 void recoverAg	    (const agent& ag, const real& now);
 void recoverSite    (const uint& site, const real& now);
@@ -201,8 +202,8 @@ int main() {
 	real IgeneralHops = 0;
 	real SgeneralHops = 0;
 	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i){
-		sim::IavNumHops[i] /= sim::ITransitions[i];
-		sim::SavNumHops[i] /= sim::STransitions[i];
+		sim::IavNumHops[i] /= (sim::ITransitions[i] > 0) ? sim::ITransitions[i] : 1;
+		sim::SavNumHops[i] /= (sim::STransitions[i] > 0) ? sim::STransitions[i] : 1;
 	}
 	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i) {
 		IgeneralHops += sim::IavNumHops[i];
@@ -254,7 +255,7 @@ void sim::setEnvironment() {
 	LAMBDA				= 1.0;											// ----> Walking speed. 
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
-	ABS_INFECTED		= 0;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+	ABS_INFECTED		= 100;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 																		//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
@@ -289,7 +290,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 300.0; NUM_AGENTS = 1000; TAU_aa = 10.0; GAMMA_a = 0.004; LAMBDA = 0.1;
+	T = 300.0; NUM_AGENTS = 1200; TAU_aa = 10.0; GAMMA_a = 0.25; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -307,7 +308,8 @@ void sim::setEnvironment() {
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
-	EARLY_MIXING = (2000.0 * LAMBDA) / GAMMA_a;
+	EARLY_MOBILITY = (100.0 * LAMBDA) / GAMMA_a;
+	//EARLY_MOBILITY = 0;
 	OVERLOOK			= 1;
 	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));
 	//OVERLOOK			= (uint)((long double)NUM_AGENTS * OVERLOOK_RATE);
@@ -501,6 +503,13 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const real& now) {
 	v_avIb[b] += (numI + numS) > 0 ? (real)numI / (numI + numS) : 0.0;
 	++v_probesIb[b];
 #endif
+}
+void sim::quietWalk(const agent& ag, const real& now) {
+	node v = nextNodeForSus(currentNode[ag]);
+	if (v == currentNode[ag])
+		return;
+	leaveNodeAsSus(ag, currentNode[ag], now);
+	enterNodeAsSus(ag, v, now);
 }
 void sim::walk(const agent& ag, const real& now) {
 	//node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
@@ -760,7 +769,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Reporter::simulationInfo(I_0, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
-			Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
+			//Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
+			Reporter::startChronometer("");
 #else
 			//Reporter::progress(round);
 #endif
@@ -776,57 +786,36 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #else //CLIQUE
 			for (agent i = 0; i < _numAgents; ++i) {
 				const node v = randomLCCNode();
-				enterNodeAsSus(i, v, -EARLY_MIXING);
+				enterNodeAsSus(i, v, -EARLY_MOBILITY);
 #ifndef PER_BLOCK
 				++v_Sv[v];
 #endif
 			}
 #endif //CLIQUE
 
-			//EARLY MIXING:
+			//EARLY MOBILITY:
 			//Initially, we schedule a single 'walk' event for each agent. A new 'walk' job will then be created and scheduled for an agent the moment its current 'walk' job is processed.
 			{
+				std::cout << '\n' << "Applying early mobility... ";
 				for (agent i = 0; i < _numAgents; ++i)
-					schedule.emplace(i, EXPLambda() - EARLY_MIXING, action::walk);
+					schedule.emplace(i, EXPLambda() - EARLY_MOBILITY, action::walk);
 				//Now, all agents are put to walk for a certain time window, so they can get somewhat mixed in the network:
 
 				job j;
 				real _now;
 				do {
 					nextJob(j, _now);
-					walk(j.target, _now);
+					quietWalk(j.target, _now);		// ----> A "quiet walk" does not produce any statistical data, as opposite to the 'walk()' method.
 					schedule.emplace(j.target, _now + EXPLambda(), action::walk);
 				} while (_now < TIME_ZERO);
-
-
-				//---------------------------------------
-				//---------------------------------------
+				std::cout << "done.";
 
 				//Now we must define which agents are infected from the start, and then schedule their 'recover' event.
 				//It is not a problem to always infect the first 'itotal' agents, since the starting node for each of them will be randomly set.
-				for (agent ag = 0; ag < I_0; ++ag) {
-
+				for (agent ag = 0; ag < I_0; ++ag)
 					infectAg(ag, TIME_ZERO);
-					//isInfectedAg[ag] = true;
-					//leaveNodeAsSus(ag, currentNode[ag], TIME_ZERO);
-					//enterNodeAsInf(ag, currentNode[ag], TIME_ZERO);
-					//schedule.emplace(ag, TIME_ZERO + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
-				}
-			} //EARLY MIXING
-//			//Random distribution of the INFECTED agents:
-//#ifdef CLIQUE
-//			for (agent i = 0; i < iaTotal; ++i)
-//				enterNodeAsInf(i, randomInt(Graph::n), TIME_ZERO);
-//#else //CLIQUE
-//			for (agent i = 0; i < iaTotal; ++i) {
-//				const node v = randomLCCNode();
-//				enterNodeAsInf(i, v, TIME_ZERO);
-//#ifndef PER_BLOCK
-//				++v_Iv[v];
-//#endif
-//			}
-//#endif //CLIQUE
 
+			} //EARLY MOBILITY
 
 #ifdef CLIQUE
 #ifdef PER_BLOCK
@@ -835,12 +824,20 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif //PER_BLOCK
 #else
 #ifdef PER_BLOCK
-			//Expected number of S-/I-agents within each node from each block:
+			//Initializing the numerical solution:
 			{
 				const real ia = (real)I_0 / NUM_AGENTS, sa = (real)(NUM_AGENTS - I_0) / NUM_AGENTS;
-				for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-					v_Iab[b] = ia * graph::Graph::kb[b];
-					v_Sab[b] = sa * graph::Graph::kb[b];
+				//Self-contained blocks:
+				//for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+				//	v_Iab[b] = ia * graph::Graph::kb[b];
+				//	v_Sab[b] = sa * graph::Graph::kb[b];
+				//}
+
+				//Instance-wise:
+				for (node v = 0; v < (uint)graph::Graph::n; ++v) {
+					const size_t myBlock = graph::Graph::gi[v].size();
+					v_Iab[myBlock] += iInNode[v];
+					v_Sab[myBlock] += sInNode[v];
 				}
 #ifdef DEBUG
 				real sum = 0.0;

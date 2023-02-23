@@ -255,7 +255,7 @@ void sim::setEnvironment() {
 	LAMBDA				= 1.0;											// ----> Walking speed. 
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
-	ABS_INFECTED		= 100;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+	ABS_INFECTED		= 10;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 																		//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
@@ -290,7 +290,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 300.0; NUM_AGENTS = 1200; TAU_aa = 10.0; GAMMA_a = 0.25; LAMBDA = 1.0;
+	T = 500.0; NUM_AGENTS = 500; TAU_aa = 1.0; GAMMA_a = 0.02; LAMBDA = 2.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -308,7 +308,7 @@ void sim::setEnvironment() {
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
-	EARLY_MOBILITY = (100.0 * LAMBDA) / GAMMA_a;
+	EARLY_MOBILITY = (10.0 * LAMBDA) / GAMMA_a;
 	//EARLY_MOBILITY = 0;
 	OVERLOOK			= 1;
 	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));

@@ -309,17 +309,21 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real Sa = (real)numAgents - Ia;
 	const real& _k_b = graph::Graph::kb[b];
 	const real _kvb_ = _k_b / nb;
+	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
 	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
-	real sigma = nT / (2.0 * nL + nT);
-
+	//real sigma = nT / (2.0 * nL + nT);
+	real sigma = nT / (nL + (nL/ii) + nT);
 	
-	//if (Sab == 0.0 || Iab == 0.0)
-	//	return -(nG * Iab);
-
 	
 	//RONALD PER BLOCK (BEST SO FAR):
 	return nL * (Ia * qb - Iab)
 		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+
+	//Alta densidade, nova tentativa:
+	//const real eT = (nT / (nL + nT)) * nT; // ----> eT == Effective Tau.
+	//const real prob_inf = 1.0 - (nL / (nL + (ii * eT)));
+	//return nL * (Ia * qb - Iab)
+	//	+ (ii + ss) * ((Sab * Iab) / nb) * nL * prob_inf * w - (nG * Iab);
 
 	////real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
 	//real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
@@ -375,15 +379,22 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real& _k_b = graph::Graph::kb[b];
 	const real _kvb_ = _k_b / nb;
 	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
-	real sigma = nT / (2.0 * nL + nT);
-
-	//if (Sab == 0.0 || Iab == 0.0)
-	//	return -(nG * Iab);
+	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
+	//real sigma = nT / (2.0 * nL + nT);
+	real sigma = nT / (nL + (nL/ii) + nT);
 
 	
 	//RONALD PER BLOCK (BEST SO FAR):
 	return nL * (Sa * qb - Sab)
 		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+
+
+	//Alta densidade, nova tentativa:
+	//const real eT = (nT / (nL + nT)) * nT; // ----> eT == Effective Tau.
+	//const real prob_inf = 1.0 - (nL / (nL + (ii * eT)));
+	//return nL * (Sa * qb - Sab)
+	//	- (ii + ss) * ((Sab * Iab) / nb) * nL * prob_inf * w + (nG * Iab);
+
 
 	//DON 2:
 	//return nb * (

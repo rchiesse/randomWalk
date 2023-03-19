@@ -72,16 +72,26 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 		<< "\t ---> Smallest degree: "	<< smallestDegree	<< '\n'
 		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)";
 }
-void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA, const real& Wi, const real& Ws, const real& avDegree, const real& _2ndMoment) {
+void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA, const real& Wi, const real& Ws, const real& avDegree, const real& _2ndMoment, const real& Eag, const real& bk, const real& maxKbnb, const std::vector<real>& block_prob) {
 	real w = (Wi + Ws) / 2.0;
 	real sigma = TAU_aa / (2.0 * LAMBDA + TAU_aa);
 	//real sigma = 1;
+
+	//TESTE!!!
+	real sum_b2pb2 = 0, sum_bpb2 = 0, factor, val;
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+		sum_b2pb2 += (size_t)b * b * block_prob[b] * block_prob[b];
+		sum_bpb2  += (size_t)b * block_prob[b] * block_prob[b];
+	}
+	factor = sum_b2pb2 / sum_bpb2;
+	val = (NUM_AGENTS / (N * avDegree)) * factor;
+
+	real tamExpBlock = (N / avDegree) * sum_bpb2;
+	real expPopulation = ((NUM_AGENTS * _2ndMoment) / (pow(avDegree, 3))) * sum_bpb2;
 	real _2sl = 2.0 * sigma * LAMBDA;
-	//real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / (N * pow(avDegree, 2.0));
-	//real beta = (2.0 * sigma * LAMBDA * _2ndMoment * w) / ( pow(avDegree, 2.0));
 	real beta_ronald = (2.0 * sigma * NUM_AGENTS * LAMBDA * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
-	real w_bound = (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment);
-	real w_asym_lambda = (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment);
+	real w_bound		= std::min((real)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment));
+	real w_asym_lambda	= std::min((real)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment));
 	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
@@ -92,14 +102,22 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 		<< "\tTAU (Infect): "						<< TAU_aa		<< '\n'
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-		<< "\tBETA (Infection force): "				<< beta_ronald << '\n'
-		<< "\tR0 (BETA/GAMMA): "					<< beta_ronald/GAMMA_a	<< '\n'
+		//<< "\tBETA (Infection force): "			<< beta_ronald << '\n'
+		<< "\t<b>_K: "								<< bk << '\n'
+		<< "\tE[#Ag] per Node (uniform): "			<< NUM_AGENTS / N << '\n'
+		<< "\tK<b^2>/(n<b>^2): "					<< (NUM_AGENTS * _2ndMoment) / (N * avDegree * avDegree) << '\n'
+		<< "\tval: "								<< val << '\n'
+		<< "\ttamExpBlock: "						<< tamExpBlock << '\n'
+		<< "\texpPopulation: "						<< expPopulation << '\n'
+		<< "\tE[#Ag] (q_b weighted): "				<< Eag << "; E[#Ag]/<b>_K = " << Eag/bk << '\n'
+		<< "\tmaxKbnb: "							<< maxKbnb << '\n'
+		
+		<< "\tAv. #hops as I: "						<< LAMBDA / GAMMA_a << '\n'
+		<< "\tEarly mobility (100.0 * lambda): "	<< (100.0 * LAMBDA) << '\n'
+		<< "\tw ((Wi + Ws) / 2): "					<< w			<< '\n'
 		<< "\tw_bound: "							<< w_bound		<< '\n'
 		<< "\tw_asym_lambda: "						<< w_asym_lambda << '\n'
-		<< "\tE[#Ag] per Node: "					<< NUM_AGENTS / N << '\n'
-		<< "\tAv. #hops as I: "						<< LAMBDA / GAMMA_a << '\n'
-		<< "\tEarly mobility (100.0 lambda/gamma): "<< (100.0 * LAMBDA) / GAMMA_a << '\n'
-
+		<< "\tR0 (BETA/GAMMA): "					<< beta_ronald/GAMMA_a	<< '\n'
 		;
 }
 void Reporter::errorOpening(const std::string& fileName) {

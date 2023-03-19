@@ -311,20 +311,19 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real _kvb_ = _k_b / nb;
 	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
 	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
-	//real sigma = nT / (2.0 * nL + nT);
-	real sigma = nT / (nL + (nL/ii) + nT);
 	
+
 	
 	//RONALD PER BLOCK (BEST SO FAR):
 	return nL * (Ia * qb - Iab)
 		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
 
-	//Alta densidade, nova tentativa:
-	//const real eT = (nT / (nL + nT)) * nT; // ----> eT == Effective Tau.
-	//const real prob_inf = 1.0 - (nL / (nL + (ii * eT)));
-	//return nL * (Ia * qb - Iab)
-	//	+ (ii + ss) * ((Sab * Iab) / nb) * nL * prob_inf * w - (nG * Iab);
 
+
+
+
+
+	
 	////real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
 	//real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
 	//real ii = ibnb;
@@ -380,20 +379,11 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	const real _kvb_ = _k_b / nb;
 	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
 	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
-	//real sigma = nT / (2.0 * nL + nT);
-	real sigma = nT / (nL + (nL/ii) + nT);
-
 	
 	//RONALD PER BLOCK (BEST SO FAR):
 	return nL * (Sa * qb - Sab)
 		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
 
-
-	//Alta densidade, nova tentativa:
-	//const real eT = (nT / (nL + nT)) * nT; // ----> eT == Effective Tau.
-	//const real prob_inf = 1.0 - (nL / (nL + (ii * eT)));
-	//return nL * (Sa * qb - Sab)
-	//	- (ii + ss) * ((Sab * Iab) / nb) * nL * prob_inf * w + (nG * Iab);
 
 
 	//DON 2:
@@ -709,6 +699,7 @@ real Solver::dIdt(const real& Ia) {
 	const real& _b2_ = graph::Graph::_2ndMmt;
 	//const uint& B = graph::Graph::B;
 	return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
+	//return (2.0 * nL * sigma * w * (44.) * Sa * Ia ) / (N * _b_) - nG * Ia;	
 
 	//real avKB = 0;
 	//for (uint b = 0; b < graph::Graph::kb.size(); ++b){
@@ -719,7 +710,6 @@ real Solver::dIdt(const real& Ia) {
 	//		continue;
 	//	avKB += (kb*qb)/(N*pb) ;
 	//}
-	////avKB /= graph::Graph::validBlocks;
 	//avKB /= graph::Graph::largestDegree;
 	//if (avKB < 2.0)
 	//	avKB = 2.0;

@@ -12,7 +12,6 @@ uint Graph::smallestDegree;
 uint Graph::selfLoops;
 uint Graph::largestDgNode;
 uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
-real Graph::validBlocks;
 real Graph::numAgents;
 real Graph::Ws;
 real Graph::Wi;
@@ -273,19 +272,26 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 #ifndef CLIQUE
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 real Graph::_2ndMmt;
+real Graph::bk;
 vector<real> Graph::block_prob;
+vector<uint> Graph::validBlocks;
 vector<real> Graph::q_b;
 vector<real> Graph::kb;
 //real Graph::avSelfLoop;
 vector<real> Graph::rho_b;
+vector<real> Graph::Kbnb;
+real Graph::maxKbnb;
+real Graph::maxKbnbBlock;
 real Graph::psi;
 
 void Graph::setBlockData() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
+	validBlocks.resize(largestDegree + 1, 0);		
 	q_b.resize(largestDegree + 1, 0);
 	//originalFreq.resize(largestDegree + 1, 0);
 	kb.resize(largestDegree + 1, 0);
 	rho_b.resize(largestDegree + 1, 0);
+	Kbnb.resize(largestDegree + 1, 0);
 
 	//Frequencies:
 	for (uint i = 0; i < lccSize; ++i)
@@ -298,6 +304,14 @@ void Graph::setBlockData() {
 	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
 	}
+	size_t numValidBlocks = 0;
+	for (uint b = 1; b < (uint)block_prob.size(); ++b) {
+		if (block_prob[b] > 0) {
+			validBlocks[numValidBlocks] = b;
+			++numValidBlocks;
+		}
+	}
+	validBlocks.resize(numValidBlocks);
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		rho_b[b] = 1.0 - pow(1.0 - ((real)b / (2 * m)), numAgents);
@@ -307,14 +321,8 @@ void Graph::setBlockData() {
 		if (block_prob[b] == 0)
 			continue;
 		psi += 1.0 / (n * block_prob[b]);
-		//psi += b * block_prob[b] * rho_b[b];
-		//psi += b * originalFreq[b] * rho_b[b];
 	}
 
-	validBlocks = 0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		if (block_prob[b] > 0) ++validBlocks;
-	}
 	//2nd moment:
 	_2ndMmt = 0;
 	//original2ndMmt = 0;
@@ -323,7 +331,7 @@ void Graph::setBlockData() {
 		//original2ndMmt += pow(b, 2) * originalFreq[b];
 	}
 	
-	const double _bk_ = _2ndMmt / averageDegree;
+	bk = _2ndMmt / averageDegree;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 #ifdef AUTO_RELATION
 		q_b[b] = ((real)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
@@ -338,6 +346,15 @@ void Graph::setBlockData() {
 		kb[b] = k * q_b[b];
 	}
 
+	//Kbnb:
+	maxKbnb = 0;
+	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+		Kbnb[b] = kb[b] / (N * block_prob[b]);
+		if (Kbnb[b] > maxKbnb) {
+			maxKbnb = Kbnb[b];
+			maxKbnbBlock = b;
+		}
+	}
 	//avSelfLoop:
 	//avSelfLoop = 0;
 	//for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {

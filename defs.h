@@ -54,8 +54,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-#define READ_NTWK_FROM_FILE
-//#define GNP
+//#define READ_NTWK_FROM_FILE
+#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -72,9 +72,8 @@ static constexpr uint N = 10;										// ----> Network size
 #endif
 
 #ifdef GNP
-//static constexpr uint N = 12008;
-static constexpr uint N = 4000;
-#define SOURCE_FILE "", 4000
+static constexpr uint N = 300000;
+#define SOURCE_FILE "", 300000
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif
@@ -118,6 +117,11 @@ static constexpr uint N = 12008;										// ----> Network size
 #define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
 #define NWTK_LABEL "BA-12k-10"
 #define SHORT_LABEL "BA-12k-10" 
+
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
+//#define NWTK_LABEL "BA-100k-10"
+//#define SHORT_LABEL "BA-100k-10" 
 
 //static constexpr uint N = 500;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-500-3.txt")), 500

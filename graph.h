@@ -26,7 +26,6 @@ public:
 	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
 	static real averageDegree;
 	static real originalAvDeg;
-	static real validBlocks;
 
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
@@ -59,11 +58,16 @@ public:
 #endif // PROTECTION_FX
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
 	static real _2ndMmt;
+	static real bk;													// ----> Expected block.
 	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
 	static vector<real> kb;											// ----> Expected number of agents in each block b.
 	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	static vector<real> Kbnb;
+	static real maxKbnb;
+	static real maxKbnbBlock;
 	static real psi;
 	static vector<real> block_prob;
+	static vector<uint> validBlocks;
 	//static real avSelfLoop;
 	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);

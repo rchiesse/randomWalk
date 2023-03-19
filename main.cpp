@@ -105,6 +105,17 @@ std::vector<real> totalSimTime;											// ----> Total simulation time at each
 #ifdef SI_PROPORTION
 vector<real> v_avIb;
 vector<real> v_probesIb;
+
+//TESTE!!!
+vector<real> Sb;		// Up-to-date number of SUSCEPTIBLE AGENTS within each block.
+vector<real> Ib;		// Up-to-date number of INFECTED AGENTS within each block.
+vector<real> sbs;		// Computes the average density S_b / S
+vector<real> total_sbs;
+vector<real> ibi;		// Computes the average density I_b / I
+vector<real> total_ibi;
+vector<real> cbs; //<k>_b - Sb/S
+vector<real> cbi; //<k>_b - Ib/I
+
 //vector<real> v_avSb;
 //vector<real> v_probesSb;
 #endif
@@ -255,7 +266,7 @@ void sim::setEnvironment() {
 	LAMBDA				= 1.0;											// ----> Walking speed. 
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
-	ABS_INFECTED		= 10;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
+	ABS_INFECTED		= 100;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
 																		//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
@@ -290,7 +301,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 500.0; NUM_AGENTS = 500; TAU_aa = 1.0; GAMMA_a = 0.02; LAMBDA = 2.0;
+	T = 2000.0; NUM_AGENTS = 250000; TAU_aa = 1.0; GAMMA_a = 0.01; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -308,7 +319,7 @@ void sim::setEnvironment() {
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
-	EARLY_MOBILITY = (10.0 * LAMBDA) / GAMMA_a;
+	EARLY_MOBILITY = 10.0;
 	//EARLY_MOBILITY = 0;
 	OVERLOOK			= 1;
 	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));
@@ -436,6 +447,7 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const real& now) {
 #endif
 	v_avIb[b] += (real)numI / (numI + numS);
 	++v_probesIb[b];
+
 #endif
 
 	if (numS > 0) {
@@ -526,14 +538,40 @@ void sim::walk(const agent& ag, const real& now) {
 	}
 	if (v == currentNode[ag])
 		return;
+	
+	//TESTE!!!
+	const uint b_orig = (uint)graph::Graph::gs[currentNode[ag]].size();
+	const uint b_dest = (uint)graph::Graph::gs[v].size();
+
 	if (isInfectedAg[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
 		enterNodeAsInf(ag, v, now);
+
+		//TESTE!!!
+		if (b_orig != b_dest) {
+			--Ib[b_orig];
+			ibi[b_orig] += Ib[b_orig] / iaTotal;
+			++total_ibi[b_orig];
+
+			++Ib[b_dest];
+			ibi[b_dest] += Ib[b_dest] / iaTotal;
+			++total_ibi[b_dest];
+		}
 
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
 		enterNodeAsSus(ag, v, now);
 
+		//TESTE!!!
+		if (b_orig != b_dest) {
+			--Sb[b_orig];
+			sbs[b_orig] += Sb[b_orig] / saTotal;
+			++total_sbs[b_orig];
+
+			++Sb[b_dest];
+			sbs[b_dest] += Sb[b_dest] / saTotal;
+			++total_sbs[b_dest];
+		}
 		if (ag == 0)
 			++hopsUntilI[hopsUntilI.size() - 1];
 	}
@@ -546,6 +584,15 @@ void sim::infectAg(const agent& ag, const real& now) {
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
 	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
+
+	//TESTE!!!
+	const uint b = (uint)graph::Graph::gs[currentNode[ag]].size();
+	--Sb[b];
+	++Ib[b];
+	sbs[b] += Sb[b] / saTotal;
+	ibi[b] += Ib[b] / iaTotal;
+	++total_sbs[b];
+	++total_ibi[b];
 }
 
 void sim::recoverAg		 (const agent& ag, const real& now) {
@@ -561,6 +608,15 @@ void sim::recoverAg		 (const agent& ag, const real& now) {
 
 	//Temp:
 	++STransitions[ag];
+
+	//TESTE!!!
+	const uint b = (uint)graph::Graph::gs[currentNode[ag]].size();
+	++Sb[b];
+	--Ib[b];
+	sbs[b] += Sb[b] / saTotal;
+	ibi[b] += Ib[b] / iaTotal;
+	++total_sbs[b];
+	++total_ibi[b];
 }
 
 void sim::recoverSite	(const uint& v, const real& now) {
@@ -691,6 +747,16 @@ void sim::resetVariables() {
 #ifdef SI_PROPORTION
 	v_avIb		.resize(Graph::block_prob.size(), 0.0);
 	v_probesIb	.resize(Graph::block_prob.size(), 0.0);
+
+	//TESTE!!!
+	Sb.resize(Graph::block_prob.size(), 0.0);
+	Ib.resize(Graph::block_prob.size(), 0.0);
+	sbs.resize(Graph::block_prob.size(), 0.0);
+	ibi.resize(Graph::block_prob.size(), 0.0);
+	total_sbs.resize(Graph::block_prob.size(), 0.0);
+	total_ibi.resize(Graph::block_prob.size(), 0.0);
+	cbs.resize(Graph::block_prob.size(), 0.0);
+	cbi.resize(Graph::block_prob.size(), 0.0);
 #endif
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
@@ -704,7 +770,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	Graph::m = (N * (N-1) / 2) + N;		// ----> "+ N" because each node contains an implicit self loop.
 	Graph::selfLoops = N;
 	Graph::smallestDegree = N;
-	Graph::validBlocks = 1;
 	sim::Reporter::networkInfo(Graph::n, Graph::m, Graph::averageDegree, Graph::largestDegree, Graph::smallestDegree, Graph::lccSize);
 #endif
 	sInNode.resize(Graph::n);									// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
@@ -766,7 +831,14 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		Stats::initStream(streamType::infFrac);
 #endif
 		Reporter::startChronometer("\n\nRunning scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + "...");
-		Reporter::simulationInfo(I_0, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt);
+
+		//E[#ag] (q_b weighted):
+		real Eag = 0;
+		for (size_t b = 1; b < Graph::block_prob.size(); ++b) {
+			Eag += NUM_AGENTS * Graph::q_b[b] * Graph::q_b[b];
+		}		
+
+		Reporter::simulationInfo(I_0, ROUNDS, T, NUM_AGENTS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws, Graph::averageDegree, Graph::_2ndMmt, Eag, Graph::bk, Graph::maxKbnb, Graph::block_prob);
 		for (uint round = 0; round < ROUNDS; ++round) {
 #ifdef MEASURE_ROUND_EXE_TIME
 			//Reporter::startChronometer("\n  Round " + std::to_string(round + 1) + "...");
@@ -801,14 +873,16 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					schedule.emplace(i, EXPLambda() - EARLY_MOBILITY, action::walk);
 				//Now, all agents are put to walk for a certain time window, so they can get somewhat mixed in the network:
 
+#ifndef BYPASS_SIMULATION
 				job j;
 				real _now;
 				do {
 					nextJob(j, _now);
-					quietWalk(j.target, _now);		// ----> A "quiet walk" does not produce any statistical data, as opposite to the 'walk()' method.
+					quietWalk(j.target, _now);		// ----> A "quiet walk" does not produce any statistical data, as opposed to the 'walk()' method.
 					schedule.emplace(j.target, _now + EXPLambda(), action::walk);
 				} while (_now < TIME_ZERO);
 				std::cout << "done.";
+#endif //BYPASS_SIMULATION
 
 				//Now we must define which agents are infected from the start, and then schedule their 'recover' event.
 				//It is not a problem to always infect the first 'itotal' agents, since the starting node for each of them will be randomly set.
@@ -816,7 +890,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					infectAg(ag, TIME_ZERO);
 
 			} //EARLY MOBILITY
-
 #ifdef CLIQUE
 #ifdef PER_BLOCK
 			Ia = I_0;
@@ -835,13 +908,18 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 				//Instance-wise:
 				for (node v = 0; v < (uint)graph::Graph::n; ++v) {
-					const size_t myBlock = graph::Graph::gi[v].size();
+					const size_t myBlock = graph::Graph::gs[v].size();
 					v_Iab[myBlock] += iInNode[v];
 					v_Sab[myBlock] += sInNode[v];
 				}
+				for (uint b = 1; b < Sb.size(); ++b) {
+					Sb[b] = v_Sab[b];
+					Ib[b] = v_Iab[b];
+				}
+
 #ifdef DEBUG
 				real sum = 0.0;
-				for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+				for (int b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 					const real nb = (real)graph::Graph::n * graph::Graph::block_prob[b];
 					sum += nb * (ivb[b] + svb[b]);
 				}
@@ -927,6 +1005,56 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif
 
 #ifdef SI_PROPORTION
+		//TESTE!!!
+		real maxCBI = -1, maxCBS = -1, minCBI = 1, minCBS = 1;
+		uint bmaxCBI, bmaxCBS, bminCBI, bminCBS;
+		for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
+			const uint& b = Graph::validBlocks[i];
+			sbs[b] /= total_sbs[b];
+			ibi[b] /= total_ibi[b];
+		}
+
+		for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
+			const uint& b = Graph::validBlocks[i];
+			cbs[b] = (Graph::kb[b] / K) - sbs[b];
+			if (cbs[b] > maxCBS) {
+				maxCBS = cbs[b];
+				bmaxCBS = b;
+			}
+			else if (cbs[b] < minCBS) {
+				minCBS = cbs[b];
+				bminCBS = b;
+			}
+		
+			cbi[b] = (Graph::kb[b] / K) - ibi[b];
+			if (cbi[b] > maxCBI) {
+				maxCBI = cbi[b];
+				bmaxCBI = b;
+			}
+			else if (cbi[b] < minCBI) {
+				minCBI = cbi[b];
+				bminCBI = b;
+			}
+		}
+		real ds = 0;
+		real di = 0;
+		real dsi = 0;
+		real d = 0;
+		for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
+			const uint& b = Graph::validBlocks[i];
+			ds += b * cbs[b];
+			di += b * cbi[b];
+			dsi += cbs[b] * cbi[b];
+		}
+		d = ds + di + dsi;
+		
+		std::cout << "\n\n Max cbs from <k>_b = " << maxCBS << " from block " << bmaxCBS << " \n";
+		std::cout << "Max cbi from <k>_b = " << maxCBI << " from block " << bmaxCBI << " \n";
+		std::cout << "Min cbs from <k>_b = " << minCBS << " from block " << bminCBS << " \n";
+		std::cout << "Min cbi from <k>_b = " << minCBI << " from block " << bminCBI << " \n";
+		std::cout << "Desvio final d = " << d << " \n";
+
+
 		//Average number of infectives per block:
 		real minAv = UINT_MAX, maxAv = 0.0;
 		uint blockMin, blockMax;
@@ -967,7 +1095,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	constexpr real stepSize = 0.001;
 	constexpr uint largerDetailUntil = 100;
 	//const uint largerDetailUntil = (uint)(T / stepSize) + 1;
-	constexpr real epsilon = 1.0 / N ;
+	//constexpr real epsilon = 1.0 / N ;
+	constexpr real epsilon = 0.001 ;
 	constexpr real timeIncrement = stepSize * outputGranularity;
 	vector<real> saveToFile_diadt;
 	vector<real> saveToFile_dildt;

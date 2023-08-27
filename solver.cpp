@@ -2,17 +2,17 @@
 #include "graph.h"
 using namespace sim;
 
-real Solver::nT = 0;
-real Solver::nL = 0;
-real Solver::nG = 0;
-real Solver::Wi = 0;
-real Solver::Ws = 0;
-real Solver::w = 0;
-real Solver::sigma = 0;
-real Solver::EULER = 0.57721566490153286060651209008240243104215933593992;		// ----> The Euler–Mascheroni constant.
+rtl Solver::nT = 0;
+rtl Solver::nL = 0;
+rtl Solver::nG = 0;
+rtl Solver::Wi = 0;
+rtl Solver::Ws = 0;
+rtl Solver::w = 0;
+rtl Solver::sigma = 0;
+rtl Solver::EULER = 0.57721566490153286060651209008240243104215933593992;		// ----> The Euler–Mascheroni constant.
 uint Solver::numAgents = 0;
 
-void Solver::setParams(const real& tau, const real& lambda, const real& gamma, const uint& NUM_AGENTS, const real& _Wi, const real& _Ws) {
+void Solver::setParams(const rtl& tau, const rtl& lambda, const rtl& gamma, const uint& NUM_AGENTS, const rtl& _Wi, const rtl& _Ws) {
 	nT = tau;
 	nL = lambda;
 	nG = gamma;
@@ -29,22 +29,22 @@ void Solver::setParams(const real& tau, const real& lambda, const real& gamma, c
 }
 
 #ifdef CLIQUE
-real Solver::diabdt(const real& Ia, const real& Sa) {
-	const real pb = 1.0;
-	const real nb = graph::Graph::n;
-	const real qb = 1.0;
-	const real ibnb = Ia / nb;
-	const real sbnb = Sa / nb;
-	const real kbnb = ibnb + sbnb;
-	const real b = N;
-	const real K = Ia + Sa;
-	const real p = b / (2.0 * graph::Graph::m - N);
-	const real E_X = K * p;
-	const real E_X2 = K*K * p*p;
-	const real Var_X = E_X * (1.0 - p);
-	const real stdDev = sqrt(Var_X);
-	//const real cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
-	//const real Sa = (double)NUM_AGENTS - Ia;
+rtl Solver::diabdt(const rtl& Ia, const rtl& Sa) {
+	const rtl pb = 1.0;
+	const rtl nb = graph::Graph::n;
+	const rtl qb = 1.0;
+	const rtl ibnb = Ia / nb;
+	const rtl sbnb = Sa / nb;
+	const rtl kbnb = ibnb + sbnb;
+	const rtl b = N;
+	const rtl K = Ia + Sa;
+	const rtl p = b / (2.0 * graph::Graph::m - N);
+	const rtl E_X = K * p;
+	const rtl E_X2 = K*K * p*p;
+	const rtl Var_X = E_X * (1.0 - p);
+	const rtl stdDev = sqrt(Var_X);
+	//const rtl cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
+	//const rtl Sa = (double)NUM_AGENTS - Ia;
 
 	//RONALD (BEST SO FAR):
 	if (Sa == 0.0)
@@ -54,7 +54,7 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
 	//	+ 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
 	//	- (GAMMA_a * Iab);
-	real sigma = nT / (2.0 * nL + nT);
+	rtl sigma = nT / (2.0 * nL + nT);
 	return
 		2.0 * ((Sa * Ia) / nb) * nL * sigma
 		- (nG * Ia);
@@ -68,41 +68,41 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//long double ii = ibnb + 1.0;
 	//const double prob_inf = ii / (H + ii);
 	//const double p = std::min(sbnb, 1.0) * std::min(ibnb, 1.0);
-	//real Hs = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0 * nL));
-	//real Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0 * nL));
-	//const real infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
-	//const real sigma = (ibnb * nT) / (nL + (ibnb * nT));
-	//const real ve = Var_X / E_X;
-	//const real ev = E_X / Var_X;
-	//const real sd = sqrt(Var_X); // ----> Standard devation.
-	//const real sdi = sd * (ibnb / kbnb);
-	//const real sds = sd * (sbnb / kbnb);
-	//const real dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
-	//const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
-	//real ii = sbnb + 1.0;
-	//real H = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0 * nL));
-	//const real prob_inf = ii / (H + ii);
+	//rtl Hs = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0 * nL));
+	//rtl Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0 * nL));
+	//const rtl infRate = (sbnb > ibnb) ? (nT / Hs) : nT;
+	//const rtl sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	//const rtl ve = Var_X / E_X;
+	//const rtl ev = E_X / Var_X;
+	//const rtl sd = sqrt(Var_X); // ----> Standard devation.
+	//const rtl sdi = sd * (ibnb / kbnb);
+	//const rtl sds = sd * (sbnb / kbnb);
+	//const rtl dimm = (ve * ibnb * nG) / ((ev * sbnb) * nT + ve * ibnb * nG);
+	//const rtl dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
+	//rtl ii = sbnb + 1.0;
+	//rtl H = std::max(1.0l, EULER * log((sbnb)+1.0) / (2.0 * nL));
+	//const rtl prob_inf = ii / (H + ii);
 	
-	//const real prob_inf = ii / (H + ii);
-	//real H = (2.0 * nL) / EULER * log(sbnb);
-	//real H = EULER * log(sbnb) / (2.0 * nL);
-	//real H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
-	//real H = EULER * log(sbnb);
-	//real ii = std::max(ibnb, 1.0l);
-	//real H = EULER * log(sbnb+1.0) / (nL);
-	//real H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
-	//const real prob_inf = (ii * nT) / (H + (ii * nT));	//RON (figura plot) (aqui a presença de nT e nL n faz diferença. Avaliar outros cenários!)
-	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL); //INTERESSANTE...
-	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
+	//const rtl prob_inf = ii / (H + ii);
+	//rtl H = (2.0 * nL) / EULER * log(sbnb);
+	//rtl H = EULER * log(sbnb) / (2.0 * nL);
+	//rtl H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
+	//rtl H = EULER * log(sbnb);
+	//rtl ii = std::max(ibnb, 1.0l);
+	//rtl H = EULER * log(sbnb+1.0) / (nL);
+	//rtl H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
+	//const rtl prob_inf = (ii * nT) / (H + (ii * nT));	//RON (figura plot) (aqui a presença de nT e nL n faz diferença. Avaliar outros cenários!)
+	//rtl H = EULER * log(sbnb * ibnb) / (2.0 * nL); //INTERESSANTE...
+	//rtl H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
 	
 	//REGIME DENSO:
-	////real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	////real H = EULER * ((log(sbnb) / (2.0 * nL)) + (log(ibnb) / (2.0 * nL)));
-	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
-	//real ii = ibnb * nT;
-	////real ii = ibnb;
-	//const real prob_inf = (ii ) / (H + (ii ));
-	////const real prob_inf = 1.0;
+	////rtl H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	////rtl H = EULER * ((log(sbnb) / (2.0 * nL)) + (log(ibnb) / (2.0 * nL)));
+	//rtl H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	//rtl ii = ibnb * nT;
+	////rtl ii = ibnb;
+	//const rtl prob_inf = (ii ) / (H + (ii ));
+	////const rtl prob_inf = 1.0;
 	//return
 	//	//E-M:
 	//	//+ Ia * sbnb * prob_inf * nT
@@ -120,78 +120,78 @@ real Solver::diabdt(const real& Ia, const real& Sa) {
 	//	((nT * Sa * Ia ) / (N)) - nG * Ia;
 }
 
-real Solver::dsabdt(const real& Ia, const real& Sa) {
-	const real pb = 1.0;
-	const real nb = graph::Graph::n;
-	const real qb = 1.0;
-	const real ibnb = Ia / nb;
-	const real sbnb = Sa / nb;
-	const real kbnb = ibnb + sbnb;
-	const real b = N;
-	const real pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
-	const real pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
-	const real K = Ia + Sa;
-	const real p = b / (2.0 * graph::Graph::m - N);
-	const real E_X = K * p;
-	const real E_X2 = K * K * p * p;
-	const real Var_X = E_X * (1.0 - p);
-	const real stdDev = sqrt(Var_X);
-	//const real cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
-	//const real Sa = (double)NUM_AGENTS - Ia;
+rtl Solver::dsabdt(const rtl& Ia, const rtl& Sa) {
+	const rtl pb = 1.0;
+	const rtl nb = graph::Graph::n;
+	const rtl qb = 1.0;
+	const rtl ibnb = Ia / nb;
+	const rtl sbnb = Sa / nb;
+	const rtl kbnb = ibnb + sbnb;
+	const rtl b = N;
+	const rtl pIn  = (b - 1) / (2.0 * graph::Graph::m - 1.0);		// ----> Probability that a randomly chosen link leads an agent to an specific node v_b, provided that the agent is outside.
+	const rtl pOut = (b - 1) / b;									// ----> Probability of leaving a node v_b, provided that the agent is inside.
+	const rtl K = Ia + Sa;
+	const rtl p = b / (2.0 * graph::Graph::m - N);
+	const rtl E_X = K * p;
+	const rtl E_X2 = K * K * p * p;
+	const rtl Var_X = E_X * (1.0 - p);
+	const rtl stdDev = sqrt(Var_X);
+	//const rtl cs = (1.0 - (sbnb / kbnb) * (ibnb / kbnb)) * stdDev;
+	//const rtl Sa = (double)NUM_AGENTS - Ia;
 	//BEST SO FAR:
 	if (Sa == 0.0) 
 		return nG * Ia;
 
-	//real H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
-	//real H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
-	//real dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
-	//real H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
-	//real H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
-	//real H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
-	//real Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0*nL));
-	//const real infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
-	//const real sigma = (ibnb * nT) / (nL + (ibnb * nT));
-	//const real ve = Var_X / E_X;
-	//const real ev = E_X / Var_X;
-	//const real dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
-	//real ii = ibnb + 1.0;
-	//real H = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0 * nL));
-	//const real prob_inf = ii / (H + ii);
+	//rtl H = EULER * log(sbnb + ibnb + 1.0) / (2.0 * nL);
+	//rtl H = EULER * log(sbnb * ibnb * (1.0 / nT)) / (2.0 * nL);
+	//rtl dFactor = (sbnb * ibnb / nT) * std::min(1.0, abs(nT - nL));
+	//rtl H = EULER * log(ibnb + 1.0 + dFactor) / (2.0 * nL);
+	//rtl H = EULER * log((ibnb * (std::min(sbnb, ibnb) / (2.0))) + 1.0) / (2.0 * nL);
+	//rtl H = EULER * log((sbnb)+1.0) / (2.0 * nL) + EULER * log((ibnb)+1.0) / (2.0 * nL);
+	//rtl Hi = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0*nL));
+	//const rtl infRate = (sbnb > ibnb) ? (nT - Hs) : nT;
+	//const rtl sigma = (ibnb * nT) / (nL + (ibnb * nT));
+	//const rtl ve = Var_X / E_X;
+	//const rtl ev = E_X / Var_X;
+	//const rtl dimm = (ibnb * nG) / ((sbnb) * nT + ibnb * nG);
+	//rtl ii = ibnb + 1.0;
+	//rtl H = std::max(1.0l, EULER * log((ibnb)+1.0) / (2.0 * nL));
+	//const rtl prob_inf = ii / (H + ii);
 
-	//real H = (2.0 * nL) / EULER * log(sbnb);
-	//real H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
-	//real H = EULER * log(sbnb);
-	//real H = EULER * log(sbnb) / (2.0 * nL);
-	//real ii = std::max(ibnb, 1.0l);
-	//real H = EULER * log(sbnb+1.0) / (nL);	//Ótimo qnd LAMBDA >> TAU; SUPERESTIMA C.C (e H = 1.0 acaba sendo melhor)
-	//real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	//real H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
-	//real H = EULER * log(ibnb) / (2.0 * nL);
-	//const real prob_inf = (ii * nT) / (H + (ii * nT));
-	//real H = EULER * log(sbnb * ibnb) / (2.0 * nL);	// INTERESSANTE...
-	//real H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
+	//rtl H = (2.0 * nL) / EULER * log(sbnb);
+	//rtl H = std::max(1.0l, EULER * log(sbnb+1.0) / (nL));
+	//rtl H = EULER * log(sbnb);
+	//rtl H = EULER * log(sbnb) / (2.0 * nL);
+	//rtl ii = std::max(ibnb, 1.0l);
+	//rtl H = EULER * log(sbnb+1.0) / (nL);	//Ótimo qnd LAMBDA >> TAU; SUPERESTIMA C.C (e H = 1.0 acaba sendo melhor)
+	//rtl H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//rtl H = std::max(1.0l, EULER * log(kbnb) / (2.0 * nL));	//LEGAL TB!
+	//rtl H = EULER * log(ibnb) / (2.0 * nL);
+	//const rtl prob_inf = (ii * nT) / (H + (ii * nT));
+	//rtl H = EULER * log(sbnb * ibnb) / (2.0 * nL);	// INTERESSANTE...
+	//rtl H = EULER * log(std::min(sbnb, ibnb)) / (2.0 * nL); // MT INTERESSANTE TB...
 	
 	//RON
-	//real H = EULER * log(kbnb) / (2.0 * nL);
-	//real ii = ibnb;
+	//rtl H = EULER * log(kbnb) / (2.0 * nL);
+	//rtl ii = ibnb;
 	
 	//RONALD v2 (ótimo em regime esparso):
 	//return (Ia - Iab) * LAMBDA * qb - Iab * LAMBDA * (1.0 - qb)
 	//	+ 2 * ((Sab * Iab)/nb) * LAMBDA * SIGMA_aa
 	//	- (GAMMA_a * Iab);
-	real sigma = nT / (2.0 * nL + nT);
+	rtl sigma = nT / (2.0 * nL + nT);
 	return 
 		- 2.0 * ((Sa * Ia)/nb) * nL * sigma
 		+ (nG * Ia);
 
 	////ALTA DENSIDADE:
 	////Muito preciso em alta densidade:
-	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
-	//real ii = ibnb * nT;
+	//rtl H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	//rtl ii = ibnb * nT;
 	//
-	//const real prob_inf = (ii ) / (H + (ii ));
-	////const real prob_inf = (ii) / (1.0 + (ii));	//Ótimo qnd TAU == LAMBDA; SUPERESTIMA qnd LAMBDA >> TAU (e EULER acaba sendo melhor)
-	////const real prob_inf = 1.0;
+	//const rtl prob_inf = (ii ) / (H + (ii ));
+	////const rtl prob_inf = (ii) / (1.0 + (ii));	//Ótimo qnd TAU == LAMBDA; SUPERESTIMA qnd LAMBDA >> TAU (e EULER acaba sendo melhor)
+	////const rtl prob_inf = 1.0;
 	//return
 	//	//POR NÓ:
 	//	//-Ia * sbnb * prob_inf * nT
@@ -212,9 +212,9 @@ real Solver::dsabdt(const real& Ia, const real& Sa) {
 	//	-((nT * Sa * Ia ) / (N)) + nG * Ia;
 }
 
-void Solver::step(const real& h, real& Ia, real& Sa) {
-	constexpr real one_sixth = 1.0 / 6.0;
-	std::vector<real> k1(2, 0), k2(2, 0), k3(2, 0), k4(2, 0);
+void Solver::step(const rtl& h, rtl& Ia, rtl& Sa) {
+	constexpr rtl one_sixth = 1.0 / 6.0;
+	std::vector<rtl> k1(2, 0), k2(2, 0), k3(2, 0), k4(2, 0);
 
 	lookAhead(h, Ia, Sa, k1);
 	lookAhead(h, Ia, Sa, k2, k1, 0.5);
@@ -226,17 +226,17 @@ void Solver::step(const real& h, real& Ia, real& Sa) {
 	Sa += one_sixth * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
 }
 
-void Solver::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, rtl& Sa, std::vector<rtl>& target) {
 	target[0] = h * diabdt(Ia, Sa);
 	target[1] = h * dsabdt(Ia, Sa);
 }
 
-void Solver::lookAhead(const real& h, real& Ia, real& Sa, std::vector<real>& target, std::vector<real>& base, const real& fraction) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, rtl& Sa, std::vector<rtl>& target, std::vector<rtl>& base, const rtl& fraction) {
 	target[0] = h * diabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
 	target[1] = h * dsabdt(Ia + fraction * base[0], Sa + fraction * base[1]);
 }
 
-void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void Solver::rungeKutta4thOrder(const rtl& t0, rtl& Ia, rtl& Sa, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
@@ -244,10 +244,10 @@ void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& 
 	bool end = false;
 	++outputSize;
 
-	real sumH = 0;
+	rtl sumH = 0;
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		step(h, Ia, Sa);
 		sumH += h;
 		if (Ia < epsilon) {
@@ -272,7 +272,7 @@ void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& 
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		step(h, Ia, Sa);
 		sumH += h;
 		if (Ia < epsilon) {
@@ -299,18 +299,18 @@ void Solver::rungeKutta4thOrder(const real& t0, real& Ia, real& Sa, const real& 
 
 #else //CLIQUE
 #ifdef PER_BLOCK
-real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	const real& pb = graph::Graph::block_prob[b];
-	const real nb = graph::Graph::n * pb;
-	const real& qb = graph::Graph::q_b[b];
-	const real ibnb = Iab / nb;
-	const real sbnb = Sab / nb;
-	const real kbnb = ibnb + sbnb;
-	const real Sa = (real)numAgents - Ia;
-	const real& _k_b = graph::Graph::kb[b];
-	const real _kvb_ = _k_b / nb;
-	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
-	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
+rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b) {
+	const rtl& pb = graph::Graph::block_prob[b];
+	const rtl nb = graph::Graph::n * pb;
+	const rtl& qb = graph::Graph::q_b[b];
+	const rtl ibnb = Iab / nb;
+	const rtl sbnb = Sab / nb;
+	const rtl kbnb = ibnb + sbnb;
+	const rtl Sa = (rtl)numAgents - Ia;
+	const rtl& _k_b = graph::Graph::kb[b];
+	const rtl _kvb_ = _k_b / nb;
+	const rtl ii = (ibnb < 1.0) ? 1.0 : ibnb;
+	const rtl ss = (sbnb < 1.0) ? 1.0 : sbnb;
 	
 
 	
@@ -324,10 +324,10 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 
 
 	
-	////real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
-	//real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
-	//real ii = ibnb;
-	//const real prob_inf = ii / (H + ii);
+	////rtl H = EULER * (log(sbnb * ibnb) / (2.0 * nL));		// ----> Ótimo em regime denso, mas falha se (sbnb * ibnb) < 1.0.
+	//rtl H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
+	//rtl ii = ibnb;
+	//const rtl prob_inf = ii / (H + ii);
 	//return //Sa * nL * qb - Sab * nL
 	//	Iab * sbnb * prob_inf * nT
 	//	- (nG * Iab);
@@ -338,12 +338,12 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	////	return Ia * nL * qb - Iab * nL
 	////		- (nG * Iab);
 	////} 
-	////real H = EULER * log(sbnb) / (2.0 * nL);
-	////real H = EULER * log(kbnb) / (2.0 * nL);	//RON
-	//real H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
-	////real H = EULER * log(sbnb * ibnb) / nL;	
-	//real ii = ibnb;
-	//const real prob_inf = (ii) / (H + ii);
+	////rtl H = EULER * log(sbnb) / (2.0 * nL);
+	////rtl H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//rtl H = EULER * (log(sbnb * ibnb) / (2.0 * nL));
+	////rtl H = EULER * log(sbnb * ibnb) / nL;	
+	//rtl ii = ibnb;
+	//const rtl prob_inf = (ii) / (H + ii);
 	//return //Ia * nL * qb - Iab * nL
 	//	+ Iab * sbnb * prob_inf * nT
 	//	- (nG * Iab);
@@ -351,7 +351,7 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	////NOVO TESTE (denso):
 	////VERSÃO DE BLOCO EQUIVALENTE AO DE NÓ:
 	////return nb * (
-	////	(Ia - ibnb) * nL * (((real)b - 1.0) / (2.0 * graph::Graph::m - N - (b - 1))) - ibnb * nL * l
+	////	(Ia - ibnb) * nL * (((rtl)b - 1.0) / (2.0 * graph::Graph::m - N - (b - 1))) - ibnb * nL * l
 	////	+ ibnb * sbnb * nT
 	////	- (nG * ibnb)
 	////);
@@ -367,18 +367,18 @@ real Solver::diabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	////);
 }
 
-real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint& b) {
-	const real& pb = graph::Graph::block_prob[b];
-	const real nb = graph::Graph::n * pb;
-	const real& qb = graph::Graph::q_b[b];
-	const real ibnb = Iab / nb;
-	const real sbnb = Sab / nb;
-	const real kbnb = ibnb + sbnb;
-	const real Sa = (real)numAgents - Ia;
-	const real& _k_b = graph::Graph::kb[b];
-	const real _kvb_ = _k_b / nb;
-	const real ii = (ibnb < 1.0) ? 1.0 : ibnb;
-	const real ss = (sbnb < 1.0) ? 1.0 : sbnb;
+rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b) {
+	const rtl& pb = graph::Graph::block_prob[b];
+	const rtl nb = graph::Graph::n * pb;
+	const rtl& qb = graph::Graph::q_b[b];
+	const rtl ibnb = Iab / nb;
+	const rtl sbnb = Sab / nb;
+	const rtl kbnb = ibnb + sbnb;
+	const rtl Sa = (rtl)numAgents - Ia;
+	const rtl& _k_b = graph::Graph::kb[b];
+	const rtl _kvb_ = _k_b / nb;
+	const rtl ii = (ibnb < 1.0) ? 1.0 : ibnb;
+	const rtl ss = (sbnb < 1.0) ? 1.0 : sbnb;
 	
 	//RONALD PER BLOCK (BEST SO FAR):
 	return nL * (Sa * qb - Sab)
@@ -434,15 +434,15 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//	return Sa * nL * qb - Sab * nL
 	//		+ (nG * Iab);
 	//}
-	//real H = EULER * log(sbnb) / (2.0 * nL);
-	//real H = EULER * log(kbnb) / (2.0 * nL);	//RON
+	//rtl H = EULER * log(sbnb) / (2.0 * nL);
+	//rtl H = EULER * log(kbnb) / (2.0 * nL);	//RON
 	
 	//if (Sab == 0.0 || Iab == 0.0)
 	//	return (nG * Iab);
 	//
-	//real H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
-	//real ii = ibnb;
-	//const real prob_inf = ii / (H + ii);
+	//rtl H = EULER * (log((sbnb * ibnb) + 1.0) / (2.0 * nL));
+	//rtl ii = ibnb;
+	//const rtl prob_inf = ii / (H + ii);
 	//return //Sa * nL * qb - Sab * nL
 	//	- Iab * sbnb * prob_inf * nT
 	//	+ (nG * Iab);
@@ -462,7 +462,7 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//	+ (nG * Iab);
 	//VERSÃO DE NÓ EQUIVALENTE AO DE BLOCO:
 	//return nb * (
-	//	(Sa - sbnb) * nL * (((real)b - 1.0) / (2.0 * graph::Graph::m - N - (b-1))) - sbnb * nL * l
+	//	(Sa - sbnb) * nL * (((rtl)b - 1.0) / (2.0 * graph::Graph::m - N - (b-1))) - sbnb * nL * l
 	//	- ibnb * sbnb * nT
 	//	+ (nG * ibnb)
 	//);
@@ -474,10 +474,10 @@ real Solver::dsabdt(const real& Ia, const real& Iab, const real& Sab, const uint
 	//);
 }
 
-void Solver::step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector<real>& v_Sab) {
-	constexpr real one_sixth = 1.0 / 6.0;
+void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab) {
+	constexpr rtl one_sixth = 1.0 / 6.0;
 	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	std::vector<real> k1(2 * blocks, 0), k2(2 * blocks, 0), k3(2 * blocks, 0), k4(2 * blocks, 0);
+	std::vector<rtl> k1(2 * blocks, 0), k2(2 * blocks, 0), k3(2 * blocks, 0), k4(2 * blocks, 0);
 
 	lookAhead(h, Ia, v_Iab, v_Sab, k1);
 	lookAhead(h, Ia, v_Iab, v_Sab, k2, k1, 0.5);
@@ -494,7 +494,7 @@ void Solver::step(const real& h, real& Ia, std::vector<real>& v_Iab, std::vector
 	}
 }
 
-void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& v_Sab, std::vector<rtl>& target) {
 	update_Ia(Ia, v_Iab);
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 		if (graph::Graph::block_prob[b] == 0)
@@ -505,7 +505,7 @@ void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, 
 	}
 }
 
-void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& v_Sab, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& v_Sab, std::vector<rtl>& target, std::vector<rtl>& base, const double& fraction) {
 	update_Ia(Ia, v_Iab, base, fraction);
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
 		if (graph::Graph::block_prob[b] == 0)
@@ -516,19 +516,19 @@ void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iab, 
 	}
 }
 
-void Solver::update_Ia(real& Ia, const std::vector<real>& v_Iab) {
+void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iab) {
 	Ia = 0;
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
 		Ia += v_Iab[b];
 }
 
-void Solver::update_Ia(real& Ia, const std::vector<real>& v_Iab, const std::vector<real>& base, const double& fraction) {
+void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& base, const double& fraction) {
 	Ia = 0;
 	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
 		Ia += v_Iab[b] + (fraction * base[2 * b]);
 }
 #else //PER_BLOCK
-real Solver::divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
+rtl Solver::divbdt(const rtl& Ia, const rtl& Iv, const rtl& Sv, const uint& b) {
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b];
@@ -540,7 +540,7 @@ real Solver::divbdt(const real& Ia, const real& Iv, const real& Sv, const uint& 
 		+ (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
 		- (GAMMA_a * Iv);
 }
-real Solver::dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& b) {
+rtl Solver::dsvbdt(const rtl& Ia, const rtl& Iv, const rtl& Sv, const uint& b) {
 	const double& pb = graph::Graph::block_prob[b];
 	const double nb = graph::Graph::n * pb;
 	const double& qb = graph::Graph::q_b[b]; const double qbnb = qb / nb;
@@ -551,10 +551,10 @@ real Solver::dsvbdt(const real& Ia, const real& Iv, const real& Sv, const uint& 
 		- (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
 		+ (GAMMA_a * Iv);
 }
-void Solver::step(const real& h, real& Ia, std::vector<real>& v_Iv, std::vector<real>& v_Sv) {
-	constexpr real one_sixth = 1.0 / 6.0;
+void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iv, std::vector<rtl>& v_Sv) {
+	constexpr rtl one_sixth = 1.0 / 6.0;
 	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	vector<real> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
+	vector<rtl> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
 
 	lookAhead(h, Ia, v_Iv, v_Sv, k1);
 	lookAhead(h, Ia, v_Iv, v_Sv, k2, k1, 0.5);
@@ -570,45 +570,45 @@ void Solver::step(const real& h, real& Ia, std::vector<real>& v_Iv, std::vector<
 		v_Sv[v] += one_sixth * (k1[2 * v + 1] + 2 * k2[2 * v + 1] + 2 * k3[2 * v + 1] + k4[2 * v + 1]);
 	}
 }
-void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<rtl>& v_Sv, std::vector<rtl>& target) {
 	update_Ia(Ia, v_Iv);
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
 		target[2 * v] = h * divbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
 		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
 	}
 }
-void Solver::lookAhead(const real& h, real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& v_Sv, std::vector<real>& target, std::vector<real>& base, const double& fraction) {
+void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<rtl>& v_Sv, std::vector<rtl>& target, std::vector<rtl>& base, const double& fraction) {
 	update_Ia(Ia, v_Iv, base, fraction);
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
 		target[2 * v] = h * divbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
 		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
 	}
 }
-void Solver::update_Ia(real& Ia, const std::vector<real>& v_Iv) {
+void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iv) {
 	Ia = 0;
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
 		Ia += v_Iv[v];
 }
-void Solver::update_Ia(real& Ia, const std::vector<real>& v_Iv, const std::vector<real>& base, const double& fraction) {
+void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<rtl>& base, const double& fraction) {
 	Ia = 0;
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v)
 		Ia += v_Iv[v] + (fraction * base[2 * v]);
 }
 #endif //PER_BLOCK
 
-real Solver::dilbdt(const real& Ia, const real& il, const real& Iab, const real& ilb, const uint& b) {
+rtl Solver::dilbdt(const rtl& Ia, const rtl& il, const rtl& Iab, const rtl& ilb, const uint& b) {
 	return 0;
 }
 
-void Solver::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, std::vector<real>& v_ilb, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, std::vector<rtl>& v_ilb, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
-	real Ia = 0;
+	rtl Ia = 0;
 	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
 		Ia += v_Iab[b];
-	real il = 0.0;
+	rtl il = 0.0;
 
 	saveToFile_diadt[0] = Ia / numAgents;
 	saveToFile_dildt[0] = il;
@@ -618,7 +618,7 @@ void Solver::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::v
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	//bool stationary = false;
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		step(h, Ia, v_Iab, v_Sab);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
@@ -648,7 +648,7 @@ void Solver::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::v
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		step(h, Ia, v_Iab, v_Sab);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
@@ -683,29 +683,30 @@ void Solver::rungeKutta4thOrder(const real& t0, std::vector<real>& v_Iab, std::v
 }
 #endif //CLIQUE
 
-//real sim::diadt(const real& Ia, const real& il) {
-real Solver::diadt(const real& Ia, const real& sumSbIb) {
+//rtl sim::diadt(const rtl& Ia, const rtl& il) {
+rtl Solver::diadt(const rtl& Ia, const rtl& sumSbIb) {
 	//return graph::Graph::psi * TAU_aa * sumSbIb - GAMMA_a * Ia;
 	return -nG * Ia;
 }
-real Solver::dildt(const real& Ia, const real& il) {
+rtl Solver::dildt(const rtl& Ia, const rtl& il) {
 	//return  beta_al * (1.0 - il) * Ia - GAMMA_l * il;
 	return 0.0;
 }
 
-real Solver::dIdt(const real& Ia) {
-	const real Sa = (real)numAgents - Ia;
-	const real _b_ = (real)graph::Graph::averageDegree;
-	const real& _b2_ = graph::Graph::_2ndMmt;
+rtl Solver::dIdt(const rtl& Ia) {
+	const rtl Sa = (rtl)numAgents - Ia;
+	const rtl _b_ = (rtl)graph::Graph::averageDegree;
+	const rtl& _b2_ = graph::Graph::_2ndMmt;
 	//const uint& B = graph::Graph::B;
 	return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
+	//return (2.0 * nL * sigma * w * Sa * Ia ) / (N) - nG * Ia;	
 	//return (2.0 * nL * sigma * w * (44.) * Sa * Ia ) / (N * _b_) - nG * Ia;	
 
-	//real avKB = 0;
+	//rtl avKB = 0;
 	//for (uint b = 0; b < graph::Graph::kb.size(); ++b){
-	//	const real& pb = graph::Graph::block_prob[b];
-	//	const real& qb = graph::Graph::q_b[b];
-	//	const real& kb = graph::Graph::kb[b];
+	//	const rtl& pb = graph::Graph::block_prob[b];
+	//	const rtl& qb = graph::Graph::q_b[b];
+	//	const rtl& kb = graph::Graph::kb[b];
 	//	if (pb == 0)
 	//		continue;
 	//	avKB += (kb*qb)/(N*pb) ;
@@ -718,15 +719,15 @@ real Solver::dIdt(const real& Ia) {
 	//
 }
 
-void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real>& v_Sab, const real& t, const real& h, const real& epsilon, std::vector<real>& saveToFile_diadt, std::vector<real>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const real& largerDetailUntil) {
+void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
-	real Ia = 0;
+	rtl Ia = 0;
 	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
 		Ia += v_Iab[b];
-	real il = 0.0;
+	rtl il = 0.0;
 
 	saveToFile_diadt[0] = Ia / numAgents;
 	saveToFile_dildt[0] = il;
@@ -736,7 +737,7 @@ void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real
 	//For the first 'largerDetailUntil' iterations every step is stored in a vector ('saveToFile'), for later being written to file.
 	//bool stationary = false;
 	for (uint s = 1; s < largerDetailUntil; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		stepMaster(h, Ia);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
@@ -766,7 +767,7 @@ void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real
 
 	//From the 'largerDetailUntil' iteration on, we afford to ignore 'outputGranularity'-size windows of values, so that the saved file does not grow explosively.
 	for (uint s = (uint)largerDetailUntil; s < totalSteps; ++s) {
-		real prevIA = Ia;
+		rtl prevIA = Ia;
 		stepMaster(h, Ia);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
@@ -800,10 +801,10 @@ void Solver::rkMaster(const real& t0, std::vector<real>& v_Iab, std::vector<real
 	}
 }
 
-void Solver::stepMaster(const real& h, real& Ia) {
-	constexpr real one_sixth = 1.0 / 6.0;
+void Solver::stepMaster(const rtl& h, rtl& Ia) {
+	constexpr rtl one_sixth = 1.0 / 6.0;
 	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	real k1(0), k2(0), k3(0), k4(0);
+	rtl k1(0), k2(0), k3(0), k4(0);
 
 	k1 = h * dIdt(Ia);
 	k2 = h * dIdt(Ia + 0.5 * k1);

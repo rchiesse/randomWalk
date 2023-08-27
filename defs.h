@@ -24,14 +24,14 @@ namespace sim {
 // ---------------------------//----------------------------- //
 
 // * DATA TYPES *
-#define uint uint32_t
-#define ulong uint64_t
-#define ushort uint16_t
-#define real long double
-//#define real float
+#define uint uint32_t		
+#define ulong uint64_t		
+#define ushort uint16_t		
+#define rtl long double		// ----> "rtl" for "rational".
+//#define rtl float
 typedef uint agent;
 namespace graph {
-	typedef uint32_t node;
+	typedef uint node;
 }
 
 // ---------------------------//----------------------------- //
@@ -41,12 +41,12 @@ namespace graph {
 #define EXE_DIR "C:/Users/rchie/source/repos/randomWalk2/x64/Release"
 namespace sim {
 	static std::string baseName;
-	static real beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
-	static real beta_al	= 0;														// ----> Force of infection from an I-agent to a site
-	static real beta_la	= 0;														// ----> Force of infection from a site to an I-agent
-	static real nT;		// ----> Normalized TAU
-	static real nG;		// ----> Normalized GAMMA
-	static real nL;		// ----> Normalized LAMBDA
+	static rtl beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
+	static rtl beta_al	= 0;														// ----> Force of infection from an I-agent to a site
+	static rtl beta_la	= 0;														// ----> Force of infection from a site to an I-agent
+	static rtl nT;		// ----> Normalized TAU
+	static rtl nG;		// ----> Normalized GAMMA
+	static rtl nL;		// ----> Normalized LAMBDA
 }
 
 // ---------------------------//----------------------------- //
@@ -54,8 +54,8 @@ namespace sim {
 
 // * NETWORK *
 //#define CLIQUE
-//#define READ_NTWK_FROM_FILE
-#define GNP
+#define READ_NTWK_FROM_FILE
+//#define GNP
 //#define STAR
 
 #ifdef STAR
@@ -108,15 +108,15 @@ static constexpr uint N = 300000;
 //#define NWTK_LABEL "GNP-2000"
 //#define SHORT_LABEL "GNP-2000" 
 
-//static constexpr uint N = 4000;											// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
-//#define NWTK_LABEL "GNP_4000"
-//#define SHORT_LABEL "GNP_4000" 
+static constexpr uint N = 4000;											// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
+#define NWTK_LABEL "GNP_4000"
+#define SHORT_LABEL "GNP_4000" 
 
-static constexpr uint N = 12008;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
-#define NWTK_LABEL "BA-12k-10"
-#define SHORT_LABEL "BA-12k-10" 
+//static constexpr uint N = 12008;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
+//#define NWTK_LABEL "BA-12k-10"
+//#define SHORT_LABEL "BA-12k-10" 
 
 //static constexpr uint N = 100000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
@@ -181,8 +181,8 @@ static constexpr uint N = 12008;										// ----> Network size
 #define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
 #define PROTECTION_FX
 #ifndef PROTECTION_FX
-static constexpr real Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
-static constexpr real Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
+static constexpr rtl Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
+static constexpr rtl Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
 #endif
 
 // ---------------------------//----------------------------- //
@@ -209,6 +209,8 @@ namespace sim{		// ----> Simulator's namespace.
 //#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
+#define MASTER	// ----> "PER_BLOCK" must be set likewise for this to be set. Do not set this option if "PER_BLOCK" is not set.
+
 } //namespace sim
 
 // ---------------------------//----------------------------- //

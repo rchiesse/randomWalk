@@ -2,47 +2,47 @@
 #include "utils.h"
 using namespace sim;
 std::ofstream Stats::infFracData;
-real Stats::t			= 0;
+rtl Stats::t			= 0;
 uint Stats::numAgents	= 0;
 uint Stats::rounds		= 0;
-real Stats::tau			= 0;
-real Stats::gamma		= 0;
-real Stats::lambda		= 0;
-real Stats::Wi			= 0;
-real Stats::Ws			= 0;
-real Stats::W			= 0;
+rtl Stats::tau			= 0;
+rtl Stats::gamma		= 0;
+rtl Stats::lambda		= 0;
+rtl Stats::Wi			= 0;
+rtl Stats::Ws			= 0;
+rtl Stats::W			= 0;
 
 #ifdef INFECTED_FRACTION
 uint Stats::_bufferPos = 0;
-std::vector<real> Stats::infectedAgFractionBuffer(BUFFER_SIZE);
-std::vector<real> Stats::infectedSiteFractionBuffer(BUFFER_SIZE);
-std::vector<real> Stats::timestampBuffer(BUFFER_SIZE);
+std::vector<rtl> Stats::infectedAgFractionBuffer(BUFFER_SIZE);
+std::vector<rtl> Stats::infectedSiteFractionBuffer(BUFFER_SIZE);
+std::vector<rtl> Stats::timestampBuffer(BUFFER_SIZE);
 std::vector<uint> Stats::agentBuffer(BUFFER_SIZE);
 //std::vector<std::string> Stats::actionBuffer(BUFFER_SIZE);
 #endif
 
 #ifdef ESTIMATE_PROBS
-real Stats::meetings = 0;
-real Stats::siMeetings = 0;
-real Stats::totalExposition = 0;
-real Stats::totalFate = 0;
-real Stats::totalInfections = 0;
+rtl Stats::meetings = 0;
+rtl Stats::siMeetings = 0;
+rtl Stats::totalExposition = 0;
+rtl Stats::totalFate = 0;
+rtl Stats::totalInfections = 0;
 
-real Stats::Psi;
-real Stats::Pinf;
-real Stats::meetingRate_;
-real Stats::siMeetingRate;
+rtl Stats::Psi;
+rtl Stats::Pinf;
+rtl Stats::meetingRate_;
+rtl Stats::siMeetingRate;
 std::ofstream Stats::probsData;
 #endif
 
 
 #ifdef OCCUPANCY
-std::vector<real> Stats::avOcc;
-std::vector<real> Stats::avSOcc;
-std::vector<real> Stats::avIOcc;
-std::vector<real> Stats::lastUpdate;
-std::vector<real> Stats::sLastUpdate;
-std::vector<real> Stats::iLastUpdate;
+std::vector<rtl> Stats::avOcc;
+std::vector<rtl> Stats::avSOcc;
+std::vector<rtl> Stats::avIOcc;
+std::vector<rtl> Stats::lastUpdate;
+std::vector<rtl> Stats::sLastUpdate;
+std::vector<rtl> Stats::iLastUpdate;
 std::vector<uint> Stats::maxOcc;
 std::vector<uint> Stats::maxSOcc;
 std::vector<uint> Stats::maxIOcc;
@@ -52,8 +52,8 @@ std::vector<uint> Stats::minIOcc;
 std::ofstream Stats::occData;
 std::ofstream Stats::netOccData;
 #endif //OCCUPANCY
-real Stats::avDur = 0;
-real Stats::lastRoundDuration = 0;
+rtl Stats::avDur = 0;
+rtl Stats::lastRoundDuration = 0;
 uint Stats::partials = 0;
 bool Stats::avDurComputed = false;
 std::ofstream Stats::avDurDataGroupL;
@@ -82,7 +82,7 @@ void Stats::probsToFile() {
 		<< siMeetingRate << std::endl;
 }
 #endif
-void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rounds, const real& _tau, const real& _gamma, const real& _lambda, const real& _Wi, const real& _Ws) {
+void Stats::setParams(const rtl& time, const uint& _numAgents, const uint& _rounds, const rtl& _tau, const rtl& _gamma, const rtl& _lambda, const rtl& _Wi, const rtl& _Ws) {
 	t			= time;
 	numAgents	= _numAgents;
 	rounds		= _rounds;
@@ -94,7 +94,7 @@ void Stats::setParams(const real& time, const uint& _numAgents, const uint& _rou
 	W           = (_Wi + _Ws) / 2.0;
 }
 
-//void Stats::initStream(const real& Ws, const real& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
+//void Stats::initStream(const rtl& Ws, const rtl& Wi, const streamType& s, const std::string& ntwLabel, const uint& ntwSize, const uint& numAgents, const double& tau, const double& gamma, const double& lambda, const uint& T, const uint& rounds) {
 void Stats::initStream(const streamType& s) {
 	//setBasename();
 	std::stringstream ss;
@@ -135,19 +135,19 @@ void Stats::initStream(const streamType& s) {
 #ifdef OCCUPANCY
 	case streamType::occupancy:
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/nodeOccupancy_" << ntwLabel << "_N" << ntwSize << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << T << "_R" << rounds << ".csv";
+		ss << EXE_DIR << "/stats/nodeOccupancy_" << NWTK_LABEL << "_N" << N << "_T" << tau << "_G" << gamma << "_L" << lambda << "_STime" << t << "_R" << rounds << ".csv";
 		fileName = ss.str();
 		occData.open(fileName, std::ios::app);
 		//Header
-		if (isEmpty(occData))
+		if (sim::utils::isEmpty(occData))
 			occData << "numAg\tWs\tWi\tnode\tavOcc\tavIOcc\tavSOcc\tmaxOcc\tmaxIOcc\tmaxSOcc\tminOcc\tminIOcc\tminSOcc" << std::endl;
 
 		ss.str("");			// ----> Clear content.
-		ss << EXE_DIR << "/stats/netInfAgMean_" << ntwLabel << "_N" << ntwSize << "_L" << tau << "_G" << gamma << "_T" << lambda << "_STime" << T << "_R" << rounds << ".csv";
+		ss << EXE_DIR << "/stats/netInfAgMean_" << NWTK_LABEL << "_N" << N << "_L" << tau << "_G" << gamma << "_T" << lambda << "_STime" << t << "_R" << rounds << ".csv";
 		fileName = ss.str();
 		netOccData.open(fileName, std::ios::app);
 		//Header
-		if (isEmpty(netOccData))
+		if (sim::utils::isEmpty(netOccData))
 			netOccData << "numAg\tWs\tWi\tinfAgMean\tsusAgMean" << std::endl;
 
 		break;
@@ -201,13 +201,13 @@ void Stats::endStream(const streamType& s) {
 	}
 }
 #ifdef INFECTED_FRACTION
-void Stats::bufferizeIFrac(const int& ag, const real& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
-	infectedAgFractionBuffer[_bufferPos] = (real)itotal / NUM_AGENTS;
+void Stats::bufferizeIFrac(const int& ag, const rtl& now, const std::string& action, const uint& itotal, const uint& iltotal, const uint& NUM_AGENTS, const uint& EVT_GRANULARITY) {
+	infectedAgFractionBuffer[_bufferPos] = (rtl)itotal / NUM_AGENTS;
 
 #ifdef NORM_SITE_PER_AG
-	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / NUM_AGENTS;
+	infectedSiteFractionBuffer[_bufferPos] = (rtl)iltotal / NUM_AGENTS;
 #else
-	infectedSiteFractionBuffer[_bufferPos] = (real)iltotal / N;
+	infectedSiteFractionBuffer[_bufferPos] = (rtl)iltotal / N;
 #endif
 	timestampBuffer[_bufferPos] = now;
 	agentBuffer[_bufferPos] = ag;
@@ -248,55 +248,89 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"#matplotlib.use('Agg')\n\n" <<
 
 		"import matplotlib.pyplot as plt\n" <<
+		"import matplotlib as mpl\n" <<
 		"import numpy as np\n" <<
 		//"from IPython.display import clear_output\n" <<
 		"import csv\n\n";
 
-	//"INFECTED FRACTION X SIMULATION TIME":
-	if (!numericOnly) {
-		of <<
-			"#Import CSV data\n" <<
-			"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
-			"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
-			"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
-			"timeData = myData[:, 1]\n" <<
-			"infAgSimul = myData[:, 2]\n" <<
-			"#infSiteSimul = myData[:, 3]\n" <<
-			"cumSumAg = np.cumsum(infAgSimul)\n" <<
-			"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
-			"#cumSumSites = np.cumsum(infSiteSimul)\n" <<
-			"#cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n";
-	}
 	of <<
-		"with open(\"./stats/Runge-Kutta_" << baseName << ".csv\", \"r\") as j :\n" <<
-		"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<
-
-		"rkData = np.array(rawRK[1:], dtype = np.float64)\n" <<
-		"timeRK = rkData[:, 0]\n" <<
-		"infAgRK = rkData[:, 1]\n" <<
-		"#infSiteRK = rkData[:, 2]\n" <<
-
-		"#Plot\n" <<
 		"plt.figure(1, dpi = 120)\n" <<
 		"plt.title(\"Fraction of Infected Agents over Time\")\n" <<
 		"plt.xlabel(\"Time\")\n" <<
 		"plt.ylabel(\"Infected Fraction\")\n" <<
 		"plt.xlim(0, " << t << ")\n" <<
-		"plt.ylim(0, 1)\n";
+		"plt.ylim(0, 1)\n\n";
 
+	of << "def incluirPlot(nomeArq, ini, lbl) :\n" <<
+		"\twith open(nomeArq, \"r\") as i :\n " <<
+		"\t\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
+
+		"\tmyData = np.array(rawdata[1:], dtype = np.float64)\n" <<
+		"\ttimeData = myData[:, ini]\n" <<
+		"\tinfAgData = myData[:, ini + 1]\n\n" <<
+
+		"\tplt.plot(timeData, infAgData, label = lbl)\n\n\n" <<
+
+		"#Import CSV data\n";
+
+
+	//"INFECTED FRACTION X SIMULATION TIME":
 	if (!numericOnly) {
 		of <<
-			"plt.plot(timeData, infAgSimul, label = \"Simulation\")\n" <<
-			"#plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
-			"plt.plot(timeData, cumMeanAg, label = \"Cumul. Average\")\n" <<
-			"#plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
-			"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
-			"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n";
+			"incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
+			
+
+			//"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
+			//"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
+			//"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
+			//"timeData = myData[:, 1]\n" <<
+			//"infAgSimul = myData[:, 2]\n" <<
+			//"#infSiteSimul = myData[:, 3]\n" <<
+			//"cumSumAg = np.cumsum(infAgSimul)\n" <<
+			//"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
+			//"#cumSumSites = np.cumsum(infSiteSimul)\n" <<
+			//"#cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n";
 	}
+	std::string method, lbl;
+#ifdef PER_BLOCK
+	#ifdef MASTER
+		method = "MASTER";
+		lbl = "master";
+	#else
+		method = "BLOCK";
+		lbl = "block";
+	#endif // MASTER
+#else
+	method = "NODE";
+	lbl = "node";
+#endif // PER_BLOCK
 
 	of <<
-		"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
-		"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
+		"incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+		
+		//"with open(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", \"r\") as j :\n" <<
+		//"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<
+		//
+		//"rkData = np.array(rawRK[1:], dtype = np.float64)\n" <<
+		//"timeRK = rkData[:, 0]\n" <<
+		//"infAgRK = rkData[:, 1]\n" <<
+		//"#infSiteRK = rkData[:, 2]\n" <<
+		//
+		//"#Plot\n";
+
+	//if (!numericOnly) {
+	//	of <<
+	//		"plt.plot(timeData, infAgSimul, label = \"Simulation\")\n" <<
+	//		"#plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
+	//		"plt.plot(timeData, cumMeanAg, label = \"Cumul. Average\")\n" <<
+	//		"#plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
+	//		"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
+	//		"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n";
+	//}
+
+	of << "\n\n" <<
+		//"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
+		//"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"#plt.xscale(\"log\")\n" <<
@@ -359,13 +393,13 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	of.close();
 }
 #endif //INFECTED_FRACTION
-void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, const uint& numAg) {
+void Stats::writeToFile(const streamType& s, const rtl& Ws, const rtl& Wi, const uint& numAg) {
 	switch (s) {
 	case streamType::avDuration:
-		std::stringstream sstype;
-		sstype.precision(1);
-		sstype << W;
-		std::string type("N" + std::to_string(N) + "_w" + sstype.str());
+		//std::stringstream sstype;
+		//sstype.precision(1);
+		//sstype << W;
+		//std::string type("N" + std::to_string(N) + "_w" + sstype.str());
 
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
 		avDurDataK << numAg  << ',' << avDuration() << '\n';
@@ -392,8 +426,8 @@ void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, con
 				<< std::endl;
 		}
 
-		real avInfAgents = 0;
-		real avSusAgents = 0;
+		rtl avInfAgents = 0;
+		rtl avSusAgents = 0;
 		for (graph::node v = 0; v < n; ++v) avInfAgents += avIOcc[v];
 		for (graph::node v = 0; v < n; ++v) avSusAgents += avSOcc[v];
 		netOccData
@@ -407,7 +441,7 @@ void Stats::writeToFile(const streamType& s, const real& Ws, const real& Wi, con
 #endif //OCCUPANCY
 	}
 }
-void Stats::partialsAvDur(const real& duration) {
+void Stats::partialsAvDur(const rtl& duration) {
 	lastRoundDuration = duration;
 	avDur += duration;
 	++partials;
@@ -439,7 +473,7 @@ void Stats::resetAvDur() {
 	partials = 0;
 	avDurComputed = false;
 }
-const real& Stats::avDuration() {
+const rtl& Stats::avDuration() {
 	if (avDurComputed) 
 		return avDur;
 	avDur = avDur / partials;
@@ -539,7 +573,7 @@ void Stats::initOcc(const uint& n) {
 		minIOcc.resize(n, n);
 	}
 }
-void Stats::updateInfOccAv(const graph::node& v, const uint& prevNumA, const uint& prevNumI, const real& now) {
+void Stats::updateInfOccAv(const graph::node& v, const uint& prevNumA, const uint& prevNumI, const rtl& now) {
 	const double timeFrame = now - lastUpdate[v];
 	const double iTimeFrame = now - iLastUpdate[v];
 	avOcc[v] += (timeFrame * prevNumA);
@@ -547,7 +581,7 @@ void Stats::updateInfOccAv(const graph::node& v, const uint& prevNumA, const uin
 	lastUpdate[v] = now;
 	iLastUpdate[v] = now;
 }
-void Stats::updateSusOccAv(const graph::node& v, const uint& prevNumA, const uint& prevNumS, const real& now) {
+void Stats::updateSusOccAv(const graph::node& v, const uint& prevNumA, const uint& prevNumS, const rtl& now) {
 	const double timeFrame = now - lastUpdate[v];
 	const double sTimeFrame = now - sLastUpdate[v];
 	avOcc[v] += (timeFrame * prevNumA);
@@ -571,19 +605,19 @@ void Stats::checkSusMinOcc(const graph::node& v, const uint& numA, const uint& n
 	if (numA < minOcc[v])  minOcc[v] = numA;
 	if (numS < minSOcc[v]) minSOcc[v] = numS;
 }
-void Stats::updateInfOccRaised(const graph::node& v, const uint& numA, const uint& numI, const real& now) {
+void Stats::updateInfOccRaised(const graph::node& v, const uint& numA, const uint& numI, const rtl& now) {
 	updateInfOccAv(v, numA - 1, numI - 1, now);
 	checkInfMaxOcc(v, numA, numI);
 }
-void Stats::updateInfOccLowered(const graph::node& v, const uint& numA, const uint& numI, const real& now) {
+void Stats::updateInfOccLowered(const graph::node& v, const uint& numA, const uint& numI, const rtl& now) {
 	updateInfOccAv(v, numA + 1, numI + 1, now);
 	checkInfMinOcc(v, numA, numI);
 }
-void Stats::updateSusOccRaised(const graph::node& v, const uint& numA, const uint& numS, const real& now) {
+void Stats::updateSusOccRaised(const graph::node& v, const uint& numA, const uint& numS, const rtl& now) {
 	updateSusOccAv(v, numA - 1, numS - 1, now);
 	checkSusMaxOcc(v, numA, numS);
 }
-void Stats::updateSusOccLowered(const graph::node& v, const uint& numA, const uint& numS, const real& now) {
+void Stats::updateSusOccLowered(const graph::node& v, const uint& numA, const uint& numS, const rtl& now) {
 	updateSusOccAv(v, numA + 1, numS + 1, now);
 	checkSusMinOcc(v, numA, numS);
 }
@@ -597,15 +631,15 @@ void Stats::getGlobalMinOcc(uint& _min, graph::node& _where) {
 		if (minOcc[i] < _min) { _min = minOcc[i]; _where = i; }
 	}
 }
-void Stats::computeOcc(const real& totalTime) {
+void Stats::computeOcc(const rtl& totalTime) {
 	const uint n = (uint)avOcc.size();
 	for (graph::node v = 0; v < n; ++v) avOcc[v] /= totalTime;
 	for (graph::node v = 0; v < n; ++v) avIOcc[v] /= totalTime;
 	for (graph::node v = 0; v < n; ++v) avSOcc[v] /= totalTime;
 }
-//void Stats::netInfAgMeanToFile(const real& Ws, const uint& numAg) {
+//void Stats::netInfAgMeanToFile(const rtl& Ws, const uint& numAg) {
 //	const uint n = (uint)avOcc.size();
-//	real avInfAgents = 0;
+//	rtl avInfAgents = 0;
 //	for (graph::node v = 0; v < n; ++v) avInfAgents += avIOcc[v];
 //	netOccData
 //		<< numAg << "\t"
@@ -613,7 +647,7 @@ void Stats::computeOcc(const real& totalTime) {
 //		<< avInfAgents
 //		<< std::endl;
 //}
-//void Stats::occToFile(const real& Ws, const uint& numAg) {
+//void Stats::occToFile(const rtl& Ws, const uint& numAg) {
 //	const uint n = (uint)avOcc.size();
 //	for (graph::node v = 0; v < n; ++v){
 //		occData

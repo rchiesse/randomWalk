@@ -12,9 +12,9 @@ namespace graph {
 	
 class Graph {
 private:
-	static real numAgents;
-	static real Ws;
-	static real Wi;
+	static rtl numAgents;
+	static rtl Ws;
+	static rtl Wi;
 public:
 	static std::unordered_map<uint, uint> idMap;
 	static uint n;													// ----> Network size, i.e. the number of nodes (n = |V|).
@@ -24,8 +24,8 @@ public:
 	static uint selfLoops;
 	static uint largestDgNode;
 	static uint lccSize;											// ---> The size (i.e. the number of nodes) of the Largest Connected Component (LCC).
-	static real averageDegree;
-	static real originalAvDeg;
+	static rtl averageDegree;
+	static rtl originalAvDeg;
 
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
@@ -57,22 +57,22 @@ public:
 	};
 #endif // PROTECTION_FX
 	static vector<node>lcc;											// ---> List of nodes that belong to the LCC.
-	static real _2ndMmt;
-	static real bk;													// ----> Expected block.
-	static vector<real> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
-	static vector<real> kb;											// ----> Expected number of agents in each block b.
-	static vector<real> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
-	static vector<real> Kbnb;
-	static real maxKbnb;
-	static real maxKbnbBlock;
-	static real psi;
-	static vector<real> block_prob;
+	static rtl _2ndMmt;
+	static rtl bk;													// ----> Expected block.
+	static vector<rtl> q_b;										// ----> Probability q_b that a randomly chosen link points to a degree-b node.
+	static vector<rtl> kb;											// ----> Expected number of agents in each block b.
+	static vector<rtl> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	static vector<rtl> Kbnb;
+	static rtl maxKbnb;
+	static rtl maxKbnbBlock;
+	static rtl psi;
+	static vector<rtl> block_prob;
 	static vector<uint> validBlocks;
-	//static real avSelfLoop;
+	//static rtl avSelfLoop;
 	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);
 #endif // CLIQUE
-	static void setParams(const uint& _numAgents, const real& _Ws, const real& _Wi);
+	static void setParams(const uint& _numAgents, const rtl& _Ws, const rtl& _Wi);
 #ifdef PROTECTION_FX
 private:
 	enum class direction{raise, lower};
@@ -80,15 +80,15 @@ private:
 #ifdef CLIQUE
 	static uint _schema_s;
 	static uint _schema_i;
-	static vector<real> _ps;
-	static vector<real> _pi;
+	static vector<rtl> _ps;
+	static vector<rtl> _pi;
 	static vector<uint> _myIdx_s;
 	static vector<uint> _myIdx_i;
 #else
 	static vector<uint> schema_s;
 	static vector<uint> schema_i;
-	static vector<vector<real>> ps;
-	static vector<vector<real>> pi;
+	static vector<vector<rtl>> ps;
+	static vector<vector<rtl>> pi;
 	static vector<vector<uint>> myForeignIdx_s;
 	static vector<vector<uint>> myForeignIdx_i;
 #endif
@@ -98,15 +98,15 @@ public:
 	static void setProbs();
 #ifdef CLIQUE
 #ifdef PROPORTIONAL
-	static const node& nextNodeForS(const real& randBase, const real& itotal, const real& stotal);
-	static const node& nextNodeForI(const real& randBase, const real& itotal, const real& stotal);
+	static const node& nextNodeForS(const rtl& randBase, const rtl& itotal, const rtl& stotal);
+	static const node& nextNodeForI(const rtl& randBase, const rtl& itotal, const rtl& stotal);
 #else
-	static const node& nextNodeForS(const real& randBase);
-	static const node& nextNodeForI(const real& randBase);
+	static const node& nextNodeForS(const rtl& randBase);
+	static const node& nextNodeForI(const rtl& randBase);
 #endif //PROPORTIONAL
 #else
-	static const node& nextNodeForS(const node& _currNode, const real& p);
-	static const node& nextNodeForI(const node& _currNode, const real& p);
+	static const node& nextNodeForS(const node& _currNode, const rtl& p);
+	static const node& nextNodeForI(const node& _currNode, const rtl& p);
 #endif //CLIQUE
 
 	//Updates node v's neighbors' schema, to reflect that v wasn't hosting any infected agent, and now one of such agents has just arrived at v. It means v is no longer a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes smaller.

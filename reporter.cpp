@@ -2,7 +2,7 @@
 
 namespace sim{
 
-real				 Reporter::timeElapsed;
+rtl				 Reporter::timeElapsed;
 std::time_t			 Reporter::timestamp;
 std::vector<clock_t> Reporter::timeScope;
 
@@ -30,11 +30,11 @@ void Reporter::stopChronometer(const std::string& message) {
 		std::cout << "Invalid 'stopChronometer()' call. No chronometer exists to be stopped (i.e. no 'startChronometer()' call remains left for being stopped) in this scope.";
 		return;
 	}
-	timeElapsed = (real)clock() - timeScope[timeScope.size() - 1];
+	timeElapsed = (rtl)clock() - timeScope[timeScope.size() - 1];
 	timeScope.resize(timeScope.size() - 1);
 
 	//User-friendly "elapsed-time" message ("hh:mm:ss" format):
-	real s = timeElapsed / CLOCKS_PER_SEC;	//seconds
+	rtl s = timeElapsed / CLOCKS_PER_SEC;	//seconds
 	uint m = (uint)s / 60;					//minutes
 	uint h = 0;								//hours
 	if (m) {
@@ -54,14 +54,14 @@ void Reporter::progress(const uint& round, const uint& granularity) {
 	std::cout << ((round % granularity == 0) ? std::to_string(round) : ".");
 }
 
-void Reporter::durationInfo(const real& duration) {
+void Reporter::durationInfo(const rtl& duration) {
 	std::cout << std::fixed << std::setprecision(2);
 	std::cout << " Sim. time: " << duration;
 }
-void Reporter::avSimTimeInfo(const real& avDuration) {
+void Reporter::avSimTimeInfo(const rtl& avDuration) {
 	std::cout << "\nAverage simulation time = " << avDuration;
 }
-void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize) {
+void Reporter::networkInfo(const uint& n, const uint& m, const rtl& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize) {
 	using std::endl;
 	std::cout << endl
 		<< "\t ---> Network name: "		<< NWTK_LABEL		<< '\n'
@@ -70,15 +70,15 @@ void Reporter::networkInfo(const uint& n, const uint& m, const real& averageDegr
 		<< "\t ---> Average degree: "	<< averageDegree	<< '\n'
 		<< "\t ---> Largest degree: "	<< largestDegree	<< '\n'
 		<< "\t ---> Smallest degree: "	<< smallestDegree	<< '\n'
-		<< "\t ---> LCC size: "			<< lccSize << " (" << ((real)lccSize / n) * 100 << "%)";
+		<< "\t ---> LCC size: "			<< lccSize << " (" << ((rtl)lccSize / n) * 100 << "%)";
 }
-void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA, const real& Wi, const real& Ws, const real& avDegree, const real& _2ndMoment, const real& Eag, const real& bk, const real& maxKbnb, const std::vector<real>& block_prob) {
-	real w = (Wi + Ws) / 2.0;
-	real sigma = TAU_aa / (2.0 * LAMBDA + TAU_aa);
-	//real sigma = 1;
+void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& T, const rtl& NUM_AGENTS, const rtl& TAU_aa, const rtl& GAMMA_a, const rtl& LAMBDA, const rtl& Wi, const rtl& Ws, const rtl& avDegree, const rtl& _2ndMoment, const rtl& Eag, const rtl& bk, const rtl& maxKbnb, const std::vector<rtl>& block_prob) {
+	rtl w = (Wi + Ws) / 2.0;
+	rtl sigma = TAU_aa / (2.0 * LAMBDA + TAU_aa);
+	//rtl sigma = 1;
 
 	//TESTE!!!
-	real sum_b2pb2 = 0, sum_bpb2 = 0, factor, val;
+	rtl sum_b2pb2 = 0, sum_bpb2 = 0, factor, val;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		sum_b2pb2 += (size_t)b * b * block_prob[b] * block_prob[b];
 		sum_bpb2  += (size_t)b * block_prob[b] * block_prob[b];
@@ -86,12 +86,12 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 	factor = sum_b2pb2 / sum_bpb2;
 	val = (NUM_AGENTS / (N * avDegree)) * factor;
 
-	real tamExpBlock = (N / avDegree) * sum_bpb2;
-	real expPopulation = ((NUM_AGENTS * _2ndMoment) / (pow(avDegree, 3))) * sum_bpb2;
-	real _2sl = 2.0 * sigma * LAMBDA;
-	real beta_ronald = (2.0 * sigma * NUM_AGENTS * LAMBDA * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
-	real w_bound		= std::min((real)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment));
-	real w_asym_lambda	= std::min((real)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment));
+	rtl tamExpBlock = (N / avDegree) * sum_bpb2;
+	rtl expPopulation = ((NUM_AGENTS * _2ndMoment) / (pow(avDegree, 3))) * sum_bpb2;
+	rtl _2sl = 2.0 * sigma * LAMBDA;
+	rtl beta_ronald = (2.0 * sigma * NUM_AGENTS * LAMBDA * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
+	rtl w_bound		= std::min((rtl)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment));
+	rtl w_asym_lambda	= std::min((rtl)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment));
 	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
 		<< "\tT: "									<< T			<< '\n'
@@ -103,6 +103,9 @@ void Reporter::simulationInfo(const uint& itotal, const real& ROUNDS, const real
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
 		//<< "\tBETA (Infection force): "			<< beta_ronald << '\n'
+		<< "\t2nd moment (<b^2>): "					<< _2ndMoment << '\n'
+		<< "\t1st moment squared (<b>^2): "			<< avDegree * avDegree << '\n'
+		<< "\t<b^2> / <b>^2: "						<< _2ndMoment / (avDegree * avDegree) << '\n'
 		<< "\t<b>_K: "								<< bk << '\n'
 		<< "\tE[#Ag] per Node (uniform): "			<< NUM_AGENTS / N << '\n'
 		<< "\tK<b^2>/(n<b>^2): "					<< (NUM_AGENTS * _2ndMoment) / (N * avDegree * avDegree) << '\n'
@@ -128,11 +131,11 @@ void Reporter::openedWithSuccess(const std::string& fileName) {
 }
 #ifdef OCCUPANCY
 void Reporter::iniOccRatioInfo(const uint& n, const uint& numAg) {
-	std::cout << "Initial occupancy ratio (NUM_AGENTS/n) = " << numAg << "/" << n << " = " << (real)numAg / n << std::endl;
+	std::cout << "Initial occupancy ratio (NUM_AGENTS/n) = " << numAg << "/" << n << " = " << (rtl)numAg / n << std::endl;
 }
 void Reporter::minMaxOccInfo(const uint& min, const uint& max, const graph::node& whereMin, const graph::node& whereMax, const uint& ntwSize, const uint& numAgents) {
-	std::cout << "\nMax occupancy over all rounds: node " << whereMax << " with " << max << " agents (" << ((real)max / numAgents) * 100 << "% of the agents)" << std::endl;
-	std::cout   << "Min occupancy over all rounds: node " << whereMin << " with " << min << " agents (" << ((real)min / numAgents) * 100 << "% of the agents)" << std::endl;
+	std::cout << "\nMax occupancy over all rounds: node " << whereMax << " with " << max << " agents (" << ((rtl)max / numAgents) * 100 << "% of the agents)" << std::endl;
+	std::cout   << "Min occupancy over all rounds: node " << whereMin << " with " << min << " agents (" << ((rtl)min / numAgents) * 100 << "% of the agents)" << std::endl;
 }
 
 #endif

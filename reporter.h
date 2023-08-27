@@ -8,7 +8,7 @@
 namespace sim {		// ----> Simulator's namespace.
 class Reporter {
 private:
-	static real timeElapsed;
+	static rtl timeElapsed;
 	static std::time_t timestamp;
 	static std::vector<clock_t> timeScope;			// ----> Allows chronometers to be nested: a chronometer does not need to stop for another one to start.
 
@@ -18,12 +18,12 @@ public:
 	static void logTimestamp	 (const std::string& message);
 	static void startChronometer (const std::string& message = "");
 	static void stopChronometer	 (const std::string& message);
-	static void durationInfo	 (const real& duration);
+	static void durationInfo	 (const rtl& duration);
 	static void progress		 (const uint& round, const uint& granularity = 10);
-	static void avSimTimeInfo	 (const real& avDuration);
-	static void networkInfo		 (const uint& n, const uint& m, const real& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize);
-	//static void simulationInfo	 (const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const real& TAU_aa, const real& TAU_al, const real& TAU_la, const real& GAMMA_a, const real& GAMMA_l, const real& LAMBDA);
-	static void simulationInfo(const uint& itotal, const real& ROUNDS, const real& T, const real& NUM_AGENTS, const real& TAU_aa, const real& GAMMA_a, const real& LAMBDA, const real& Wi, const real& Ws, const real& avDegree, const real& _2ndMoment, const real& Eag, const real& bk, const real& maxKbnb, const std::vector<real>& block_prob);
+	static void avSimTimeInfo	 (const rtl& avDuration);
+	static void networkInfo		 (const uint& n, const uint& m, const rtl& averageDegree, const uint& largestDegree, const uint& smallestDegree, const uint& lccSize);
+	//static void simulationInfo	 (const uint& ROUNDS, const uint& T, const uint& numAg, const uint& itotal, const uint& n, const rtl& TAU_aa, const rtl& TAU_al, const rtl& TAU_la, const rtl& GAMMA_a, const rtl& GAMMA_l, const rtl& LAMBDA);
+	static void simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& T, const rtl& NUM_AGENTS, const rtl& TAU_aa, const rtl& GAMMA_a, const rtl& LAMBDA, const rtl& Wi, const rtl& Ws, const rtl& avDegree, const rtl& _2ndMoment, const rtl& Eag, const rtl& bk, const rtl& maxKbnb, const std::vector<rtl>& block_prob);
 	static void errorOpening	 (const std::string& fileName);
 	static void openedWithSuccess(const std::string& fileName);
 #ifdef OCCUPANCY

@@ -4,17 +4,17 @@ using namespace graph;
 
 std::unordered_map<uint, uint> Graph::idMap;
 uint Graph::n;													// ----> Network size, i.e. the number of nodes.
-real Graph::averageDegree;
-real Graph::originalAvDeg;
+rtl Graph::averageDegree;
+rtl Graph::originalAvDeg;
 uint Graph::m;												
 uint Graph::largestDegree;
 uint Graph::smallestDegree;
 uint Graph::selfLoops;
 uint Graph::largestDgNode;
 uint Graph::lccSize;											// ---> The size of the Largest Connected Component (LCC).
-real Graph::numAgents;
-real Graph::Ws;
-real Graph::Wi;
+rtl Graph::numAgents;
+rtl Graph::Ws;
+rtl Graph::Wi;
 
 #ifdef CLIQUE
 #ifdef PROTECTION_FX
@@ -37,15 +37,15 @@ vector<vector<node>> Graph::g;									// ----> The graph, as an edge list.
 #ifdef CLIQUE
 uint			Graph::_schema_s;
 uint			Graph::_schema_i;
-vector<real>	Graph::_ps;
-vector<real>	Graph::_pi;
+vector<rtl>	Graph::_ps;
+vector<rtl>	Graph::_pi;
 vector<uint>	Graph::_myIdx_s;
 vector<uint>	Graph::_myIdx_i;
 #else
 vector<uint>			Graph::schema_s;
 vector<uint>			Graph::schema_i;
-vector<vector<real>>	Graph::ps;
-vector<vector<real>>	Graph::pi;
+vector<vector<rtl>>	Graph::ps;
+vector<vector<rtl>>	Graph::pi;
 vector<vector<uint>>	Graph::myForeignIdx_s;
 vector<vector<uint>>	Graph::myForeignIdx_i;
 #endif //CLIQUE
@@ -54,9 +54,9 @@ void Graph::setProbs() {
 #ifdef CLIQUE
 	_ps.resize((size_t)n + 1);
 	_pi.resize((size_t)n + 1);
-	vector<real>& probsS = _ps;	// ----> It is important to create the reference only AFTER _ps BEING RESIZED. The need for contiguous space may lead '_ps' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _ps's old address).
-	vector<real>& probsI = _pi;	// ----> It is important to create the reference only AFTER _pi BEING RESIZED. The need for contiguous space may lead '_pi' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _pi's old address).
-	real sumW = 0;
+	vector<rtl>& probsS = _ps;	// ----> It is important to create the reference only AFTER _ps BEING RESIZED. The need for contiguous space may lead '_ps' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _ps's old address).
+	vector<rtl>& probsI = _pi;	// ----> It is important to create the reference only AFTER _pi BEING RESIZED. The need for contiguous space may lead '_pi' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _pi's old address).
+	rtl sumW = 0;
 	for (uint schema = 0; schema < probsS.size(); ++schema) {
 		probsS[schema] = sumW / (n - schema + sumW);
 		sumW += sim::Ws;
@@ -73,10 +73,10 @@ void Graph::setProbs() {
 	for (node v = 0; v < n; ++v) pi[v].resize((size_t)gi[v].size() + 1);
 
 	for (node v = 0; v < n; ++v) {
-		vector<real>& vProbsS = ps[v];
-		vector<real>& vProbsI = pi[v];
-		const real vDegree = (real)(gs[v].size());
-		real sumW = 0;
+		vector<rtl>& vProbsS = ps[v];
+		vector<rtl>& vProbsI = pi[v];
+		const rtl vDegree = (rtl)(gs[v].size());
+		rtl sumW = 0;
 		for (uint schema = 0; schema < vProbsS.size(); ++schema) {
 			vProbsS[schema] = sumW / (vDegree - schema + sumW);
 			sumW += Ws;
@@ -143,22 +143,22 @@ void Graph::updateIBound(const node& v) {
 	vIdx = _schema_i;
 }
 #ifdef PROPORTIONAL
-const node& Graph::nextNodeForS(const real& randBase, const real& itotal, const real& stotal) {
-	real ps = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_s;
+const node& Graph::nextNodeForS(const rtl& randBase, const rtl& itotal, const rtl& stotal) {
+	rtl ps = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_s;
 	ps /= (ps + (Graph::n - _schema_s));
 #else
-const node& Graph::nextNodeForS(const real& randBase) {
-	const real& ps = _ps[_schema_s];
+const node& Graph::nextNodeForS(const rtl& randBase) {
+	const rtl& ps = _ps[_schema_s];
 #endif
 	return (randBase < ps) ? gs[(size_t)(floor((randBase * _schema_s) / ps))] : gs[(size_t)floor(  randBase * (gs.size() - _schema_s)  ) + _schema_s];
 }
 #ifdef PROPORTIONAL
-const node& Graph::nextNodeForI(const real& randBase, const real& itotal, const real& stotal) {
-	real pi = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_i;
+const node& Graph::nextNodeForI(const rtl& randBase, const rtl& itotal, const rtl& stotal) {
+	rtl pi = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_i;
 	pi /= (pi + (Graph::n - _schema_s));
 #else
-const node& Graph::nextNodeForI(const real& randBase) {
-	const real& pi = _pi[_schema_i];
+const node& Graph::nextNodeForI(const rtl& randBase) {
+	const rtl& pi = _pi[_schema_i];
 #endif
 	return (randBase < pi) ? gi[(uint)(floor((randBase * _schema_i) / pi))] : gi[(uint)floor(  randBase * (gi.size() - _schema_i) ) + _schema_i];
 }
@@ -256,14 +256,14 @@ void Graph::lowerSchema(const node& v, vector<uint>& schema, const vector<node>&
 	for (int idxW = (int)neighbors.size() - 1; idxW >= 0; --idxW)
 		--(schema[neighbors[idxW]]);
 }
-const node& Graph::nextNodeForS(const node& _currNode, const real& p) {
+const node& Graph::nextNodeForS(const node& _currNode, const rtl& p) {
 	const uint& schema = schema_s[_currNode];
-	const real& _ps = ps[_currNode][schema];
+	const rtl& _ps = ps[_currNode][schema];
 	return (p < _ps) ? gs[_currNode][(uint)(floor(p * schema))] : gs[_currNode][(uint)floor(  p * (gs[_currNode].size() - schema) ) + schema];
 }
-const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
+const node& Graph::nextNodeForI(const node& _currNode, const rtl& p) {
 	const uint& schema = schema_i[_currNode];
-	const real& _pi = pi[_currNode][schema];
+	const rtl& _pi = pi[_currNode][schema];
 	return (p < _pi) ? gi[_currNode][(uint)(floor((p * schema) / _pi))] : gi[_currNode][(uint)floor(p * (gi[_currNode].size() - schema)) + schema];
 }
 #endif //CLIQUE
@@ -271,18 +271,18 @@ const node& Graph::nextNodeForI(const node& _currNode, const real& p) {
 
 #ifndef CLIQUE
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
-real Graph::_2ndMmt;
-real Graph::bk;
-vector<real> Graph::block_prob;
+rtl Graph::_2ndMmt;
+rtl Graph::bk;
+vector<rtl> Graph::block_prob;
 vector<uint> Graph::validBlocks;
-vector<real> Graph::q_b;
-vector<real> Graph::kb;
-//real Graph::avSelfLoop;
-vector<real> Graph::rho_b;
-vector<real> Graph::Kbnb;
-real Graph::maxKbnb;
-real Graph::maxKbnbBlock;
-real Graph::psi;
+vector<rtl> Graph::q_b;
+vector<rtl> Graph::kb;
+//rtl Graph::avSelfLoop;
+vector<rtl> Graph::rho_b;
+vector<rtl> Graph::Kbnb;
+rtl Graph::maxKbnb;
+rtl Graph::maxKbnbBlock;
+rtl Graph::psi;
 
 void Graph::setBlockData() {
 	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
@@ -314,7 +314,7 @@ void Graph::setBlockData() {
 	validBlocks.resize(numValidBlocks);
 	
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		rho_b[b] = 1.0 - pow(1.0 - ((real)b / (2 * m)), numAgents);
+		rho_b[b] = 1.0 - pow(1.0 - ((rtl)b / (2 * m)), numAgents);
 	}
 	psi = 0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
@@ -334,9 +334,9 @@ void Graph::setBlockData() {
 	bk = _2ndMmt / averageDegree;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 #ifdef AUTO_RELATION
-		q_b[b] = ((real)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
+		q_b[b] = ((rtl)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 #else
-		q_b[b] = ((real)b * n * block_prob[b]) / (2.0 * m);
+		q_b[b] = ((rtl)b * n * block_prob[b]) / (2.0 * m);
 #endif
 	}
 
@@ -365,7 +365,7 @@ void Graph::setBlockData() {
 	//avSelfLoop /= n;
 	
 	//Validation
-	real sumQB = 0, sumBP = 0, sumKB = 0.0;
+	rtl sumQB = 0, sumBP = 0, sumKB = 0.0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		sumQB += q_b[b];
 		sumBP += block_prob[b];
@@ -396,17 +396,17 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	{// ----> Extra scope.
 		std::random_device _rd;
 		std::mt19937_64 _gen(_rd());										// ----> Generator.
-		std::uniform_real_distribution<real> _U(0, 1);
+		std::uniform_real_distribution<rtl> _U(0, 1);
 
 		//constexpr uint _n = N;
-		//constexpr real _avDegree = 10.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
-		//const real _avDegree = 2.0 * log10(N)/N;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold value for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a real network, for the sake of comparisons) and then adjust 'p' accordingly.
-		//const real _p = _avDegree / (N - 1);
-		const real _p = 4.0 * log10(N) / N;
-		const real log_q = log(1 - _p);
+		//constexpr rtl _avDegree = 10.74;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a rtl network, for the sake of comparisons) and then adjust 'p' accordingly.
+		//const rtl _avDegree = 2.0 * log10(N)/N;									// ----> The average degree <d> of a G(n,p) graph is (n-1)p. The threshold value for the graph to be connected is log(n)/n. Here we first fix <d> at some value (say, the same <d> of a rtl network, for the sake of comparisons) and then adjust 'p' accordingly.
+		//const rtl _p = _avDegree / (N - 1);
+		const rtl _p = 4.0 * log10(N) / N;
+		const rtl log_q = log(1 - _p);
 
 		int v = 1, w = -1;
-		real r;
+		rtl r;
 		while (v < N) {
 			r = _U(_gen);													// ----> Random number uniformly drawn from the interval (0,1).
 			w = w + 1 + (int)std::floor(log(1 - r) / log_q);
@@ -712,7 +712,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	//	graphData 
 	//		<< i << "\t"
 	//		<< g[i].size() + 1 << "\t"
-	//		<< ((real)(g[i].size() + 1))/(real)((2*m)+n) << "\t"
+	//		<< ((rtl)(g[i].size() + 1))/(rtl)((2*m)+n) << "\t"
 	//		<< m
 	//		<< std::endl;
 	//}
@@ -747,7 +747,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 }
 #endif // CLIQUE
 
-void Graph::setParams(const uint& _numAgents, const real& _Ws, const real& _Wi) {
+void Graph::setParams(const uint& _numAgents, const rtl& _Ws, const rtl& _Wi) {
 	numAgents = _numAgents;
 	Ws = _Ws;
 	Wi = _Wi;

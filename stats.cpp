@@ -266,31 +266,18 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"\t\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
 
 		"\tmyData = np.array(rawdata[1:], dtype = np.float64)\n" <<
-		"\ttimeData = myData[:, ini]\n" <<
-		"\tinfAgData = myData[:, ini + 1]\n\n" <<
+		"\txData = myData[:, ini]\n" <<
+		"\tyData = myData[:, ini + 1]\n\n" <<
 
-		"\tplt.plot(timeData, infAgData, label = lbl)\n\n\n" <<
+		"\tplt.plot(xData, yData, label = lbl)\n\n\n" <<
 
 		"#Import CSV data\n";
 
 
 	//"INFECTED FRACTION X SIMULATION TIME":
-	if (!numericOnly) {
-		of <<
-			"incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
-			
+	if (!numericOnly) 
+		of << "incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
 
-			//"with open(\"./stats/" << referenceFile << ".csv\", \"r\") as i :\n" <<
-			//"\trawdata = list(csv.reader(i, delimiter = \"\\t\"))\n\n" <<
-			//"myData = np.array(rawdata[1:], dtype = np.float64)\n" <<
-			//"timeData = myData[:, 1]\n" <<
-			//"infAgSimul = myData[:, 2]\n" <<
-			//"#infSiteSimul = myData[:, 3]\n" <<
-			//"cumSumAg = np.cumsum(infAgSimul)\n" <<
-			//"cumMeanAg = cumSumAg / np.arange(1, len(timeData)+1)\n\n" <<
-			//"#cumSumSites = np.cumsum(infSiteSimul)\n" <<
-			//"#cumMeanSites = cumSumSites / np.arange(1, len(timeData)+1)\n\n";
-	}
 	std::string method, lbl;
 #ifdef PER_BLOCK
 	#ifdef MASTER
@@ -305,32 +292,8 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	lbl = "node";
 #endif // PER_BLOCK
 
-	of <<
-		"incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
-		
-		//"with open(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", \"r\") as j :\n" <<
-		//"\trawRK = list(csv.reader(j, delimiter = \"\\t\"))\n\n" <<
-		//
-		//"rkData = np.array(rawRK[1:], dtype = np.float64)\n" <<
-		//"timeRK = rkData[:, 0]\n" <<
-		//"infAgRK = rkData[:, 1]\n" <<
-		//"#infSiteRK = rkData[:, 2]\n" <<
-		//
-		//"#Plot\n";
-
-	//if (!numericOnly) {
-	//	of <<
-	//		"plt.plot(timeData, infAgSimul, label = \"Simulation\")\n" <<
-	//		"#plt.plot(timeData, infSiteSimul, label = \"InfSites\")\n" <<
-	//		"plt.plot(timeData, cumMeanAg, label = \"Cumul. Average\")\n" <<
-	//		"#plt.plot(timeData, cumMeanSites, label = \"Cum.Av.#infSites\")\n" <<
-	//		"#plt.plot(timeData, infSiteSimul, label = \"Model\")\n" <<
-	//		"#plt.plot(timeData, [np.mean(infAgSimul) for i in range(len(timeData))], label = \"Av.#infAg\")\n";
-	//}
-
+	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
 	of << "\n\n" <<
-		//"plt.plot(timeRK, infAgRK, label = \"Model\")\n" <<
-		//"#plt.plot(timeRK, infSiteRK, label = \"Model-Site\")\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<
 		"#plt.xscale(\"log\")\n" <<
@@ -348,7 +311,6 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	std::string avlName = avLTxt.str();
 	std::ifstream arq__avL(avlName);
 	//if (!arq__avL.is_open()) {
-	//	std::cout << "DOOH!";
 	//	sim::Reporter::errorOpening(avDurSetNameL);
 	//	return;
 	//}
@@ -370,19 +332,25 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		getline(arq__avL, instanceName);
 		if (instanceName.empty())
 			break;
-		of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
+
 		vector<std::string> labels;
 		utils::split(instanceName, '-', labels);
 		std::string label = labels[1];
-		std::replace(instanceName.begin(), instanceName.end(), '.', '_');
-		std::replace(instanceName.begin(), instanceName.end(), '-', '_');
-		of <<
-			"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \",\"))\n\n" <<
+		
+		//TESTE!!!
+		of << "incluirPlot(\"./stats/averages/" << instanceName << ".csv\", 0, \"" << label << "\")\n";
 
-			instanceName << " = np.array(raw_"  << instanceName << "[1:], dtype = np.float64)\n" <<
-			"lambda_"  << instanceName << " = " << instanceName << "[:, 0]\n" <<
-			"duration_"<< instanceName << " = " << instanceName << "[:, 1]\n" <<
-			"plt.plot(lambda_"  << instanceName << ", duration_" << instanceName << ", label = \"" << label << "\")\n\n";
+		//of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
+		//
+		//std::replace(instanceName.begin(), instanceName.end(), '.', '_');
+		//std::replace(instanceName.begin(), instanceName.end(), '-', '_');
+		//of <<
+		//	"\traw_"<< instanceName <<" = list(csv.reader(j, delimiter = \",\"))\n\n" <<
+		//
+		//	instanceName << " = np.array(raw_"  << instanceName << "[1:], dtype = np.float64)\n" <<
+		//	"lambda_"  << instanceName << " = " << instanceName << "[:, 0]\n" <<
+		//	"duration_"<< instanceName << " = " << instanceName << "[:, 1]\n" <<
+		//	"plt.plot(lambda_"  << instanceName << ", duration_" << instanceName << ", label = \"" << label << "\")\n\n";
 	} while (arq__avL.good());
 	arq__avL.close();
 
@@ -392,6 +360,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	
 	of.close();
 }
+
 #endif //INFECTED_FRACTION
 void Stats::writeToFile(const streamType& s, const rtl& Ws, const rtl& Wi, const uint& numAg) {
 	switch (s) {

@@ -188,9 +188,7 @@ const node& nextNodeForSus(const node& _currNode);
 const node& nextNodeForInf(const node& _currNode);
 void nextJob(job& _j, rtl& _time);
 void setEnvironment();
-#ifndef CLIQUE
 const node& randomLCCNode();
-#endif
 } // Namespace sim
 
 
@@ -199,10 +197,8 @@ int main() {
 	sim::Reporter::logTimestamp("Simulation requested.");
 	sim::Reporter::startChronometer();
 	sim::setEnvironment();
-#ifndef CLIQUE
 	graph::Graph::readGraph(SOURCE_FILE);
 	graph::Graph::setBlockData();
-#endif
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
 
@@ -678,49 +674,23 @@ void sim::siteFate(const uint& v, const rtl& now, const uint& infective, const u
 }
 const graph::node& sim::nextNodeForSus(const node& _currNode) {
 	using graph::Graph;
-#ifdef CLIQUE
-#ifdef PROTECTION_FX
-#ifdef PROPORTIONAL
-	return Graph::nextNodeForS(U(), itotal, stotal);
-#else
-	return Graph::nextNodeForS(U());
-#endif //PROPORTIONAL
-#else
-	return Graph::g[randomInt(graph::Graph::n)];
-#endif //PROTECTION_FX
-#else
 #ifdef PROTECTION_FX
 	return Graph::nextNodeForS(_currNode, U());
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
 #endif //PROTECTION_FX
-#endif //CLIQUE
 }
 const graph::node& sim::nextNodeForInf(const node& _currNode) {
 	using graph::Graph;
-#ifdef CLIQUE
-#ifdef PROTECTION_FX
-#ifdef PROPORTIONAL
-	return Graph::nextNodeForI(U(), itotal, stotal);
-#else
-	return Graph::nextNodeForI(U());
-#endif //PROPORTIONAL
-#else
-	return Graph::g[randomInt(Graph::n)];
-#endif //PROTECTION_FX
-#else
 #ifdef PROTECTION_FX
 	return Graph::nextNodeForI(_currNode, U());
 #else
 	return Graph::g[_currNode][randomInt((uint)Graph::g[_currNode].size())];
 #endif //PROTECTION_FX
-#endif //CLIQUE
 }
-#ifndef CLIQUE
 const graph::node& sim::randomLCCNode() { 
 	return graph::Graph::lcc[(size_t)floor(graph::Graph::lcc.size() * sim::U())]; 
 }
-#endif
 void sim::nextJob(job& _j, rtl& _time) {
 	_j = schedule.top();
 	schedule.pop();
@@ -764,17 +734,6 @@ void sim::resetVariables() {
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	using graph::Graph; using graph::node; 
-#ifdef CLIQUE
-	Graph::n = N;
-	Graph::g.resize(Graph::n);
-	Graph::averageDegree = N;
-	Graph::largestDegree = N;
-	Graph::lccSize = N;
-	Graph::m = (N * (N-1) / 2) + N;		// ----> "+ N" because each node contains an implicit self loop.
-	Graph::selfLoops = N;
-	Graph::smallestDegree = N;
-	sim::Reporter::networkInfo(Graph::n, Graph::m, Graph::averageDegree, Graph::largestDegree, Graph::smallestDegree, Graph::lccSize);
-#endif
 	sInNode.resize(Graph::n);									// ----> Keeps track, for each node v, of how many susceptible agents are in v at time t.
 	iInNode.resize(Graph::n);									// ----> Keeps track, for each node v, of how many infected agents are in v at time t.
 	sAgents.resize(Graph::n);									// ----> Up-to-date list of susceptible agents within each node v.
@@ -804,26 +763,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	uint scenario = 0;
 	uint _numAgents;
 
-#ifdef CLIQUE
-#ifdef PER_BLOCK
-	rtl Ia = 0.0, Sa = 0.0;
-#else
-	vector<rtl> v_Iv(Graph::n, 0.0), v_Sv(Graph::n, 0.0);
-#endif
-#else //CLIQUE
 #ifdef PER_BLOCK
 	vector<rtl> v_Iab(Graph::block_prob.size(), 0.0), v_ilb(Graph::block_prob.size(), 0.0), v_Sab(Graph::block_prob.size(), 0.0);
 #else
 	vector<rtl> v_Iv(Graph::n, 0.0), v_Sv(Graph::n, 0.0);
 #endif
-#endif //CLIQUE
 	while (scenario < numScenarios){
 		_numAgents = _startingNumAg + (scenario * step);
 		
 		//Agent-wise reset:
-#ifdef CLIQUE
-		for (node v = 0; v < Graph::n; ++v) Graph::g[v] = v;		// ----> This will be important during the "protection effect" process, as the nodes will be re-arranged. 
-#endif //CLIQUE
 		Stats::resetAvDur();
 		for (uint r = 0; r < ROUNDS; ++r) totalSimTime[r] = 0;
 		I_0 = (I_0 > NUM_AGENTS) ? NUM_AGENTS : I_0;
@@ -855,10 +803,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 
 			// * DISTRIBUTING THE AGENTS ACROSS THE NETWORK *
 			//Random distribution of agents (initially susceptible):
-#ifdef CLIQUE
-			for (agent i = I_0; i < _numAgents; ++i)
-				enterNodeAsSus(i, randomInt(Graph::n), TIME_ZERO);
-#else //CLIQUE
 			for (agent i = 0; i < _numAgents; ++i) {
 				const node v = randomLCCNode();
 				enterNodeAsSus(i, v, -EARLY_MOBILITY);
@@ -866,7 +810,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				++v_Sv[v];
 #endif
 			}
-#endif //CLIQUE
 
 			//EARLY MOBILITY:
 			//Initially, we schedule a single 'walk' event for each agent. A new 'walk' job will then be created and scheduled for an agent the moment its current 'walk' job is processed.
@@ -893,12 +836,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					infectAg(ag, TIME_ZERO);
 
 			} //EARLY MOBILITY
-#ifdef CLIQUE
-#ifdef PER_BLOCK
-			Ia = I_0;
-			Sa = NUM_AGENTS - I_0;
-#endif //PER_BLOCK
-#else
 #ifdef PER_BLOCK
 			//Initializing the numerical solution:
 			{
@@ -930,7 +867,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #endif //DEBUG
 			}
 #endif //PER_BLOCK
-#endif //CLIQUE
 			
 			// * MAIN LOOP *
 			bool earlyStop = false;
@@ -940,8 +876,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			nextJob(j, now);
 			const rtl logInterval = 0.01 * T; // ----> Log progress to the console at one-percent increments.
 			rtl prevLog = 0;
-			//rtl prevTime;
-			//uint hitCount = 0;
 			std::cout << std::fixed;
 			std::cout << std::setprecision(1);
 			std::cout << '\n' << "Round " << (round + 1) << '/' << ROUNDS << ": 0% complete...     ";
@@ -951,7 +885,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			while (now < timeLimit) {
 #endif
 				roundDuration += (now - roundDuration);
-				//prevTime = j.time;
 				switch (j.a) {
 				case action::walk:
 					walk(j.target, now);
@@ -960,15 +893,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				case action::agInfectAg:
 					agFate_fromAg(j.target, now, j.infective, j.validity_S, j.validity_I, j.streamer);
 					break;
-				case action::siteInfectAg:
-					agFate_fromSite(j.target, now, j.infective, j.validity_S, j.validity_I);
-					break;
-				case action::agInfectSite:
-					siteFate(j.target, now, j.infective, j.validity_S, j.validity_I);
-					break;
-				case action::recoverSite:
-					recoverSite(j.target, now);
-					break;
+				//case action::siteInfectAg:
+				//	agFate_fromSite(j.target, now, j.infective, j.validity_S, j.validity_I);
+				//	break;
+				//case action::agInfectSite:
+				//	siteFate(j.target, now, j.infective, j.validity_S, j.validity_I);
+				//	break;
+				//case action::recoverSite:
+				//	recoverSite(j.target, now);
+				//	break;
 				default:
 					recoverAg(j.target, now);
 					if (iaTotal == 0) {
@@ -978,16 +911,12 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					break;
 				}
 				nextJob(j, now);
-				//if (prevTime == j.time) {
-				//	++hitCount;
-				//}
 				if (now - prevLog > logInterval) {
 					prevLog = now;
 					std::cout << '\r' << "Round " << (round + 1) << '/' << ROUNDS << ": " << std::round((now / T) * 100) << "% complete...";
 				}
 			}
 			std::cout << '\r' << "Round " << (round + 1)  << '/' << ROUNDS << ": " << "100% complete!    ";
-			//std::cout << '\n' << "Hit Count: " << hitCount << '\n';
 			Stats::partialsAvDur(roundDuration);
 #ifdef MEASURE_ROUND_EXE_TIME
 			Reporter::stopChronometer((earlyStop) ? "done-IV" : "done-TL");	// ----> TL == Time Limit; IV == Infection Vanished.
@@ -1006,87 +935,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifndef MEASURE_ROUND_EXE_TIME
 		Reporter::tell("\nAll rounds completed.\n");
 #endif
-
-#ifdef SI_PROPORTION
-		////TESTE!!!
-		//rtl maxCBI = -1, maxCBS = -1, minCBI = 1, minCBS = 1;
-		//uint bmaxCBI, bmaxCBS, bminCBI, bminCBS;
-		//for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
-		//	const uint& b = Graph::validBlocks[i];
-		//	sbs[b] /= total_sbs[b];
-		//	ibi[b] /= total_ibi[b];
-		//}
-		//
-		//for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
-		//	const uint& b = Graph::validBlocks[i];
-		//	cbs[b] = (Graph::kb[b] / K) - sbs[b];
-		//	if (cbs[b] > maxCBS) {
-		//		maxCBS = cbs[b];
-		//		bmaxCBS = b;
-		//	}
-		//	else if (cbs[b] < minCBS) {
-		//		minCBS = cbs[b];
-		//		bminCBS = b;
-		//	}
-		//
-		//	cbi[b] = (Graph::kb[b] / K) - ibi[b];
-		//	if (cbi[b] > maxCBI) {
-		//		maxCBI = cbi[b];
-		//		bmaxCBI = b;
-		//	}
-		//	else if (cbi[b] < minCBI) {
-		//		minCBI = cbi[b];
-		//		bminCBI = b;
-		//	}
-		//}
-		//rtl ds = 0;
-		//rtl di = 0;
-		//rtl dsi = 0;
-		//rtl d = 0;
-		//for (size_t i = 0; i < Graph::validBlocks.size(); ++i) {
-		//	const uint& b = Graph::validBlocks[i];
-		//	ds += b * cbs[b];
-		//	di += b * cbi[b];
-		//	dsi += cbs[b] * cbi[b];
-		//}
-		//d = ds + di + dsi;
-		//
-		//std::cout << "\n\n Max cbs from <k>_b = " << maxCBS << " from block " << bmaxCBS << " \n";
-		//std::cout << "Max cbi from <k>_b = " << maxCBI << " from block " << bmaxCBI << " \n";
-		//std::cout << "Min cbs from <k>_b = " << minCBS << " from block " << bminCBS << " \n";
-		//std::cout << "Min cbi from <k>_b = " << minCBI << " from block " << bminCBI << " \n";
-		//std::cout << "Desvio final d = " << d << " \n";
-
-
-		////Average number of infectives per block:
-		//rtl minAv = UINT_MAX, maxAv = 0.0;
-		//uint blockMin, blockMax;
-		//for (uint b = 1; b < v_avIb.size(); ++b){
-		//	v_avIb[b] /= v_probesIb[b];
-		//	if (v_avIb[b] < minAv && v_avIb[b] > 0.0) {
-		//		minAv = v_avIb[b];
-		//		blockMin = b;
-		//	}
-		//	else if (v_avIb[b] > maxAv) {
-		//		maxAv = v_avIb[b];
-		//		blockMax = b;
-		//	}
-		//}
-		////<b_k>:
-		//rtl _b_k_ = 0;
-		//for (uint b = 1; b < v_avIb.size(); ++b){
-		//	if (graph::Graph::block_prob[b] > 0.0) {
-		//		_b_k_ += (graph::Graph::kb[b] / NUM_AGENTS) * b;
-		//	}
-		//}
-		////const rtl _47 = graph::Graph::kb[47] / (N * graph::Graph::block_prob[47]);
-		//const rtl nb = (N * graph::Graph::block_prob[graph::Graph::largestDegree]);
-		////std::cout << "\nAverages for <Kb> = " << maxKB / szMaxB << ": \n";
-		//std::cout << "\nAverages for <K>_bMAX = " << graph::Graph::kb[graph::Graph::kb.size() - 1] / nb << " and <b>_K = " << _b_k_ << ": \n";
-		//std::cout << "\tMin = " << minAv << " at block " << blockMin << " \n";
-		//std::cout << "\tMax = " << maxAv << " at block " << blockMax << " \n\n";
-#endif //SI_PROPORTION
-
 		Reporter::stopChronometer("Scenario " + std::to_string(scenario + 1) + "/" + std::to_string(numScenarios) + " completed");
 		Reporter::avSimTimeInfo(Stats::avDuration());
 		++scenario;
@@ -1097,8 +945,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	constexpr uint outputGranularity = 50;
 	constexpr rtl stepSize = 0.01;
 	constexpr uint largerDetailUntil = 1000;
-	//const uint largerDetailUntil = (uint)(T / stepSize) + 1;
-	//constexpr rtl epsilon = 1.0 / N ;
 	constexpr rtl epsilon = 0.001 ;
 	constexpr rtl timeIncrement = stepSize * outputGranularity;
 	vector<rtl> saveToFile_diadt;
@@ -1120,14 +966,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 		//<< "_Gl"	<< GAMMA_l 
 	baseName = name.str();
 
-#ifdef CLIQUE
-#ifdef PER_BLOCK
-	Solver::rungeKutta4thOrder(0, Ia, Sa, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
-#else
-	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
-#endif
-#else //CLIQUE
-
 	std::string method;
 #ifdef PER_BLOCK
 	#ifdef MASTER	
@@ -1145,7 +983,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 	method = "NODE";
 #endif
-#endif //CLIQUE
 	//Saving to file:
 	std::ofstream RKdata;
 	std::stringstream _ss;

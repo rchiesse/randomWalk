@@ -208,6 +208,7 @@ namespace sim{		// ----> Simulator's namespace.
 #define SOLVE_NUMERICALLY
 //#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
+#define PER_NODE
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 #define MASTER	// ----> "PER_BLOCK" must be set likewise for this to be set. Do not set this option if "PER_BLOCK" is not set.
 

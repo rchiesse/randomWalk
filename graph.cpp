@@ -16,57 +16,23 @@ rtl Graph::numAgents;
 rtl Graph::Ws;
 rtl Graph::Wi;
 
-#ifdef CLIQUE
-#ifdef PROTECTION_FX
-vector<node> Graph::gs;
-vector<node> Graph::gi;
-#else
-vector<node> Graph::g;
 
-#endif //PROTECTION_FX
-#else  //CLIQUE
 #ifdef PROTECTION_FX
 vector<vector<node>> Graph::gs;									// ----> The graph, as an edge list.
 vector<vector<node>> Graph::gi;									// ----> The graph, as an edge list.
 #else
 vector<vector<node>> Graph::g;									// ----> The graph, as an edge list.
 #endif //PROTECTION_FX
-#endif //CLIQUE
 
 #ifdef PROTECTION_FX
-#ifdef CLIQUE
-uint			Graph::_schema_s;
-uint			Graph::_schema_i;
-vector<rtl>	Graph::_ps;
-vector<rtl>	Graph::_pi;
-vector<uint>	Graph::_myIdx_s;
-vector<uint>	Graph::_myIdx_i;
-#else
 vector<uint>			Graph::schema_s;
 vector<uint>			Graph::schema_i;
 vector<vector<rtl>>	Graph::ps;
 vector<vector<rtl>>	Graph::pi;
 vector<vector<uint>>	Graph::myForeignIdx_s;
 vector<vector<uint>>	Graph::myForeignIdx_i;
-#endif //CLIQUE
 
 void Graph::setProbs() {
-#ifdef CLIQUE
-	_ps.resize((size_t)n + 1);
-	_pi.resize((size_t)n + 1);
-	vector<rtl>& probsS = _ps;	// ----> It is important to create the reference only AFTER _ps BEING RESIZED. The need for contiguous space may lead '_ps' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _ps's old address).
-	vector<rtl>& probsI = _pi;	// ----> It is important to create the reference only AFTER _pi BEING RESIZED. The need for contiguous space may lead '_pi' to be reallocated in memory upon resizing, what in turn would invalidate any previously created reference (as it would still be pointing to _pi's old address).
-	rtl sumW = 0;
-	for (uint schema = 0; schema < probsS.size(); ++schema) {
-		probsS[schema] = sumW / (n - schema + sumW);
-		sumW += sim::Ws;
-	}
-	sumW = 0;
-	for (uint schema = 0; schema < probsI.size(); ++schema) {
-		probsI[schema] = sumW / (n - schema + sumW);
-		sumW += sim::Wi;
-	}
-#else
 	ps.resize(n);
 	pi.resize(n);
 	for (node v = 0; v < n; ++v) ps[v].resize((size_t)gs[v].size() + 1);
@@ -87,7 +53,6 @@ void Graph::setProbs() {
 			sumW += Wi;
 		}
 	}
-#endif //#ifdef CLIQUE
 }
 
 void Graph::resetSchema() {
@@ -99,71 +64,6 @@ void Graph::resetSchema() {
 	for (size_t i = 0; i < schema_i.size(); ++i) schema_i[i] = 0;
 #endif
 }
-#ifdef CLIQUE
-void Graph::resetAgentIdx() {
-	_myIdx_s = Graph::gs;
-	_myIdx_i = Graph::gi;
-}
-void Graph::raiseSchema	(uint& _schema) { ++_schema; }
-void Graph::lowerSchema	(uint& _schema) { --_schema; }
-void Graph::updateHasI(const node& v) {
-	updateSBound(v);
-	raiseSchema(_schema_s);
-}
-void Graph::updateNoI(const node& v) {
-	//Opposite to 'updateHasI()', here we must first modify v's neighbors' schema and only then update their respective bounds:
-	lowerSchema(_schema_s);
-	updateSBound(v);
-}
-void Graph::updateHasS(const node& v) {
-	updateIBound(v);
-	raiseSchema(_schema_i);
-}
-void Graph::updateNoS(const node& v) {
-	//Opposite to 'updateHasS()', here we must first modify v's neighbors' schema and only then update their respective bounds:
-	lowerSchema(_schema_i);
-	updateIBound(v);
-}
-void Graph::updateSBound(const node& v) {
-	//Swap v and u. Note that u is the node at the clique's schema bound, to be swapped with v on 'Graph::g' vector. Also, v and u exchange their indexes and update their respective '_myIdx_s' accordingly.
-	uint& vIdx = _myIdx_s[v];
-	const node u = gs[_schema_s];
-	gs[_schema_s] = v;
-	gs[vIdx] = u;
-	_myIdx_s[u] = vIdx;
-	vIdx = _schema_s;
-}
-void Graph::updateIBound(const node& v) {
-	//Swap v and u. Note that u is the node at the clique's schema bound, to be swapped with v on 'Graph::g' vector. Also, v and u exchange their indexes and update their respective '_myIdx_i' accordingly.
-	uint& vIdx = _myIdx_i[v];
-	const node u = gi[_schema_i];
-	gi[_schema_i] = v;
-	gi[vIdx] = u;
-	_myIdx_i[u] = vIdx;
-	vIdx = _schema_i;
-}
-#ifdef PROPORTIONAL
-const node& Graph::nextNodeForS(const rtl& randBase, const rtl& itotal, const rtl& stotal) {
-	rtl ps = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_s;
-	ps /= (ps + (Graph::n - _schema_s));
-#else
-const node& Graph::nextNodeForS(const rtl& randBase) {
-	const rtl& ps = _ps[_schema_s];
-#endif
-	return (randBase < ps) ? gs[(size_t)(floor((randBase * _schema_s) / ps))] : gs[(size_t)floor(  randBase * (gs.size() - _schema_s)  ) + _schema_s];
-}
-#ifdef PROPORTIONAL
-const node& Graph::nextNodeForI(const rtl& randBase, const rtl& itotal, const rtl& stotal) {
-	rtl pi = pow(1.0 - (itotal / (itotal + stotal)), sim::_r) * _schema_i;
-	pi /= (pi + (Graph::n - _schema_s));
-#else
-const node& Graph::nextNodeForI(const rtl& randBase) {
-	const rtl& pi = _pi[_schema_i];
-#endif
-	return (randBase < pi) ? gi[(uint)(floor((randBase * _schema_i) / pi))] : gi[(uint)floor(  randBase * (gi.size() - _schema_i) ) + _schema_i];
-}
-
-#else //CLIQUE
 
 void Graph::updateHasI(const node& v) {
 	updateNeighborsBound(v, gs, myForeignIdx_s, schema_s);
@@ -197,15 +97,6 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 			vector<node>& wNeighbors = g[w];
 			const uint wSchema = schema[w];
 			const node u = wNeighbors[wSchema];	// ----> Opposite to 'w', node 'u' cannot be simply referenced (&) here since its position in 'wNeighbors' will be exchanged with 'v' (and the reference would then be linked to 'v' instead of 'u').
-	//#ifdef AUTO_RELATION
-			//if (w == v && u != v) {
-			//	const uint w_index_in_u = foreignIdx[w][wSchema];
-			//	std::swap(wNeighbors[idxW], wNeighbors[wSchema]);
-			//	foreignIdx[u][w_index_in_u] = (uint)idxW;
-			//	std::swap(foreignIdx[w][idxW], foreignIdx[w][wSchema]);
-			//}
-			//else if (u != v && u != w) {
-	//#else
 			if (u != v) {
 				if (u != w) {
 					//#endif
@@ -266,10 +157,8 @@ const node& Graph::nextNodeForI(const node& _currNode, const rtl& p) {
 	const rtl& _pi = pi[_currNode][schema];
 	return (p < _pi) ? gi[_currNode][(uint)(floor((p * schema) / _pi))] : gi[_currNode][(uint)floor(p * (gi[_currNode].size() - schema)) + schema];
 }
-#endif //CLIQUE
 #endif //PROTECTION_FX
 
-#ifndef CLIQUE
 vector<node> Graph::lcc;										// ---> List of nodes that belong to the LCC.
 rtl Graph::_2ndMmt;
 rtl Graph::bk;
@@ -277,7 +166,6 @@ vector<rtl> Graph::block_prob;
 vector<uint> Graph::validBlocks;
 vector<rtl> Graph::q_b;
 vector<rtl> Graph::kb;
-//rtl Graph::avSelfLoop;
 vector<rtl> Graph::rho_b;
 vector<rtl> Graph::Kbnb;
 rtl Graph::maxKbnb;
@@ -285,7 +173,7 @@ rtl Graph::maxKbnbBlock;
 rtl Graph::psi;
 
 void Graph::setBlockData() {
-	block_prob.resize(largestDegree + 1, 0);		// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
+	block_prob.resize(largestDegree + 1, 0);					// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
 	validBlocks.resize(largestDegree + 1, 0);		
 	q_b.resize(largestDegree + 1, 0);
 	//originalFreq.resize(largestDegree + 1, 0);
@@ -325,10 +213,8 @@ void Graph::setBlockData() {
 
 	//2nd moment:
 	_2ndMmt = 0;
-	//original2ndMmt = 0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		_2ndMmt += pow(b, 2) * block_prob[b];
-		//original2ndMmt += pow(b, 2) * originalFreq[b];
 	}
 	
 	bk = _2ndMmt / averageDegree;
@@ -355,15 +241,7 @@ void Graph::setBlockData() {
 			maxKbnbBlock = b;
 		}
 	}
-	//avSelfLoop:
-	//avSelfLoop = 0;
-	//for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-	//	if (block_prob[b] == 0)
-	//		continue;
-	//	avSelfLoop += (((double)b - 1.0) / b) * n * block_prob[b];
-	//}
-	//avSelfLoop /= n;
-	
+
 	//Validation
 	rtl sumQB = 0, sumBP = 0, sumKB = 0.0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
@@ -692,36 +570,9 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	lcc.resize(lccSize);
 
 	sim::Reporter::networkInfo(n, m, averageDegree, largestDegree, smallestDegree, lccSize);
-
-	//TESTE!!!
-	//std::ofstream graphData;
-	//std::stringstream tt;
-	//tt.str("");			// ----> Clear content.
-	//tt << EXE_DIR << "/stats/graphData_" << NWTK_LABEL << ".csv";
-	//string dataFile = tt.str();
-	//graphData.open(dataFile);
-	//graphData.seekp(0, std::ios::end);
-	//if (graphData.tellp() == 0)
-	//	cout << "new";
-	//else
-	//	cout << "appending...";
-	////Header
-	//graphData << "node\td(v)\td(v)/2m\tm" << std::endl;
-	////Data:
-	//for (size_t i = 0; i < g.size(); ++i){
-	//	graphData 
-	//		<< i << "\t"
-	//		<< g[i].size() + 1 << "\t"
-	//		<< ((rtl)(g[i].size() + 1))/(rtl)((2*m)+n) << "\t"
-	//		<< m
-	//		<< std::endl;
-	//}
-	//graphData.close();
-
 	if (selfLoops > 0)
 		cout << "\t ---> " << selfLoops << " native self-loops identified and removed." <<  "\n";
 
-#ifndef CLIQUE
 #ifdef AUTO_RELATION
 #ifdef PROTECTION_FX
 	for (node v = 0; v < n; ++v) gs[v].emplace_back(v);
@@ -743,9 +594,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	cout << "\t\t---> Average degree = " << averageDegree << "\n";
 	cout << "\t\t---> Largest degree = " << largestDegree;
 #endif //AUTO_RELATION
-#endif //CLIQUE
 }
-#endif // CLIQUE
 
 void Graph::setParams(const uint& _numAgents, const rtl& _Ws, const rtl& _Wi) {
 	numAgents = _numAgents;

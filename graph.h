@@ -27,14 +27,6 @@ public:
 	static rtl averageDegree;
 	static rtl originalAvDeg;
 
-#ifdef CLIQUE
-#ifdef PROTECTION_FX
-	static vector<node> gs;											// ----> The graph, with nodes varying their index according to the susceptible agents' random walk.
-	static vector<node> gi;											// ----> The graph, with nodes varying their index according to the infected agents' random walk.
-#else 
-	static vector<node> g;											// ----> The graph.
-#endif // PROTECTION_FX
-#else  // CLIQUE
 #ifdef PROTECTION_FX
 	static vector<vector<node>> gs;									// ----> The graph, as an edge list, with nodes varying their index according to the susceptible agents' random walk.
 	static vector<vector<node>> gi;									// ----> The graph, as an edge list, with nodes varying their index according to the infected agents' random walk.
@@ -71,43 +63,23 @@ public:
 	//static rtl avSelfLoop;
 	static void setBlockData();
 	static void readGraph(const string& fileName, const size_t& totalNodes);
-#endif // CLIQUE
 	static void setParams(const uint& _numAgents, const rtl& _Ws, const rtl& _Wi);
+
 #ifdef PROTECTION_FX
 private:
 	enum class direction{raise, lower};
 	//static const uint LIST_SIZE_POS = 0;
-#ifdef CLIQUE
-	static uint _schema_s;
-	static uint _schema_i;
-	static vector<rtl> _ps;
-	static vector<rtl> _pi;
-	static vector<uint> _myIdx_s;
-	static vector<uint> _myIdx_i;
-#else
 	static vector<uint> schema_s;
 	static vector<uint> schema_i;
 	static vector<vector<rtl>> ps;
 	static vector<vector<rtl>> pi;
 	static vector<vector<uint>> myForeignIdx_s;
 	static vector<vector<uint>> myForeignIdx_i;
-#endif
 public:
 	static void resetSchema();
-	static void resetAgentIdx();
 	static void setProbs();
-#ifdef CLIQUE
-#ifdef PROPORTIONAL
-	static const node& nextNodeForS(const rtl& randBase, const rtl& itotal, const rtl& stotal);
-	static const node& nextNodeForI(const rtl& randBase, const rtl& itotal, const rtl& stotal);
-#else
-	static const node& nextNodeForS(const rtl& randBase);
-	static const node& nextNodeForI(const rtl& randBase);
-#endif //PROPORTIONAL
-#else
 	static const node& nextNodeForS(const node& _currNode, const rtl& p);
 	static const node& nextNodeForI(const node& _currNode, const rtl& p);
-#endif //CLIQUE
 
 	//Updates node v's neighbors' schema, to reflect that v wasn't hosting any infected agent, and now one of such agents has just arrived at v. It means v is no longer a safe spot and a new schema is necessary to reflect that the probability at which nearby susceptible agents choose v as their next hop becomes smaller.
 	static void updateHasI	(const node& v);
@@ -117,16 +89,9 @@ public:
 	static void updateNoS	(const node& v);
 
 private:
-#ifdef CLIQUE
-	static void updateSBound(const node& v);
-	static void updateIBound(const node& v);
-	static void raiseSchema (uint& _schema);
-	static void lowerSchema	(uint& _schema);
-#else
 	static void raiseSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 	static void lowerSchema	(const node& v, vector<uint>& schema, const vector<node>& neighbors);
 	static void updateNeighborsBound(const node&, vector<vector<node>>& g, vector<vector<uint>>& foreignIdx, const vector<uint>& schema);
-#endif //CLIQUE
 #endif //PROTECTION_FX
 };
 }

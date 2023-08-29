@@ -53,7 +53,6 @@ namespace sim {
 
 
 // * NETWORK *
-//#define CLIQUE
 #define READ_NTWK_FROM_FILE
 //#define GNP
 //#define STAR
@@ -63,12 +62,6 @@ static constexpr uint N = 200;
 #define SOURCE_FILE "", 200
 #define NWTK_LABEL "Star"
 #define SHORT_LABEL "star"
-#endif
-
-#ifdef CLIQUE
-static constexpr uint N = 10;										// ----> Network size
-#define NWTK_LABEL "Clique"
-#define SHORT_LABEL "CL"
 #endif
 
 #ifdef GNP

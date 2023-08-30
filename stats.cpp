@@ -100,19 +100,17 @@ void Stats::initStream(const streamType& s) {
 	std::stringstream ss;
 	ss.precision(2);
 	std::string fileName;
+	std::string ref;
 	switch (s) {
 #ifdef INFECTED_FRACTION
 	case streamType::infFrac:
 		ss.str("");			// ----> Clear content.
 		ss << "fractionInfected_" << baseName;
-		{
-			std::string ref = ss.str();
+		ref = ss.str();
 #ifdef BYPASS_SIMULATION
-			genPlotScript(ref, true);
+		genPlotScript(ref, true);
 #else
-			genPlotScript(ref);
-#endif
-		}
+		genPlotScript(ref);
 		ss.str("");			// ----> Clear content.
 		ss << "./stats/fractionInfected_" << baseName << ".csv";
 		fileName = ss.str();
@@ -120,6 +118,7 @@ void Stats::initStream(const streamType& s) {
 
 		//Header
 		infFracData << "Agent\tTime\ti_ag\ti_site\n";
+#endif
 		break;
 #endif //INFECTED_FRACTION
 #ifdef ESTIMATE_PROBS
@@ -277,22 +276,27 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	//"INFECTED FRACTION X SIMULATION TIME":
 	if (!numericOnly) 
 		of << "incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
+	else
+		of << "#incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
 
 	std::string method, lbl;
-#ifdef PER_BLOCK
-	#ifdef MASTER
-		method = "MASTER";
-		lbl = "master";
-	#else
-		method = "BLOCK";
-		lbl = "block";
-	#endif // MASTER
-#else
-	method = "NODE";
-	lbl = "node";
-#endif // PER_BLOCK
-
+	method = "MASTER";
+	lbl = "master";
+#ifdef MASTER
 	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+#else
+	of << "#incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+#endif // MASTER
+	method = "BLOCK";
+	lbl = "block";
+#ifdef PER_BLOCK
+	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+#else
+	of << "#incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+#endif // PER_BLOCK
+	//method = "NODE";
+	//lbl = "node";
+
 	of << "\n\n" <<
 		"plt.legend()\n" <<
 		"plt.grid()\n" <<

@@ -297,19 +297,16 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 5000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
+	T = 10000.0; NUM_AGENTS = 200; TAU_aa = 1.0; GAMMA_a = 0.0003; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
-
-
-
-
+	
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.06;
-	Ws = 0.06;
+	Wi = 0.1;
+	Ws = 0.1;
 	//Wi = 0.65;
 	//Ws = 0.65; 
 #else
@@ -763,11 +760,11 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	uint scenario = 0;
 	uint _numAgents;
 
-#ifdef PER_BLOCK
+//#ifdef PER_BLOCK 
 	vector<rtl> v_Iab(Graph::block_prob.size(), 0.0), v_ilb(Graph::block_prob.size(), 0.0), v_Sab(Graph::block_prob.size(), 0.0);
-#else
-	vector<rtl> v_Iv(Graph::n, 0.0), v_Sv(Graph::n, 0.0);
-#endif
+//#else
+//	vector<rtl> v_Iv(Graph::n, 0.0), v_Sv(Graph::n, 0.0);
+//#endif
 	while (scenario < numScenarios){
 		_numAgents = _startingNumAg + (scenario * step);
 		
@@ -806,9 +803,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 			for (agent i = 0; i < _numAgents; ++i) {
 				const node v = randomLCCNode();
 				enterNodeAsSus(i, v, -EARLY_MOBILITY);
-#ifndef PER_BLOCK
-				++v_Sv[v];
-#endif
+//#ifndef PER_BLOCK
+//				++v_Sv[v];
+//#endif
 			}
 
 			//EARLY MOBILITY:
@@ -836,7 +833,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					infectAg(ag, TIME_ZERO);
 
 			} //EARLY MOBILITY
-#ifdef PER_BLOCK
+
 			//Initializing the numerical solution:
 			{
 				const rtl ia = (rtl)I_0 / NUM_AGENTS, sa = (rtl)(NUM_AGENTS - I_0) / NUM_AGENTS;
@@ -866,7 +863,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				assertm(abs(sum - NUM_AGENTS) < epsilon, "The computed *expected number of S-/I-agents per node* is incorrect.");
 #endif //DEBUG
 			}
-#endif //PER_BLOCK
 			
 			// * MAIN LOOP *
 			bool earlyStop = false;
@@ -967,39 +963,67 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	baseName = name.str();
 
 	std::string method;
-#ifdef PER_BLOCK
-	#ifdef MASTER	
+#ifdef MASTER	
 	Reporter::startChronometer("\nSolving at network level...");
 	Solver::rkMaster(0, v_Iab, v_Sab, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 	Reporter::stopChronometer(" done");
 	method = "MASTER";
-	#else
+	
+	//Saving to file:
+	{
+		std::ofstream RKdata;
+		std::stringstream _ss;
+		_ss.precision(4);
+		_ss << "./stats/Runge-Kutta_" << method << "_" << baseName << ".csv";
+		std::string _fileName = _ss.str();
+		RKdata.open(_fileName);
+		RKdata << "Time\tia\til\n"; // ----> Header
+		rtl _time = 0;
+		for (size_t s = 0; s < largerDetailUntil; ++s) {
+			RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
+			_time += stepSize;
+		}
+		for (size_t s = largerDetailUntil; s < outputSize; ++s) {
+			RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
+			_time += timeIncrement;
+		}
+		RKdata.close();
+	}
+#endif //MASTER	
+
+#ifdef PER_BLOCK
+	saveToFile_diadt.resize(0);
+	saveToFile_dildt.resize(0);
+	outputSize = 0;
 	Reporter::startChronometer("\nSolving at block level...");
 	Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
 	Reporter::stopChronometer(" done");
 	method = "BLOCK";
-	#endif //MASTER	
-#else
-	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
-	method = "NODE";
-#endif
+
 	//Saving to file:
-	std::ofstream RKdata;
-	std::stringstream _ss;
-	_ss.precision(4);
-	_ss << "./stats/Runge-Kutta_" << method << "_" << baseName << ".csv";
-	std::string _fileName = _ss.str();
-	RKdata.open(_fileName);
-	RKdata << "Time\tia\til\n"; // ----> Header
-	rtl _time = 0;
-	for (size_t s = 0; s < largerDetailUntil; ++s) {
-		RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
-		_time += stepSize;
+	{
+		std::ofstream RKdata;
+		std::stringstream _ss;
+		_ss.precision(4);
+		_ss << "./stats/Runge-Kutta_" << method << "_" << baseName << ".csv";
+		std::string _fileName = _ss.str();
+		RKdata.open(_fileName);
+		RKdata << "Time\tia\til\n"; // ----> Header
+		rtl _time = 0;
+		for (size_t s = 0; s < largerDetailUntil; ++s) {
+			RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
+			_time += stepSize;
+		}
+		for (size_t s = largerDetailUntil; s < outputSize; ++s) {
+			RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
+			_time += timeIncrement;
+		}
+		RKdata.close();
 	}
-	for (size_t s = largerDetailUntil; s < outputSize; ++s){
-		RKdata << _time << '\t' << saveToFile_diadt[s] << '\t' << saveToFile_diadt[s] << '\n';
-		_time += timeIncrement;
-	}
-	RKdata.close();
+//#else
+//	Solver::rungeKutta4thOrder(0, v_Iv, v_Sv, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+//	method = "NODE";
+//#endif
+#endif //PER_BLOCK
 #endif //SOLVE_NUMERICALLY
 }

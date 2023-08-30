@@ -101,32 +101,32 @@ void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector
 }
 #else //PER_BLOCK
 rtl Solver::divbdt(const rtl& Ia, const rtl& Iv, const rtl& Sv, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b];
-	const double qbnb = qb / nb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	return ((Ia - Iv) * LAMBDA * qbnb - Iv * LAMBDA * (1.0 - qbnb))
-		+ (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
-		+ (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
-		- (GAMMA_a * Iv);
+	//const double& pb = graph::Graph::block_prob[b];
+	//const double nb = graph::Graph::n * pb;
+	//const double& qb = graph::Graph::q_b[b];
+	//const double qbnb = qb / nb;
+	//const double Sa = (double)NUM_AGENTS - Ia;
+	//const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+	//return ((Ia - Iv) * LAMBDA * qbnb - Iv * LAMBDA * (1.0 - qbnb))
+	//	+ (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
+	//	+ (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
+	//	- (GAMMA_a * Iv);
 }
 rtl Solver::dsvbdt(const rtl& Ia, const rtl& Iv, const rtl& Sv, const uint& b) {
-	const double& pb = graph::Graph::block_prob[b];
-	const double nb = graph::Graph::n * pb;
-	const double& qb = graph::Graph::q_b[b]; const double qbnb = qb / nb;
-	const double Sa = (double)NUM_AGENTS - Ia;
-	const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
-	return ((Sa - Sv) * LAMBDA * qbnb - Sv * LAMBDA * (1.0 - qbnb))
-		- (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
-		- (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
-		+ (GAMMA_a * Iv);
+	//const double& pb = graph::Graph::block_prob[b];
+	//const double nb = graph::Graph::n * pb;
+	//const double& qb = graph::Graph::q_b[b]; const double qbnb = qb / nb;
+	//const double Sa = (double)NUM_AGENTS - Ia;
+	//const double prob_inf = (TAU_aa / (2.0 * LAMBDA + TAU_aa));
+	//return ((Sa - Sv) * LAMBDA * qbnb - Sv * LAMBDA * (1.0 - qbnb))
+	//	- (Sa - Sv) * LAMBDA * qbnb * Iv * prob_inf
+	//	- (Ia - Iv) * LAMBDA * qbnb * Sv * prob_inf
+	//	+ (GAMMA_a * Iv);
 }
 void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iv, std::vector<rtl>& v_Sv) {
 	constexpr rtl one_sixth = 1.0 / 6.0;
 	const uint blocks = static_cast<uint>(graph::Graph::block_prob.size());
-	vector<rtl> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
+	std::vector<rtl> k1(2 * graph::Graph::n, 0), k2(2 * graph::Graph::n, 0), k3(2 * graph::Graph::n, 0), k4(2 * graph::Graph::n, 0);
 
 	lookAhead(h, Ia, v_Iv, v_Sv, k1);
 	lookAhead(h, Ia, v_Iv, v_Sv, k2, k1, 0.5);
@@ -145,15 +145,15 @@ void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iv, std::vector<rtl
 void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<rtl>& v_Sv, std::vector<rtl>& target) {
 	update_Ia(Ia, v_Iv);
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
-		target[2 * v] = h * divbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
-		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::g[v].size());
+		target[2 * v] = h * divbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::gs[v].size());
+		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v], v_Sv[v], (uint)graph::Graph::gs[v].size());
 	}
 }
 void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<rtl>& v_Sv, std::vector<rtl>& target, std::vector<rtl>& base, const double& fraction) {
 	update_Ia(Ia, v_Iv, base, fraction);
 	for (int v = (uint)graph::Graph::n - 1; v >= 0; --v) {
-		target[2 * v] = h * divbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
-		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::g[v].size());
+		target[2 * v] = h * divbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::gs[v].size());
+		target[2 * v + 1] = h * dsvbdt(Ia, v_Iv[v] + fraction * base[2 * v], v_Sv[v] + fraction * base[2 * v + 1], (uint)graph::Graph::gs[v].size());
 	}
 }
 void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iv) {

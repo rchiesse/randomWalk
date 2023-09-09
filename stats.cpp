@@ -268,7 +268,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"\txData = myData[:, ini]\n" <<
 		"\tyData = myData[:, ini + 1]\n\n" <<
 
-		"\tplt.plot(xData, yData, label = lbl)\n\n\n" <<
+		"\tplt.plot(xData, yData, label = lbl, linewidth = (1 + (1 - ini)*0.5))\n\n\n" <<
 
 		"#Import CSV data\n";
 
@@ -298,7 +298,8 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 	//lbl = "node";
 
 	of << "\n\n" <<
-		"plt.legend()\n" <<
+		"plt.legend(fontsize=\"7\")\n" <<
+		"#plt.legend(fontsize=\"7\", ncol=4, loc = (0.15, 0.15))\n" <<
 		"plt.grid()\n" <<
 		"#plt.xscale(\"log\")\n" <<
 		"#plt.yscale(\"log\")\n\n" <<

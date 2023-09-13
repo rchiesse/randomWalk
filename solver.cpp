@@ -9,7 +9,10 @@ rtl Solver::Wi = 0;
 rtl Solver::Ws = 0;
 rtl Solver::w = 0;
 rtl Solver::sigma = 0;
+rtl Solver::master_esigma = 0;
 uint Solver::numAgents = 0;
+rtl Solver::master_walkRate = 0;
+std::vector<rtl> Solver::block_walkRate = {0};
 
 void Solver::setParams(const rtl& tau, const rtl& lambda, const rtl& gamma, const uint& NUM_AGENTS, const rtl& _Wi, const rtl& _Ws) {
 	nT = tau;
@@ -27,14 +30,70 @@ void Solver::setParams(const rtl& tau, const rtl& lambda, const rtl& gamma, cons
 	sigma = nT / (2.0 * nL + nT); 
 }
 
+void Solver::setBlockData() {
+	block_walkRate	.resize(graph::Graph::block_prob.size(), 0);
+	
+	for (const auto& b : graph::Graph::validBlocks) 
+		block_walkRate[b] = (((rtl)(b - 1)) / b) * nL;
+	
+	for (const auto& b : graph::Graph::validBlocks)
+		master_walkRate += block_walkRate[b] * graph::Graph::block_prob[b];
+
+	rtl avEscapeRate = 0;
+	for (const auto& b : graph::Graph::validBlocks) {
+		const rtl out = (rtl)(b - 1);
+		avEscapeRate += ((out / (out + w)) * nL) * graph::Graph::block_prob[b];
+	}
+	master_esigma += nT / (2 * avEscapeRate + nT);
+}
+
 #ifdef PER_BLOCK
 rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b) {
 	const rtl nb = graph::Graph::n * graph::Graph::block_prob[b];
 	const rtl& qb = graph::Graph::q_b[b];
 	const rtl Sa = (rtl)numAgents - Ia;
 	
+	const rtl out = (rtl)(b - 1);
+	
+	const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
+	const rtl hostile_s = Ia / graph::Graph::n;
+	const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
+	const rtl hostile_i = Sa / graph::Graph::n;
+
+	//const rtl escapeRate_s = (1.0 - (Ws / (out * (safe_s + hostile_s * Ws) + Ws))) * nL;
+	//const rtl escapeRate_i = (1.0 - (Wi / (out * (safe_i + hostile_i * Wi) + Wi))) * nL;
+	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
+	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
+	const rtl escapeRate = (out / (out + w)) * nL;
+	const rtl esigma = nT / (2 * escapeRate + nT);
+	
+	
+	//OFICIAL:
+	//return nL * (Ia * qb - Iab)
+	//	+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+
+	//TESTE!!!
 	return nL * (Ia * qb - Iab)
-		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+		+ 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w - (nG * Iab);
+	
+	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
+	//rtl sbnb = Sab / nb;
+	//rtl ibnb = Iab / nb;
+	////rtl maxL = (ibnb < 1.0) ? nL : ibnb*nL;
+	//
+	//rtl probinf = nT / ((ibnb * nL) + nT);
+	//rtl probacq = ibnb * (nT / ((ibnb * nL) + nT));
+	//rtl inf2 = sbnb * ibnb * probinf * probinf;
+	//rtl acq2 = sbnb * ibnb * probacq * probacq
+	//	+ 2.0 * sbnb * ibnb * probacq * probinf
+	//	+ sbnb * ibnb * probinf * probinf;
+	//
+	//return nL * (Ia * qb - Iab)
+	//	+ ((Sab * Iab) / nb) * nL * probinf * w
+	//	+ ((Sab * Iab) / nb) * nL * probacq * w
+	//	+ acq2
+	//	+ acq2
+	//	- (nG * Iab);
 }
 
 rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b) {
@@ -42,8 +101,45 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl& qb = graph::Graph::q_b[b];
 	const rtl Sa = (rtl)numAgents - Ia;
 	
+	const rtl out = (rtl)(b - 1);
+	const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
+	const rtl hostile_s = Ia / graph::Graph::n;
+	const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
+	const rtl hostile_i = Sa / graph::Graph::n;
+
+	//const rtl escapeRate_s = (1.0 - (Ws / (out * (safe_s + hostile_s * Ws) + Ws))) * nL;
+	//const rtl escapeRate_i = (1.0 - (Wi / (out * (safe_i + hostile_i * Wi) + Wi))) * nL;
+	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
+	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
+	const rtl escapeRate = (out / (out + w)) * nL;
+	const rtl esigma = nT / (2 * escapeRate + nT);
+
+	//OFICIAL:
+	//return nL * (Sa * qb - Sab)
+	//	- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+	 
+	//TESTE!!!
 	return nL * (Sa * qb - Sab)
-		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+		- 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w + (nG * Iab);
+	 
+	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
+	//rtl sbnb = Sab / nb;
+	//rtl ibnb = Iab / nb;
+	////rtl maxL = (ibnb < 1.0) ? nL : ibnb * nL;
+	//
+	//rtl probinf = nT / ((ibnb * nL)+nT);
+	//rtl probacq = ibnb * (nT / ((ibnb * nL) + nT));
+	//rtl inf2 = sbnb * ibnb * probinf * probinf;
+	//rtl acq2 = sbnb * ibnb * probacq * probacq
+	//	+ 2.0 * sbnb * ibnb * probacq * probinf
+	//	+ sbnb * ibnb * probinf * probinf;
+	//
+	//return nL * (Sa * qb - Sab)
+	//	- ((Sab * Iab) / nb) * nL * probinf * w
+	//	- ((Sab * Iab) / nb) * nL * probacq * w
+	//	- acq2
+	//	- acq2
+	//	+ (nG * Iab);
 }
 
 void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab) {
@@ -255,7 +351,16 @@ rtl Solver::dIdt(const rtl& Ia) {
 	const rtl Sa = (rtl)numAgents - Ia;
 	const rtl _b_ = (rtl)graph::Graph::averageDegree;
 	const rtl& _b2_ = graph::Graph::_2ndMmt;
-	return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
+	
+	//rtl walkRate = 0;
+	//for (const auto& b : graph::Graph::validBlocks)
+	//	walkRate += ((rtl)(b - 1) / b) * nL * graph::Graph::block_prob[b];
+	
+	//OFICIAL:
+	//return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
+
+	//TESTE!!!
+	return (2.0 * master_walkRate * master_esigma * w * _b2_ * Sa * Ia) / (N * pow(_b_, 2.0)) - nG * Ia;
 }
 
 void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {

@@ -8,9 +8,13 @@ namespace sim {
 		static rtl Wi, Ws, w;
 		static rtl sigma;
 		static uint numAgents;
+		static std::vector<rtl> block_walkRate;			
+		static rtl master_esigma;
+		static rtl master_walkRate;
+
 	public:
 		static void setParams(const rtl& tau, const rtl& lambda, const rtl& gamma, const uint& NUM_AGENTS, const rtl& _Wi = 1.0, const rtl& _Ws = 1.0);
-
+		static void setBlockData();
 		//static rtl diadt(const rtl& ia, const rtl& sumSbIb);
 		//static rtl dildt(const rtl& ia, const rtl& il);
 

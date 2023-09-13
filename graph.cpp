@@ -170,7 +170,6 @@ vector<rtl> Graph::rho_b;
 vector<rtl> Graph::Kbnb;
 rtl Graph::maxKbnb;
 rtl Graph::maxKbnbBlock;
-rtl Graph::psi;
 
 void Graph::setBlockData() {
 	block_prob.resize(largestDegree + 1, 0);					// ----> Each position refers to a node degree, hence this "+ 1" happening. Vectors in C++ are indexed from 0 to n-1 (where n is the size of the vector). If the largest degree is, say, 5, then we need to acess the position 'block_prob[5]' instead of 'block_prob[4]'. Note that block_prob[0] will always be 0 (since no 0-degree nodes exist in the LCC).
@@ -188,7 +187,6 @@ void Graph::setBlockData() {
 #else
 		++(block_prob[g[lcc[i]].size()]);
 #endif
-	//Probabilities:
 	for (uint b = 0; b < (uint)block_prob.size(); ++b) {	// ----> Equivalent to "p_b" in [1].
 		block_prob[b] /= lccSize;
 	}
@@ -204,12 +202,7 @@ void Graph::setBlockData() {
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		rho_b[b] = 1.0 - pow(1.0 - ((rtl)b / (2 * m)), numAgents);
 	}
-	psi = 0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		if (block_prob[b] == 0)
-			continue;
-		psi += 1.0 / (n * block_prob[b]);
-	}
+	
 
 	//2nd moment:
 	_2ndMmt = 0;
@@ -228,8 +221,7 @@ void Graph::setBlockData() {
 
 	//kb:
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		const uint& k = (uint)numAgents;
-		kb[b] = k * q_b[b];
+		kb[b] = numAgents * q_b[b];
 	}
 
 	//Kbnb:

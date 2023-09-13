@@ -260,7 +260,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.xlim(0, " << t << ")\n" <<
 		"plt.ylim(0, 1)\n\n";
 
-	of << "def incluirPlot(nomeArq, ini, lbl) :\n" <<
+	of << "def incluirPlot(nomeArq, ini, lbl, style) :\n" <<
 		"\twith open(nomeArq, \"r\") as i :\n " <<
 		"\t\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
 
@@ -268,34 +268,36 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"\txData = myData[:, ini]\n" <<
 		"\tyData = myData[:, ini + 1]\n\n" <<
 
-		"\tplt.plot(xData, yData, label = lbl, linewidth = (1 + (1 - ini)*0.5))\n\n\n" <<
+		"\tplt.plot(xData, yData, label = lbl, linewidth = (1 + (1 - ini)*0.5), linestyle = style) \n\n\n" <<
 
 		"#Import CSV data\n";
 
 
 	//"INFECTED FRACTION X SIMULATION TIME":
-	if (!numericOnly) 
-		of << "incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
-	else
-		of << "#incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\")\n";
+	if (numericOnly) 
+		of << "#";
 
-	std::string method, lbl;
-	method = "MASTER";
-	lbl = "master";
-#ifdef MASTER
-	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
-#else
-	of << "#incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
-#endif // MASTER
+	of << "incluirPlot(\"./stats/" << referenceFile << ".csv\", 1, \"w" << W << "\", \"solid\")\n";
+
+	std::string method, lbl, style;
 	method = "BLOCK";
+	style = "solid";
 	lbl = "block";
-#ifdef PER_BLOCK
-	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
-#else
-	of << "#incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\")\n";
+#ifndef PER_BLOCK
+	of << "#";
 #endif // PER_BLOCK
+	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\", \"" << style << "\")\n";
 	//method = "NODE";
 	//lbl = "node";
+	
+	method = "MASTER";
+	style = "dashed";
+	lbl = "master";
+#ifndef MASTER
+	of << "#";
+#endif // MASTER
+	of << "incluirPlot(\"./stats/Runge-Kutta_" << method << "_" << baseName << ".csv\", 0, \"w" << W << " " << lbl << "\", \"" << style << "\")\n";
+	
 
 	of << "\n\n" <<
 		"plt.legend(fontsize=\"7\")\n" <<
@@ -343,7 +345,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		std::string label = labels[1];
 		
 		//TESTE!!!
-		of << "incluirPlot(\"./stats/averages/" << instanceName << ".csv\", 0, \"" << label << "\")\n";
+		of << "incluirPlot(\"./stats/averages/" << instanceName << ".csv\", 0, \"" << label << "\", \"solid\")\n";
 
 		//of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
 		//

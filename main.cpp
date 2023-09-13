@@ -196,9 +196,8 @@ const node& randomLCCNode();
 int main() {
 	sim::Reporter::logTimestamp("Simulation requested.");
 	sim::Reporter::startChronometer();
-	sim::setEnvironment();
 	graph::Graph::readGraph(SOURCE_FILE);
-	graph::Graph::setBlockData();
+	sim::setEnvironment();
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
 
@@ -297,7 +296,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 50000.0; NUM_AGENTS = 450; TAU_aa = 1.0; GAMMA_a = 0.0005; LAMBDA = 1.0;
+	T = 5000.0; NUM_AGENTS = 5000; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -305,8 +304,8 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.05;
-	Ws = 0.05;
+	Wi = 0.5;
+	Ws = 0.5;
 	//Wi = 0.65;
 	//Ws = 0.65; 
 #else
@@ -360,10 +359,12 @@ void sim::setEnvironment() {
 	//	nT = TAU_aa / LAMBDA;
 	//	nG = GAMMA_a / LAMBDA;
 	//}
-	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
 #endif //SOLVE_NUMERICALLY
 	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);
+	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
 	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
+	graph::Graph::setBlockData();
+	Solver::setBlockData();
 	Stats::setBasename();
 	Stats::initAvDur();
 }
@@ -939,7 +940,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
-	constexpr rtl stepSize = 0.01;
+	constexpr rtl stepSize = 0.001;
 	constexpr uint largerDetailUntil = 1000;
 	constexpr rtl epsilon = 0.001 ;
 	constexpr rtl timeIncrement = stepSize * outputGranularity;

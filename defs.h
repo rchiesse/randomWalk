@@ -40,6 +40,7 @@ namespace graph {
 //#define EXE_DIR "C:/Users/Ronald/source/repos/randomWalkTimeFrame/x64/Release"
 #define EXE_DIR "C:/Users/rchie/source/repos/randomWalk2/x64/Release"
 namespace sim {
+
 	static std::string baseName;
 	static rtl beta_a	= 0;														// ----> Force of infection from an I-agent to an S-agent
 	static rtl beta_al	= 0;														// ----> Force of infection from an I-agent to a site
@@ -111,10 +112,15 @@ static constexpr uint N = 300000;
 //#define NWTK_LABEL "BA-12k-10"
 //#define SHORT_LABEL "BA-12k-10" 
 
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
+//#define NWTK_LABEL "BA-100k-10"
+//#define SHORT_LABEL "BA-100k-10" 
+
 static constexpr uint N = 100000;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
-#define NWTK_LABEL "BA-100k-10"
-#define SHORT_LABEL "BA-100k-10" 
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-20.txt")), 100000
+#define NWTK_LABEL "GNP-100k-20"
+#define SHORT_LABEL "GNP-100k-20" 
 
 //static constexpr uint N = 500;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-500-3.txt")), 500
@@ -199,7 +205,7 @@ static constexpr rtl Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 her
 // * NUMERICAL SOLUTION *
 namespace sim{		// ----> Simulator's namespace.
 #define SOLVE_NUMERICALLY
-//#define BYPASS_SIMULATION
+#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
 #define PER_NODE
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).

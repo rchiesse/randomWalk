@@ -165,8 +165,8 @@ rtl Graph::bk;
 vector<rtl> Graph::block_prob;
 vector<uint> Graph::validBlocks;
 vector<rtl> Graph::q_b;
-vector<rtl> Graph::kb;
-vector<rtl> Graph::rho_b;
+vector<rtl> Graph::Kb;
+//vector<rtl> Graph::rho_b;
 vector<rtl> Graph::Kbnb;
 rtl Graph::maxKbnb;
 rtl Graph::maxKbnbBlock;
@@ -176,8 +176,7 @@ void Graph::setBlockData() {
 	validBlocks.resize(largestDegree + 1, 0);		
 	q_b.resize(largestDegree + 1, 0);
 	//originalFreq.resize(largestDegree + 1, 0);
-	kb.resize(largestDegree + 1, 0);
-	rho_b.resize(largestDegree + 1, 0);
+	Kb.resize(largestDegree + 1, 0);
 	Kbnb.resize(largestDegree + 1, 0);
 
 	//Frequencies:
@@ -199,9 +198,9 @@ void Graph::setBlockData() {
 	}
 	validBlocks.resize(numValidBlocks);
 	
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		rho_b[b] = 1.0 - pow(1.0 - ((rtl)b / (2 * m)), numAgents);
-	}
+	//for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	//	rho_b[b] = 1.0 - pow(1.0 - ((rtl)b / (2 * m)), numAgents);
+	//}
 	
 
 	//2nd moment:
@@ -219,15 +218,15 @@ void Graph::setBlockData() {
 #endif
 	}
 
-	//kb:
+	//Kb:
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		kb[b] = numAgents * q_b[b];
+		Kb[b] = numAgents * q_b[b];
 	}
 
 	//Kbnb:
 	maxKbnb = 0;
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		Kbnb[b] = kb[b] / (N * block_prob[b]);
+		Kbnb[b] = Kb[b] / (N * block_prob[b]);
 		if (Kbnb[b] > maxKbnb) {
 			maxKbnb = Kbnb[b];
 			maxKbnbBlock = b;
@@ -239,7 +238,7 @@ void Graph::setBlockData() {
 	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
 		sumQB += q_b[b];
 		sumBP += block_prob[b];
-		sumKB += kb[b];
+		sumKB += Kb[b];
 	}
 	assertm(abs(sumQB - 1.0)		< sim::epsilon, "The values within the probability vector 'q_b' do not sum to 1.");
 	assertm(abs(sumBP - 1.0)		< sim::epsilon, "The values within the probability vector 'block_prob' do not sum to 1.");

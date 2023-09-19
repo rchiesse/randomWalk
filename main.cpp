@@ -296,7 +296,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 5000.0; NUM_AGENTS = 5000; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
+	T = 10000.0; NUM_AGENTS = 5000; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 
@@ -304,8 +304,8 @@ void sim::setEnvironment() {
 	//BA:
 	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 0.5;
-	Ws = 0.5;
+	Wi = 0.2;
+	Ws = 0.2;
 	//Wi = 0.65;
 	//Ws = 0.65; 
 #else
@@ -840,8 +840,8 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 				const rtl ia = (rtl)I_0 / NUM_AGENTS, sa = (rtl)(NUM_AGENTS - I_0) / NUM_AGENTS;
 				//Self-contained blocks:
 				//for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
-				//	v_Iab[b] = ia * graph::Graph::kb[b];
-				//	v_Sab[b] = sa * graph::Graph::kb[b];
+				//	v_Iab[b] = ia * graph::Graph::Kb[b];
+				//	v_Sab[b] = sa * graph::Graph::Kb[b];
 				//}
 
 				//Instance-wise:
@@ -940,7 +940,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
-	constexpr rtl stepSize = 0.001;
+	constexpr rtl stepSize = 0.01;
 	constexpr uint largerDetailUntil = 1000;
 	constexpr rtl epsilon = 0.001 ;
 	constexpr rtl timeIncrement = stepSize * outputGranularity;

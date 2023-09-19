@@ -37,14 +37,18 @@ void Solver::setBlockData() {
 		block_walkRate[b] = (((rtl)(b - 1)) / b) * nL;
 	
 	for (const auto& b : graph::Graph::validBlocks)
-		master_walkRate += block_walkRate[b] * graph::Graph::block_prob[b];
+		master_walkRate += block_walkRate[b] * graph::Graph::q_b[b];
+		//master_walkRate += block_walkRate[b] * graph::Graph::block_prob[b];
 
-	rtl avEscapeRate = 0;
+	//rtl avEscapeRate = 0;
 	for (const auto& b : graph::Graph::validBlocks) {
 		const rtl out = (rtl)(b - 1);
-		avEscapeRate += ((out / (out + w)) * nL) * graph::Graph::block_prob[b];
+		//const rtl escapeRate = (out / (out + w)) * nL;
+		const rtl escapeRate = (out / b) * nL;
+		master_esigma += (nT / (2 * escapeRate + nT)) * graph::Graph::q_b[b];
+		//avEscapeRate += ((out / (out + w)) * nL) * graph::Graph::block_prob[b];
 	}
-	master_esigma += nT / (2 * avEscapeRate + nT);
+	//master_esigma += nT / (2 * avEscapeRate + nT);
 }
 
 #ifdef PER_BLOCK
@@ -55,18 +59,18 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	
 	const rtl out = (rtl)(b - 1);
 	
-	const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
-	const rtl hostile_s = Ia / graph::Graph::n;
-	const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
-	const rtl hostile_i = Sa / graph::Graph::n;
+	//const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
+	//const rtl hostile_s = Ia / graph::Graph::n;
+	//const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
+	//const rtl hostile_i = Sa / graph::Graph::n;
 
 	//const rtl escapeRate_s = (1.0 - (Ws / (out * (safe_s + hostile_s * Ws) + Ws))) * nL;
 	//const rtl escapeRate_i = (1.0 - (Wi / (out * (safe_i + hostile_i * Wi) + Wi))) * nL;
 	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
-	const rtl escapeRate = (out / (out + w)) * nL;
+	//const rtl escapeRate = (out / (out + w)) * nL;
+	const rtl escapeRate = (out / b) * nL;
 	const rtl esigma = nT / (2 * escapeRate + nT);
-	
 	
 	//OFICIAL:
 	//return nL * (Ia * qb - Iab)
@@ -74,7 +78,9 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 
 	//TESTE!!!
 	return nL * (Ia * qb - Iab)
-		+ 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w - (nG * Iab);
+		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
+		//+ 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w - (nG * Iab);
+	
 	
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
 	//rtl sbnb = Sab / nb;
@@ -102,25 +108,28 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl Sa = (rtl)numAgents - Ia;
 	
 	const rtl out = (rtl)(b - 1);
-	const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
-	const rtl hostile_s = Ia / graph::Graph::n;
-	const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
-	const rtl hostile_i = Sa / graph::Graph::n;
+	//const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
+	//const rtl hostile_s = Ia / graph::Graph::n;
+	//const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
+	//const rtl hostile_i = Sa / graph::Graph::n;
 
 	//const rtl escapeRate_s = (1.0 - (Ws / (out * (safe_s + hostile_s * Ws) + Ws))) * nL;
 	//const rtl escapeRate_i = (1.0 - (Wi / (out * (safe_i + hostile_i * Wi) + Wi))) * nL;
 	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
-	const rtl escapeRate = (out / (out + w)) * nL;
+	//const rtl escapeRate = (out / (out + w)) * nL;
+	const rtl escapeRate = (out / b) * nL;
 	const rtl esigma = nT / (2 * escapeRate + nT);
-
+	
 	//OFICIAL:
 	//return nL * (Sa * qb - Sab)
 	//	- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
 	 
 	//TESTE!!!
 	return nL * (Sa * qb - Sab)
-		- 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w + (nG * Iab);
+		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
+		//- 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w + (nG * Iab);
+	
 	 
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
 	//rtl sbnb = Sab / nb;

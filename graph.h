@@ -52,8 +52,8 @@ public:
 	static rtl _2ndMmt;
 	static rtl bk;													// ----> Expected block.
 	static vector<rtl> q_b;											// ----> Probability q_b that a randomly chosen link points to a degree-b node.
-	static vector<rtl> kb;											// ----> Expected number of agents in each block b.
-	static vector<rtl> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
+	static vector<rtl> Kb;											// ----> Expected number of agents in each block b.
+	//static vector<rtl> rho_b;										// ----> Probability that an specific node v_b from block b is NOT empty, i.e. the probability that v_b hosts at least one agent.
 	static vector<rtl> Kbnb;
 	static rtl maxKbnb;
 	static rtl maxKbnbBlock;

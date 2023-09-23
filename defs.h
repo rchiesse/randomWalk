@@ -66,8 +66,8 @@ static constexpr uint N = 200;
 #endif
 
 #ifdef GNP
-static constexpr uint N = 300000;
-#define SOURCE_FILE "", 300000
+static constexpr uint N = 2;
+#define SOURCE_FILE "", 2
 #define NWTK_LABEL "Gnp"
 #define SHORT_LABEL "gnp"
 #endif
@@ -112,15 +112,15 @@ static constexpr uint N = 300000;
 //#define NWTK_LABEL "BA-12k-10"
 //#define SHORT_LABEL "BA-12k-10" 
 
-//static constexpr uint N = 100000;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
-//#define NWTK_LABEL "BA-100k-10"
-//#define SHORT_LABEL "BA-100k-10" 
-
 static constexpr uint N = 100000;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-20.txt")), 100000
-#define NWTK_LABEL "GNP-100k-20"
-#define SHORT_LABEL "GNP-100k-20" 
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
+#define NWTK_LABEL "BA-100k-10"
+#define SHORT_LABEL "BA-100k-10" 
+
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-20.txt")), 100000
+//#define NWTK_LABEL "GNP-100k-20"
+//#define SHORT_LABEL "GNP-100k-20" 
 
 //static constexpr uint N = 500;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-500-3.txt")), 500
@@ -177,7 +177,7 @@ static constexpr uint N = 100000;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
+//#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
 #define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr rtl Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.

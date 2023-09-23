@@ -69,17 +69,17 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
 	//const rtl escapeRate = (out / (out + w)) * nL;
-	const rtl escapeRate = (out / b) * nL;
-	const rtl esigma = nT / (2 * escapeRate + nT);
+	
+	//const rtl escapeRate = (out / b) * nL;
+	//const rtl esigma = nT / (2 * escapeRate + nT);
 	
 	//OFICIAL:
-	//return nL * (Ia * qb - Iab)
-	//	+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+	return nL * (Ia * qb - Iab)
+		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
 
 	//TESTE!!!
-	return nL * (Ia * qb - Iab)
-		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
-		//+ 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w - (nG * Iab);
+	//return nL * (Ia * qb - Iab)
+	//	+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
 	
 	
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
@@ -118,17 +118,17 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl escapeRate = ((out * safe + out * hostile * w) / (out * safe + out * hostile * w + w)) * nL;
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
 	//const rtl escapeRate = (out / (out + w)) * nL;
-	const rtl escapeRate = (out / b) * nL;
-	const rtl esigma = nT / (2 * escapeRate + nT);
+	
+	//const rtl escapeRate = (out / b) * nL;
+	//const rtl esigma = nT / (2 * escapeRate + nT);
 	
 	//OFICIAL:
-	//return nL * (Sa * qb - Sab)
-	//	- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+	return nL * (Sa * qb - Sab)
+		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
 	 
 	//TESTE!!!
-	return nL * (Sa * qb - Sab)
-		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
-		//- 2.0 * ((Sab * Iab) / nb) * block_walkRate[b] * esigma * w + (nG * Iab);
+	//return nL * (Sa * qb - Sab)
+	//	- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
 	
 	 
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:

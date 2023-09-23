@@ -205,12 +205,14 @@ void Graph::setBlockData() {
 
 	//2nd moment:
 	_2ndMmt = 0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	uint b = (uint)block_prob.size();
+	while (--b) {
 		_2ndMmt += pow(b, 2) * block_prob[b];
 	}
 	
 	bk = _2ndMmt / averageDegree;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	b = (uint)block_prob.size();
+	while (--b) {
 #ifdef AUTO_RELATION
 		q_b[b] = ((rtl)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 #else
@@ -219,13 +221,15 @@ void Graph::setBlockData() {
 	}
 
 	//Kb:
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	b = (uint)block_prob.size();
+	while(--b) {
 		Kb[b] = numAgents * q_b[b];
 	}
 
 	//Kbnb:
 	maxKbnb = 0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	b = (uint)block_prob.size();
+	while(--b) {
 		Kbnb[b] = Kb[b] / (N * block_prob[b]);
 		if (Kbnb[b] > maxKbnb) {
 			maxKbnb = Kbnb[b];

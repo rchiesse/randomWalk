@@ -70,16 +70,16 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
 	//const rtl escapeRate = (out / (out + w)) * nL;
 	
-	//const rtl escapeRate = (out / b) * nL;
-	//const rtl esigma = nT / (2 * escapeRate + nT);
+	const rtl escapeRate = (out / b) * nL;
+	const rtl esigma = nT / (2 * escapeRate + nT);
 	
 	//OFICIAL:
-	return nL * (Ia * qb - Iab)
-		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+	//return nL * (Ia * qb - Iab)
+	//	+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
 
 	//TESTE!!!
-	//return nL * (Ia * qb - Iab)
-	//	+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
+	return nL * (Ia * qb - Iab)
+		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
 	
 	
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
@@ -119,16 +119,16 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl esigma = nT / (escapeRate_i + escapeRate_s + nT);
 	//const rtl escapeRate = (out / (out + w)) * nL;
 	
-	//const rtl escapeRate = (out / b) * nL;
-	//const rtl esigma = nT / (2 * escapeRate + nT);
+	const rtl escapeRate = (out / b) * nL;
+	const rtl esigma = nT / (2 * escapeRate + nT);
 	
 	//OFICIAL:
-	return nL * (Sa * qb - Sab)
-		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+	//return nL * (Sa * qb - Sab)
+	//	- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
 	 
 	//TESTE!!!
-	//return nL * (Sa * qb - Sab)
-	//	- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
+	return nL * (Sa * qb - Sab)
+		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
 	
 	 
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
@@ -162,7 +162,8 @@ void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iab, std::vector<rt
 	lookAhead(h, Ia, v_Iab, v_Sab, k4, k3);
 
 	//Take step:
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+	uint b = (uint)graph::Graph::block_prob.size();
+	while (--b) {
 		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
@@ -173,7 +174,8 @@ void Solver::step(const rtl& h, rtl& Ia, std::vector<rtl>& v_Iab, std::vector<rt
 
 void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& v_Sab, std::vector<rtl>& target) {
 	update_Ia(Ia, v_Iab);
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+	uint b = (uint)graph::Graph::block_prob.size();
+	while (--b) {
 		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
@@ -184,7 +186,8 @@ void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, con
 
 void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& v_Sab, std::vector<rtl>& target, std::vector<rtl>& base, const double& fraction) {
 	update_Ia(Ia, v_Iab, base, fraction);
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b) {
+	uint b = (uint)graph::Graph::block_prob.size();
+	while (--b) {
 		if (graph::Graph::block_prob[b] == 0)
 			continue;
 
@@ -195,13 +198,15 @@ void Solver::lookAhead(const rtl& h, rtl& Ia, const std::vector<rtl>& v_Iab, con
 
 void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iab) {
 	Ia = 0;
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
+	uint b = (uint)graph::Graph::block_prob.size();
+	while (--b)
 		Ia += v_Iab[b];
 }
 
 void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iab, const std::vector<rtl>& base, const double& fraction) {
 	Ia = 0;
-	for (uint b = (uint)graph::Graph::block_prob.size() - 1; b > 0; --b)
+	uint b = (uint)graph::Graph::block_prob.size();
+	while (--b)
 		Ia += v_Iab[b] + (fraction * base[2 * b]);
 }
 #else //PER_BLOCK

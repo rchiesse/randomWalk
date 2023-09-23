@@ -296,7 +296,7 @@ void sim::setEnvironment() {
 	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
 	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 	
-	T = 500.0; NUM_AGENTS = 1500; TAU_aa = 1.0; GAMMA_a = 0.02; LAMBDA = 1.0;
+	T = 20000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.0055; LAMBDA = 1.0;
 
 	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
 

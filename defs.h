@@ -177,7 +177,7 @@ static constexpr uint N = 100000;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-//#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
+#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
 #define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr rtl Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.

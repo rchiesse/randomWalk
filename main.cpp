@@ -13,16 +13,16 @@ uint NUM_AGENTS;														// ----> Total number of agents in a simulation.
 uint STARTING_NUM_AG;
 uint GRAN_NUM_AG;
 uint ROUNDS;															// ----> Number of simulation runs for a given setup. 
-rtl TAU_aa;															// ----> Agent-to-agent transmissibility rate.
-rtl TAU_al;															// ----> Agent-to-location transmissibility rate.
-rtl TAU_la;															// ----> Location-to-agent transmissibility rate.
+rtl TAU_aa;																// ----> Agent-to-agent transmissibility rate.
+rtl TAU_al;																// ----> Agent-to-location transmissibility rate.
+rtl TAU_la;																// ----> Location-to-agent transmissibility rate.
 rtl GAMMA_a;															// ----> Recovery rate. 
 rtl GAMMA_l;															// ----> Recovery rate. 
-rtl LAMBDA;															// ----> Walking speed. 
+rtl LAMBDA;																// ----> Walk rate. 
 rtl FRAC_AG_INFECTED;													// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 rtl FRAC_ST_INFECTED;													// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 uint ABS_INFECTED;														// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
-rtl EARLY_MOBILITY;													// ----> Time dedicated for agents to freely walk through the network before the epidemic starts.
+rtl EARLY_MOBILITY;														// ----> Time dedicated for agents to freely walk through the network before the epidemic starts.
 
 
 rtl Ws = 1.0;															// ----> Susceptible-agents' tolerance to enter nodes that contain infected agents, such that 0 <= Ws <= 1. This is the "s-protection-effect" single parameter.
@@ -102,24 +102,6 @@ uint ilTotal = 0;														// ----> Up-to-date number of INFECTED SITES duri
 rtl now;
 std::vector<rtl> totalSimTime;											// ----> Total simulation time at each round, to average upon.
 
-#ifdef SI_PROPORTION
-vector<rtl> v_avIb;
-vector<rtl> v_probesIb;
-
-//TESTE!!!
-vector<rtl> Sb;		// Up-to-date number of SUSCEPTIBLE AGENTS within each block.
-vector<rtl> Ib;		// Up-to-date number of INFECTED AGENTS within each block.
-vector<rtl> sbs;		// Computes the average density S_b / S
-vector<rtl> total_sbs;
-vector<rtl> ibi;		// Computes the average density I_b / I
-vector<rtl> total_ibi;
-vector<rtl> cbs; //<k>_b - Sb/S
-vector<rtl> cbi; //<k>_b - Ib/I
-
-//vector<rtl> v_avSb;
-//vector<rtl> v_probesSb;
-#endif
-
 
 //Agent control variables
 using std::vector; using graph::node;
@@ -139,12 +121,12 @@ vector<vector<agent>> sAgents;											// ----> Up-to-date list of susceptible
 vector<vector<agent>> iAgents;											// ----> Up-to-date list of infected agents within each node v.
 
 //Average number of hops until changing status:
-vector<rtl> IavNumHops;
-vector<rtl> SavNumHops;
-vector<uint> ITransitions;
-vector<uint> STransitions;
-vector<uint> hopsUntilI;
-vector<uint> hopsUntilS;
+//vector<rtl> IavNumHops;
+//vector<rtl> SavNumHops;
+//vector<uint> ITransitions;
+//vector<uint> STransitions;
+//vector<uint> hopsUntilI;
+//vector<uint> hopsUntilS;
 
 
 // * GLOBAL UNIFORM(0,1) RANDOM-NUMBER GENERATOR * 
@@ -198,42 +180,48 @@ int main() {
 	sim::Reporter::startChronometer();
 	graph::Graph::readGraph(SOURCE_FILE);
 	sim::setEnvironment();
+
+	////Cria um anel:
+	//std::ofstream rede;
+	//rede.open("ring-10k.txt");
+	//uint tam = 1e4, n = tam + 1;
+	//while (--n)
+	//	rede << n << ' ' << n - 1 << '\n';
+	//rede << n << ' ' << tam << '\n';
+	//rede.close();
+	//return 0;
 	sim::runSimulation(sim::STARTING_NUM_AG, sim::GRAN_NUM_AG);
 	sim::Reporter::stopChronometer("\n\nSimulation completed");
 
-
-
 	//=============================================================
 	//Temp:
-	rtl IgeneralHops = 0;
-	rtl SgeneralHops = 0;
-	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i){
-		sim::IavNumHops[i] /= (sim::ITransitions[i] > 0) ? sim::ITransitions[i] : 1;
-		sim::SavNumHops[i] /= (sim::STransitions[i] > 0) ? sim::STransitions[i] : 1;
-	}
-	for (int i = sim::NUM_AGENTS - 1; i >= 0; --i) {
-		IgeneralHops += sim::IavNumHops[i];
-		SgeneralHops += sim::SavNumHops[i];
-	}
-	IgeneralHops /= sim::NUM_AGENTS;
-	SgeneralHops /= sim::NUM_AGENTS;
-
-	std::cout << "\n\nAv. num. hops as I-agent: " << IgeneralHops;
-	std::cout << "\nAv. num. hops as S-agent: " << SgeneralHops;
-
-	std::sort(sim::hopsUntilI.begin(), sim::hopsUntilI.end());
-	std::cout << "\n\n10 minimum #hops until becoming infected: \n";
-	for (size_t i = 0; i < 10; ++i) {
-		std::cout << sim::hopsUntilI[i] << " ";
-	}
-	std::cout << "\n\n10 maximum #hops until becoming infected: \n";
-	for (size_t i = 0; i < 10; ++i){
-		std::cout << sim::hopsUntilI[sim::hopsUntilI.size() - 1 - i] << " ";
-	}
-	std::cout << '\n';
+	//rtl IgeneralHops = 0;
+	//rtl SgeneralHops = 0;
+	//for (int i = sim::NUM_AGENTS - 1; i >= 0; --i){
+	//	sim::IavNumHops[i] /= (sim::ITransitions[i] > 0) ? sim::ITransitions[i] : 1;
+	//	sim::SavNumHops[i] /= (sim::STransitions[i] > 0) ? sim::STransitions[i] : 1;
+	//}
+	//for (int i = sim::NUM_AGENTS - 1; i >= 0; --i) {
+	//	IgeneralHops += sim::IavNumHops[i];
+	//	SgeneralHops += sim::SavNumHops[i];
+	//}
+	//IgeneralHops /= sim::NUM_AGENTS;
+	//SgeneralHops /= sim::NUM_AGENTS;
+	//
+	//std::cout << "\n\nAv. num. hops as I-agent: " << IgeneralHops;
+	//std::cout << "\nAv. num. hops as S-agent: " << SgeneralHops;
+	//
+	//std::sort(sim::hopsUntilI.begin(), sim::hopsUntilI.end());
+	//std::cout << "\n\n10 minimum #hops until becoming infected: \n";
+	//for (size_t i = 0; i < 10; ++i) {
+	//	std::cout << sim::hopsUntilI[i] << " ";
+	//}
+	//std::cout << "\n\n10 maximum #hops until becoming infected: \n";
+	//for (size_t i = 0; i < 10; ++i){
+	//	std::cout << sim::hopsUntilI[sim::hopsUntilI.size() - 1 - i] << " ";
+	//}
+	//std::cout << '\n';
 	//=============================================================
-
-
 
 	sim::Reporter::logTimestamp("End of simulation.");
 	return 0;
@@ -258,56 +246,22 @@ void sim::setEnvironment() {
 	ROUNDS				= 1;											// ----> Number of simulation runs for a given setup. 
 	TAU_aa				= 100.0;										// ----> Agent-to-agent transmissibility rate.
 	GAMMA_a				= 15000.0;										// ----> Recovery rate. 
-	LAMBDA				= 1.0;											// ----> Walking speed. 
+	LAMBDA				= 1.0;											// ----> Walk rate.
 	FRAC_AG_INFECTED	= 0.5;											// ----> Fraction of AGENTS initially infected (i.e. when the simulation starts).
 	FRAC_ST_INFECTED	= 0.0;											// ----> Fraction of SITES initially infected (i.e. when the simulation starts).
 	ABS_INFECTED		= 0;											// ----> Absolute number of agents initially infected (i.e. when the simulation starts). This value is used whenever it is set to any value > 0, in which case it overrides 'FRAC_AG_INFECTED'. To use 'FRAC_AG_INFECTED' instead, set 'ABS_INFECTED = 0'.
-																		//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
+	
+	//TAU_al				= 0.000001;										// ----> Agent-to-location transmissibility rate.
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
 	
-	////Pre-built scenarios:
-	//// CL N100:
-	//T = 0.02; NUM_AGENTS = 20000; TAU_aa = 100.0; GAMMA_a = 15000.0; LAMBDA = 1.0;
-	
-	//// CL N4:
-	//T = 3; NUM_AGENTS = 800; TAU_aa = 10.0; GAMMA_a = 1500.0; LAMBDA = 1.0;
+	T = 2000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.07; LAMBDA = 1.0;
 
-	//// CL N200: 
-	//T = 2; NUM_AGENTS = 15000; TAU_aa = 10.0; GAMMA_a = 500.0; LAMBDA = 1.0;
-	//T = 5; NUM_AGENTS = 15000; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; //(CASO 2)
-	//T = 5.0; NUM_AGENTS = 1000; TAU_aa = 3.0; GAMMA_a = 250.0; LAMBDA = 50.0;	//EULER - BEST
-	
-	//T = 20.0; NUM_AGENTS = 100; TAU_aa = 50.0; GAMMA_a = 270.0; LAMBDA = 50.0;
-	//T = 2.0; NUM_AGENTS = 10000; TAU_aa = 5.0; GAMMA_a = 4200.0; LAMBDA = 2.0;
-	//T = 2.0; NUM_AGENTS = 2000; TAU_aa = 3.0; GAMMA_a = 540.0; LAMBDA = 11.0;
-	
-	//// CL N10: 
-	//T = 0.1; NUM_AGENTS = 200; TAU_aa = 1000.0; GAMMA_a = 47500.0; LAMBDA = 1.0; 
-	//T = 0.01; NUM_AGENTS = 2000; TAU_aa = 1000.0; GAMMA_a = 840000.0; LAMBDA = 1.0; 
-	
-	//G(n,p):
-	//T = 1.0; NUM_AGENTS = 15000; TAU_aa = 1.0; GAMMA_a = 20.0; LAMBDA = 10.0; 
-	
-	
-	//1)T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
-	//2) T = 10000.0; NUM_AGENTS = 200; TAU_aa = 10.0; GAMMA_a = 0.15; LAMBDA = 1.0; 
-	//3) T = 10000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.06; LAMBDA = 1.0; 
-	//4-5-) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.1; GAMMA_a = 0.06; LAMBDA = 1.0; 
-	//6) T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
-	
-	T = 20000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.0055; LAMBDA = 1.0;
-
-	//T = 20000.0; NUM_AGENTS = 400; TAU_aa = 0.01; GAMMA_a = 0.005; LAMBDA = 2.0; 
-
-	
-	//BA:
-	//T = 10000.0; NUM_AGENTS = 50; TAU_aa = 10.0; GAMMA_a = 0.02; LAMBDA = 30.0; 
 #ifdef PROTECTION_FX
-	Wi = 1.0;
-	Ws = 1.0;
-	//Wi = 0.65;
-	//Ws = 0.65; 
+	//Wi = 1.0;
+	//Ws = 1.0;
+	Wi = 0.65;
+	Ws = 0.65;
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
@@ -345,21 +299,10 @@ void sim::setEnvironment() {
 	myEvents		.resize(NUM_AGENTS);
 
 #ifdef SOLVE_NUMERICALLY
-	// * NORMALIZATION *
 	nT = TAU_aa;
 	nL = LAMBDA;
 	nG = GAMMA_a;
-	//if (TAU_aa <= LAMBDA) {
-	//	nT = 1.0;
-	//	nL = LAMBDA / TAU_aa;
-	//	nG = GAMMA_a / TAU_aa;
-	//}
-	//else {
-	//	nL = 1.0;
-	//	nT = TAU_aa / LAMBDA;
-	//	nG = GAMMA_a / LAMBDA;
-	//}
-#endif //SOLVE_NUMERICALLY
+#endif 
 	graph::Graph::setParams(NUM_AGENTS, Ws, Wi);
 	Solver::setParams(nT, nL, nG, NUM_AGENTS, Wi, Ws);
 	Stats::setParams(T, NUM_AGENTS, ROUNDS, TAU_aa, GAMMA_a, LAMBDA, Wi, Ws);
@@ -383,7 +326,7 @@ void sim::check_in (const agent& ag, const node& v, vector<vector<agent>>& _wher
 void sim::check_out  (const agent& ag, const node& v, vector<vector<agent>>& _where) {
 	vector<agent>& list = _where[v];
 	uint& lastPos = list[ELEMS];
-	if (lastPos > 1) {	// ----> "Is any susceptible agent still going to remain at 'v' once 'ag' has been removed?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions become redundant, not wrong.
+	if (lastPos > 1) {	// ----> "Will any susceptible agent still remain at 'v' once 'ag' is gone?". If true, then the agent from the last position is copied to ag's. There's no problem if the outcoming agent happens to be the one at the 'top' position. In this case, both inner instructions simply become redundant, but NOT WRONG.
 		list[indexWithinNode[ag]] = list[lastPos];
 		indexWithinNode[list[lastPos]] = indexWithinNode[ag];
 	}
@@ -396,10 +339,11 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const rtl& now) {
 	uint&		numS = sInNode[v];					// ----> Number of susceptible agents currently hosted in v.
 	++numS;
 	
-	if (numI > 0) {
+	if (numI) {
 		const vector<uint>& list = iAgents[v];
 		rtl delta;
-		for (uint i = numI; i > 0; --i) {
+		uint i = numI + 1;
+		while (--i) {
 			delta = EXPTau_aa();
 			myEvents[ag].emplace(ag, now + delta, action::agInfectAg, list[i], snapshot_a[ag], snapshot_a[list[i]], ag);
 		}
@@ -417,15 +361,6 @@ void sim::enterNodeAsSus (const agent& ag, const node& v, const rtl& now) {
 		graph::Graph::updateHasS(v);
 #endif
 
-#ifdef SI_PROPORTION
-#ifdef PROTECTION_FX
-	const uint b = (uint)graph::Graph::gs[v].size();
-#else
-	const uint b = (uint)graph::Graph::g[v].size();
-#endif
-	v_avIb[b] += (rtl)numI / (numI + numS);
-	++v_probesIb[b];
-#endif //SI_PROPORTION
 }
 void sim::enterNodeAsInf (const agent& ag, const node& v, const rtl& now) {
 	++snapshot_a[ag];
@@ -434,21 +369,11 @@ void sim::enterNodeAsInf (const agent& ag, const node& v, const rtl& now) {
 	uint&		numI = iInNode[v];				// ----> Number of infected agents currently hosted in v.
 	++numI;
 
-#ifdef SI_PROPORTION
-#ifdef PROTECTION_FX
-	const uint b = (uint)graph::Graph::gs[v].size();
-#else
-	const uint b = (uint)graph::Graph::g[v].size();
-#endif
-	v_avIb[b] += (rtl)numI / (numI + numS);
-	++v_probesIb[b];
-
-#endif
-
-	if (numS > 0) {
+	if (numS) {
 		const vector<uint>& list = sAgents[v];
 		rtl delta;
-		for (uint i = numS; i > 0; --i) {
+		uint i = numS + 1;
+		while(--i) {
 			delta = EXPTau_aa();
 			myEvents[ag].emplace(list[i], now + delta, action::agInfectAg, ag, snapshot_a[list[i]], snapshot_a[ag], ag);
 		}
@@ -477,20 +402,10 @@ void sim::leaveNodeAsInf (const agent& ag, const node& v, const rtl& now) {
 	if (numI == 0)
 		graph::Graph::updateNoI(v);
 #endif
-#ifdef SI_PROPORTION
-	uint& numS = sInNode[v];
-#ifdef PROTECTION_FX
-	const uint b = (uint)graph::Graph::gs[v].size();
-#else
-	const uint b = (uint)graph::Graph::g[v].size();
-#endif
-	v_avIb[b] += (numI + numS) > 0 ? (rtl)numI / (numI + numS) : 0.0;
-	++v_probesIb[b];
-#endif
 }
 void sim::leaveNodeAsSus (const agent& ag, const node& v, const rtl& now) {
 	++snapshot_a[ag];
-	myEvents[ag] = {};		// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
+	myEvents[ag] = {};							// ----> Any events remaining into ag's queue becomes invalid, so that we may simply erase them.
 	check_out(ag, v, sAgents);
 	uint&		numS = sInNode[v];				// ----> Number of susceptible agents currently hosted in v.
 	--numS;
@@ -498,17 +413,6 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const rtl& now) {
 #ifdef PROTECTION_FX
 	if (numS == 0)
 		graph::Graph::updateNoS(v);
-#endif
-
-#ifdef SI_PROPORTION
-	uint& numI = iInNode[v];
-#ifdef PROTECTION_FX
-	const uint b = (uint)graph::Graph::gs[v].size();
-#else
-	const uint b = (uint)graph::Graph::g[v].size();
-#endif
-	v_avIb[b] += (numI + numS) > 0 ? (rtl)numI / (numI + numS) : 0.0;
-	++v_probesIb[b];
 #endif
 }
 void sim::quietWalk(const agent& ag, const rtl& now) {
@@ -519,58 +423,19 @@ void sim::quietWalk(const agent& ag, const rtl& now) {
 	enterNodeAsSus(ag, v, now);
 }
 void sim::walk(const agent& ag, const rtl& now) {
-	//node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
-	node v;
-	if (isInfectedAg[ag]) {
-		v = nextNodeForInf(currentNode[ag]);
-		//Temp:
-		++IavNumHops[ag];
-	}
-	else {
-		v = nextNodeForSus(currentNode[ag]);
-		//Temp:
-		++SavNumHops[ag];
-	}
-
-	//TESTE!!! (a inclusão do comentário - descomentar p/ retornar ao original)
+	node v = (isInfectedAg[ag]) ? nextNodeForInf(currentNode[ag]) : nextNodeForSus(currentNode[ag]);
+#ifdef SELF_LOOPS
 	if (v == currentNode[ag])
 		return;
-	
-	//TESTE!!!
-	const uint b_orig = (uint)graph::Graph::gs[currentNode[ag]].size();
-	const uint b_dest = (uint)graph::Graph::gs[v].size();
-
+#endif
 	if (isInfectedAg[ag]) {
 		leaveNodeAsInf(ag, currentNode[ag], now);
 		enterNodeAsInf(ag, v, now);
-
-		//TESTE!!!
-		if (b_orig != b_dest) {
-			--Ib[b_orig];
-			ibi[b_orig] += Ib[b_orig] / iaTotal;
-			++total_ibi[b_orig];
-
-			++Ib[b_dest];
-			ibi[b_dest] += Ib[b_dest] / iaTotal;
-			++total_ibi[b_dest];
-		}
-
 	} else {
 		leaveNodeAsSus(ag, currentNode[ag], now);
 		enterNodeAsSus(ag, v, now);
-
-		//TESTE!!!
-		if (b_orig != b_dest) {
-			--Sb[b_orig];
-			sbs[b_orig] += Sb[b_orig] / saTotal;
-			++total_sbs[b_orig];
-
-			++Sb[b_dest];
-			sbs[b_dest] += Sb[b_dest] / saTotal;
-			++total_sbs[b_dest];
-		}
-		if (ag == 0)
-			++hopsUntilI[hopsUntilI.size() - 1];
+		//if (ag == 0)
+		//	++hopsUntilI[hopsUntilI.size() - 1];
 	}
 }
 
@@ -581,15 +446,6 @@ void sim::infectAg(const agent& ag, const rtl& now) {
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsInf(ag, currentNode[ag], now);
 	schedule.emplace(ag, now + EXPGamma_a(), action::recoverAg); // ----> 'Recover' event is scheduled.
-
-	//TESTE!!!
-	const uint b = (uint)graph::Graph::gs[currentNode[ag]].size();
-	--Sb[b];
-	++Ib[b];
-	sbs[b] += Sb[b] / saTotal;
-	ibi[b] += Ib[b] / iaTotal;
-	++total_sbs[b];
-	++total_ibi[b];
 }
 
 void sim::recoverAg		 (const agent& ag, const rtl& now) {
@@ -602,18 +458,6 @@ void sim::recoverAg		 (const agent& ag, const rtl& now) {
 	const graph::node& v = currentNode[ag];
 	leaveNodeAsInf(ag, v, now);
 	enterNodeAsSus(ag, v, now);
-
-	//Temp:
-	++STransitions[ag];
-
-	//TESTE!!!
-	const uint b = (uint)graph::Graph::gs[currentNode[ag]].size();
-	++Sb[b];
-	--Ib[b];
-	sbs[b] += Sb[b] / saTotal;
-	ibi[b] += Ib[b] / iaTotal;
-	++total_sbs[b];
-	++total_ibi[b];
 }
 
 void sim::recoverSite	(const uint& v, const rtl& now) {
@@ -638,10 +482,6 @@ void sim::agFate_fromAg(const agent& ag, const rtl& now, const uint& infective, 
 #ifdef INFECTED_FRACTION
 	Stats::bufferizeIFrac(ag, now, "Ia", iaTotal, ilTotal, NUM_AGENTS, OVERLOOK);
 #endif
-	//Temp:
-	++ITransitions[ag];
-	if(ag == 0)
-		hopsUntilI.emplace_back(0);
 }
 void sim::agFate_fromSite(const agent& ag, const rtl& now, const uint& infective, const uint& validity_S, const uint& validity_I) {
 	if (validity_S != snapshot_a[ag] || validity_I != snapshot_l[infective]) 
@@ -715,20 +555,7 @@ void sim::resetVariables() {
 #ifdef PROTECTION_FX
 	graph::Graph::resetSchema();
 #endif
-#ifdef SI_PROPORTION
-	v_avIb		.resize(Graph::block_prob.size(), 0.0);
-	v_probesIb	.resize(Graph::block_prob.size(), 0.0);
 
-	//TESTE!!!
-	Sb.resize(Graph::block_prob.size(), 0.0);
-	Ib.resize(Graph::block_prob.size(), 0.0);
-	sbs.resize(Graph::block_prob.size(), 0.0);
-	ibi.resize(Graph::block_prob.size(), 0.0);
-	total_sbs.resize(Graph::block_prob.size(), 0.0);
-	total_ibi.resize(Graph::block_prob.size(), 0.0);
-	cbs.resize(Graph::block_prob.size(), 0.0);
-	cbi.resize(Graph::block_prob.size(), 0.0);
-#endif
 }
 void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	using graph::Graph; using graph::node; 
@@ -740,15 +567,15 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	for (node v = 0; v < Graph::n; ++v) iAgents[v].resize((size_t)LIST_INI_SZ + 1);	// ----> The extra spot is to store the actual number of elements in the list, which may differ from the container size.
 
 	//Temp:
-	IavNumHops.resize(NUM_AGENTS, 0);
-	SavNumHops.resize(NUM_AGENTS, 0);
-	ITransitions.resize(NUM_AGENTS, 0);
-	STransitions.resize(NUM_AGENTS, 0);
-
-	hopsUntilI.reserve((size_t)(T * nL));
-	hopsUntilS.reserve((size_t)(T * nL));
-	hopsUntilI.emplace_back(0);
-	hopsUntilS.emplace_back(0);
+	//IavNumHops.resize(NUM_AGENTS, 0);
+	//SavNumHops.resize(NUM_AGENTS, 0);
+	//ITransitions.resize(NUM_AGENTS, 0);
+	//STransitions.resize(NUM_AGENTS, 0);
+	//
+	//hopsUntilI.reserve((size_t)(T * nL));
+	//hopsUntilS.reserve((size_t)(T * nL));
+	//hopsUntilI.emplace_back(0);
+	//hopsUntilS.emplace_back(0);
 
 #ifdef PROTECTION_FX
 	Graph::setProbs();
@@ -850,10 +677,6 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 					v_Iab[myBlock] += iInNode[v];
 					v_Sab[myBlock] += sInNode[v];
 				}
-				for (uint b = 1; b < Sb.size(); ++b) {
-					Sb[b] = v_Sab[b];
-					Ib[b] = v_Iab[b];
-				}
 
 #ifdef DEBUG
 				rtl sum = 0.0;
@@ -940,9 +763,9 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef SOLVE_NUMERICALLY
 	//Runge-Kutta:
 	constexpr uint outputGranularity = 50;
-	constexpr rtl stepSize = 0.01;
+	constexpr rtl stepSize = 0.001;
 	constexpr uint largerDetailUntil = 1000;
-	constexpr rtl epsilon = 0.001 ;
+	constexpr rtl epsilon = 0.01 ;
 	constexpr rtl timeIncrement = stepSize * outputGranularity;
 	vector<rtl> saveToFile_diadt;
 	vector<rtl> saveToFile_dildt;

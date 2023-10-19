@@ -111,7 +111,7 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 					std::swap(foreignIdx[w][v_index_in_w], foreignIdx[w][u_index_in_w]);	// ----> Node w (which has received the alert from v for an s-bound update) has to update its 'myForeignIdx_s' to reflect that the indexes at which v and u poll their own position at w's neighborhood were exchanged.
 					std::swap(v_index_in_w, u_index_in_w);
 				}
-#ifdef AUTO_RELATION
+#ifdef SELF_LOOPS
 				else {
 					uint& v_index_in_w = foreignIdx[v][idxW];
 					std::swap(wNeighbors[v_index_in_w], wNeighbors[wSchema]);
@@ -123,7 +123,7 @@ void Graph::updateNeighborsBound(const node& v, vector<vector<node>>& g, vector<
 			
 		}
 	}
-#ifdef AUTO_RELATION
+#ifdef SELF_LOOPS
 	//Self-loop treatment:
 	vector<node>& vNeighbors = g[v];
 	const uint vSchema = schema[v];
@@ -213,7 +213,7 @@ void Graph::setBlockData() {
 	bk = _2ndMmt / averageDegree;
 	b = (uint)block_prob.size();
 	while (--b) {
-#ifdef AUTO_RELATION
+#ifdef SELF_LOOPS
 		q_b[b] = ((rtl)b * n * block_prob[b]) / ((2.0 * m) - n);	// ----> A self loop does not increase the sum of degrees by 2 but only by 1 (afterall, only one node will have its degree increased, not 2 nodes - which is the case when we add a new link between them). We must therefore discount one unit for each node, which in turn means subtracting n from 2m.
 #else
 		q_b[b] = ((rtl)b * n * block_prob[b]) / (2.0 * m);
@@ -239,7 +239,8 @@ void Graph::setBlockData() {
 
 	//Validation
 	rtl sumQB = 0, sumBP = 0, sumKB = 0.0;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
+	b = (uint)block_prob.size();
+	while (--b) {
 		sumQB += q_b[b];
 		sumBP += block_prob[b];
 		sumKB += Kb[b];
@@ -568,7 +569,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	if (selfLoops > 0)
 		cout << "\t ---> " << selfLoops << " native self-loops identified and removed." <<  "\n";
 
-#ifdef AUTO_RELATION
+#ifdef SELF_LOOPS
 #ifdef PROTECTION_FX
 	for (node v = 0; v < n; ++v) gs[v].emplace_back(v);
 	for (node v = 0; v < n; ++v) gi[v].emplace_back(v);
@@ -588,7 +589,7 @@ void Graph::readGraph(const string& fileName, const size_t& totalNodes) {
 	cout << "\t\t---> " << m << " edges.\n";
 	cout << "\t\t---> Average degree = " << averageDegree << "\n";
 	cout << "\t\t---> Largest degree = " << largestDegree;
-#endif //AUTO_RELATION
+#endif //SELF_LOOPS
 }
 
 void Graph::setParams(const uint& _numAgents, const rtl& _Ws, const rtl& _Wi) {

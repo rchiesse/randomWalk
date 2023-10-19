@@ -56,7 +56,6 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl nb = graph::Graph::n * graph::Graph::block_prob[b];
 	const rtl& qb = graph::Graph::q_b[b];
 	const rtl Sa = (rtl)numAgents - Ia;
-	
 	const rtl out = (rtl)(b - 1);
 	
 	//const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
@@ -73,14 +72,13 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl escapeRate = (out / b) * nL;
 	const rtl esigma = nT / (2 * escapeRate + nT);
 	
-	//OFICIAL:
-	//return nL * (Ia * qb - Iab)
-	//	+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
-
-	//TESTE!!!
+#ifdef SELF_LOOPS
 	return nL * (Ia * qb - Iab)
-		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - (nG * Iab);
-	
+		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - nG * Iab;
+#else
+	return nL * (Ia * qb - Iab)
+		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
+#endif
 	
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
 	//rtl sbnb = Sab / nb;
@@ -106,8 +104,8 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl nb = graph::Graph::n * graph::Graph::block_prob[b];
 	const rtl& qb = graph::Graph::q_b[b];
 	const rtl Sa = (rtl)numAgents - Ia;
-	
 	const rtl out = (rtl)(b - 1);
+	
 	//const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
 	//const rtl hostile_s = Ia / graph::Graph::n;
 	//const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
@@ -121,14 +119,15 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	
 	const rtl escapeRate = (out / b) * nL;
 	const rtl esigma = nT / (2 * escapeRate + nT);
-	
-	//OFICIAL:
-	//return nL * (Sa * qb - Sab)
-	//	- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
-	 
-	//TESTE!!!
+
+#ifdef SELF_LOOPS
 	return nL * (Sa * qb - Sab)
-		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + (nG * Iab);
+		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + nG * Iab;
+#else
+	return nL * (Sa * qb - Sab)
+		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
+#endif
+
 	
 	 
 	//TESTE DENSO - Bom apenas quando endemia é menor q 50% da população:
@@ -366,15 +365,11 @@ rtl Solver::dIdt(const rtl& Ia) {
 	const rtl _b_ = (rtl)graph::Graph::averageDegree;
 	const rtl& _b2_ = graph::Graph::_2ndMmt;
 	
-	//rtl walkRate = 0;
-	//for (const auto& b : graph::Graph::validBlocks)
-	//	walkRate += ((rtl)(b - 1) / b) * nL * graph::Graph::block_prob[b];
-	
-	//OFICIAL:
-	//return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;	//----> Ótimo no esparso pra qq rede!
-
-	//TESTE!!!
+#ifdef SELF_LOOPS
 	return (2.0 * master_walkRate * master_esigma * w * _b2_ * Sa * Ia) / (N * pow(_b_, 2.0)) - nG * Ia;
+#else
+	return (2.0 * nL * sigma * w * _b2_ * Sa * Ia ) / (N * pow(_b_, 2.0)) - nG * Ia;
+#endif
 }
 
 void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {

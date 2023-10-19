@@ -75,6 +75,10 @@ void Reporter::networkInfo(const uint& n, const uint& m, const rtl& averageDegre
 void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& T, const rtl& NUM_AGENTS, const rtl& TAU_aa, const rtl& GAMMA_a, const rtl& LAMBDA, const rtl& Wi, const rtl& Ws, const rtl& avDegree, const rtl& _2ndMoment, const rtl& Eag, const rtl& bk, const rtl& maxKbnb, const std::vector<rtl>& block_prob) {
 	rtl w = (Wi + Ws) / 2.0;
 	rtl sigma = TAU_aa / (2.0 * LAMBDA + TAU_aa);
+
+	rtl elambda = LAMBDA * (1.0 - (1.0 / avDegree));
+	rtl esigma = TAU_aa / (2.0 * elambda + TAU_aa);
+
 	//rtl sigma = 1;
 
 	//TESTE!!!
@@ -89,8 +93,10 @@ void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& 
 	rtl tamExpBlock = (N / avDegree) * sum_bpb2;
 	rtl expPopulation = ((NUM_AGENTS * _2ndMoment) / (pow(avDegree, 3))) * sum_bpb2;
 	rtl _2sl = 2.0 * sigma * LAMBDA;
-	rtl beta_ronald = (2.0 * sigma * NUM_AGENTS * LAMBDA * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
-	rtl w_bound		= std::min((rtl)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * sigma * LAMBDA * NUM_AGENTS * _2ndMoment));
+	rtl beta_ronald = (2.0 * esigma * NUM_AGENTS * elambda * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
+	rtl exp_agglom = (NUM_AGENTS * _2ndMoment) / (N * pow(avDegree, 2.0));
+	rtl beta_asym = TAU_aa * w * exp_agglom;
+	rtl w_bound		= std::min((rtl)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (2.0 * esigma * elambda * NUM_AGENTS * _2ndMoment));
 	rtl w_asym_lambda	= std::min((rtl)1.0, (GAMMA_a * N * pow(avDegree, 2.0)) / (TAU_aa * NUM_AGENTS * _2ndMoment));
 	std::cout << '\n'
 		<< "\tROUNDS: "								<< ROUNDS		<< '\n'
@@ -102,7 +108,8 @@ void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& 
 		<< "\tTAU (Infect): "						<< TAU_aa		<< '\n'
 		<< "\tGAMMA (Recover): "					<< GAMMA_a		<< '\n'
 		<< "\tLAMBDA (Walk): "						<< LAMBDA		<< '\n'
-		//<< "\tBETA (Infection force): "			<< beta_ronald << '\n'
+		<< "\tBETA (Infection force): "				<< beta_ronald << '\n'
+		<< "\tBETA (Asymptotic on lambda): "		<< beta_asym << '\n'
 		<< "\t2nd moment (<b^2>): "					<< _2ndMoment << '\n'
 		<< "\t1st moment squared (<b>^2): "			<< avDegree * avDegree << '\n'
 		<< "\t<b^2> / <b>^2: "						<< _2ndMoment / (avDegree * avDegree) << '\n'
@@ -115,8 +122,8 @@ void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& 
 		<< "\tE[#Ag] (q_b weighted): "				<< Eag << "; E[#Ag]/<b>_K = " << Eag/bk << '\n'
 		<< "\tmaxKbnb: "							<< maxKbnb << '\n'
 		
-		<< "\tAv. #hops as I: "						<< LAMBDA / GAMMA_a << '\n'
-		<< "\tEarly mobility (100.0 * lambda): "	<< (100.0 * LAMBDA) << '\n'
+		<< "\tE[#hops as I]: "						<< LAMBDA / GAMMA_a << '\n'
+		<< "\tEarly mobility (50 * (1.0/LAMBDA)): "	<< (50.0 * (1.0 / LAMBDA)) << '\n'
 		<< "\tw ((Wi + Ws) / 2): "					<< w			<< '\n'
 		<< "\tw_bound: "							<< w_bound		<< '\n'
 		<< "\tw_asym_lambda: "						<< w_asym_lambda << '\n'

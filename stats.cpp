@@ -162,7 +162,7 @@ void Stats::initStream(const streamType& s) {
 		//	return;
 		//}
 		if (sim::utils::isEmpty(avDurDataK))
-			avDurDataK << "k,duration\n";	//Header
+			avDurDataK << "k\tduration\n";	//Header
 
 		ss.str("");
 		ss.clear();
@@ -174,7 +174,7 @@ void Stats::initStream(const streamType& s) {
 		//	return;
 		//}
 		if (sim::utils::isEmpty(avDurDataL))
-			avDurDataL << "lambda,duration\n";
+			avDurDataL << "lambda\tduration\n";
 	default:;
 	}
 }
@@ -260,15 +260,15 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		"plt.xlim(0, " << t << ")\n" <<
 		"plt.ylim(0, 1)\n\n";
 
-	of << "def incluirPlot(nomeArq, ini, lbl, style) :\n" <<
+	of << "def incluirPlot(nomeArq, ini, lbl, style, my_marker = '') :\n" <<
 		"\twith open(nomeArq, \"r\") as i :\n " <<
-		"\t\trawdata = list(csv.reader(i, delimiter = \"\t\"))\n\n" <<
+		"\t\trawdata = list(csv.reader(i, delimiter = \"\t\")) # ---> Delimiter is NOT a space! It is a *Tab*.\n\n" <<
 
 		"\tmyData = np.array(rawdata[1:], dtype = np.float64)\n" <<
 		"\txData = myData[:, ini]\n" <<
 		"\tyData = myData[:, ini + 1]\n\n" <<
 
-		"\tplt.plot(xData, yData, label = lbl, linewidth = (1 + (1 - ini)*0.5), linestyle = style) \n\n\n" <<
+		"\tplt.plot(xData, yData, label = lbl, linewidth = (1 + (1 - ini)*0.5), linestyle = style, marker = my_marker) \n\n\n" <<
 
 		"#Import CSV data\n";
 
@@ -345,7 +345,7 @@ void Stats::genPlotScript(const std::string& referenceFile, const bool&& numeric
 		std::string label = labels[1];
 		
 		//TESTE!!!
-		of << "incluirPlot(\"./stats/averages/" << instanceName << ".csv\", 0, \"" << label << "\", \"solid\")\n";
+		of << "incluirPlot(\"./stats/averages/" << instanceName << ".csv\", 0, \"" << label << "\", \"solid\", '.')\n";
 
 		//of << "with open(\"./stats/averages/" << instanceName << ".csv\", \"r\") as j :\n";
 		//
@@ -378,8 +378,8 @@ void Stats::writeToFile(const streamType& s, const rtl& Ws, const rtl& Wi, const
 		//std::string type("N" + std::to_string(N) + "_w" + sstype.str());
 
 		//avDurData << numAg << "\t" << Ws << "\t" << Wi << "\t" << avDuration() << '\n';
-		avDurDataK << numAg  << ',' << avDuration() << '\n';
-		avDurDataL << lambda << ',' << avDuration() << '\n';
+		avDurDataK << numAg  << '\t' << avDuration() << '\n';
+		avDurDataL << lambda << '\t' << avDuration() << '\n';
 		break;
 #ifdef OCCUPANCY
 	case streamType::occupancy:

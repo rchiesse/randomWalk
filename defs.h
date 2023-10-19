@@ -102,20 +102,35 @@ static constexpr uint N = 2;
 //#define NWTK_LABEL "GNP-2000"
 //#define SHORT_LABEL "GNP-2000" 
 
-//static constexpr uint N = 4000;											// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
-//#define NWTK_LABEL "GNP_4000"
-//#define SHORT_LABEL "GNP_4000" 
+static constexpr uint N = 4000;											// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
+#define NWTK_LABEL "GNP_4000"
+#define SHORT_LABEL "GNP_4000" 
 
 //static constexpr uint N = 12008;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
 //#define NWTK_LABEL "BA-12k-10"
 //#define SHORT_LABEL "BA-12k-10" 
 
-static constexpr uint N = 100000;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
-#define NWTK_LABEL "BA-100k-10"
-#define SHORT_LABEL "BA-100k-10" 
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
+//#define NWTK_LABEL "BA-100k-10"
+//#define SHORT_LABEL "BA-100k-10" 
+
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-4.txt")), 100000
+//#define NWTK_LABEL "BA-100k-4"
+//#define SHORT_LABEL "BA-100k-4" 
+
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-10.txt")), 100000
+//#define NWTK_LABEL  "GNP-100k-10"
+//#define SHORT_LABEL "GNP-100k-10"
+
+//static constexpr uint N = 10000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/ring-10k.txt")), 10000
+//#define NWTK_LABEL  "ring-10k"
+//#define SHORT_LABEL "ring-10k"
 
 //static constexpr uint N = 100000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-20.txt")), 100000
@@ -177,7 +192,7 @@ static constexpr uint N = 100000;										// ----> Network size
 
 
 // * AGENTS' BEHAVIOR *
-#define AUTO_RELATION					// ----> Gives agents the option of staying at their current node upon their walk event. If not enabled, agents will necessarily change their current node when their walk event is processed.
+#define SELF_LOOPS					// ----> When enabled, agents have the option of staying at their current node upon their walk event. When disabled, agents will necessarily hop to some other node when their walk event is processed.
 #define PROTECTION_FX
 #ifndef PROTECTION_FX
 static constexpr rtl Ws = 1.0;	// !DO NOT CHANGE THIS LINE! To set Ws to 1.0 here means "no protection effect", which is the desired behaviour when the pre-processor macro "PROTECTION_FX" is not defined.
@@ -189,7 +204,6 @@ static constexpr rtl Wi = 1.0;	// !DO NOT CHANGE THIS LINE! To set Wi to 1.0 her
 
 // * STATS * 
 #define INFECTED_FRACTION
-#define SI_PROPORTION
 //#define OCCUPANCY
 //#define ESTIMATE_PROBS
 

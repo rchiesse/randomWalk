@@ -79,19 +79,11 @@ void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& 
 	rtl elambda = LAMBDA * (1.0 - (1.0 / avDegree));
 	rtl esigma = TAU_aa / (2.0 * elambda + TAU_aa);
 
-	//rtl sigma = 1;
-
-	//TESTE!!!
-	rtl sum_b2pb2 = 0, sum_bpb2 = 0, factor, val;
-	for (uint b = (uint)block_prob.size() - 1; b > 0; --b) {
-		sum_b2pb2 += (size_t)b * b * block_prob[b] * block_prob[b];
-		sum_bpb2  += (size_t)b * block_prob[b] * block_prob[b];
+	uint numBlocks = 0;
+	for (size_t i = 0; i < block_prob.size(); ++i){
+		numBlocks += block_prob[i] > 0;
 	}
-	factor = sum_b2pb2 / sum_bpb2;
-	val = (NUM_AGENTS / (N * avDegree)) * factor;
 
-	rtl tamExpBlock = (N / avDegree) * sum_bpb2;
-	rtl expPopulation = ((NUM_AGENTS * _2ndMoment) / (pow(avDegree, 3))) * sum_bpb2;
 	rtl _2sl = 2.0 * sigma * LAMBDA;
 	rtl beta_ronald = (2.0 * esigma * NUM_AGENTS * elambda * _2ndMoment * w) / ( N * pow(avDegree, 2.0));
 	rtl exp_agglom = (NUM_AGENTS * _2ndMoment) / (N * pow(avDegree, 2.0));
@@ -116,9 +108,9 @@ void Reporter::simulationInfo(const uint& itotal, const rtl& ROUNDS, const rtl& 
 		<< "\t<b>_K: "								<< bk << '\n'
 		<< "\tE[#Ag] per Node (uniform): "			<< NUM_AGENTS / N << '\n'
 		<< "\tK<b^2>/(n<b>^2): "					<< (NUM_AGENTS * _2ndMoment) / (N * avDegree * avDegree) << '\n'
-		<< "\tval: "								<< val << '\n'
-		<< "\ttamExpBlock: "						<< tamExpBlock << '\n'
-		<< "\texpPopulation: "						<< expPopulation << '\n'
+		<< "\tNUM_BLOCKS: "							<< numBlocks << '\n'
+		
+		
 		<< "\tE[#Ag] (q_b weighted): "				<< Eag << "; E[#Ag]/<b>_K = " << Eag/bk << '\n'
 		<< "\tmaxKbnb: "							<< maxKbnb << '\n'
 		

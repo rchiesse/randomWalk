@@ -102,25 +102,47 @@ static constexpr uint N = 2;
 //#define NWTK_LABEL "GNP-2000"
 //#define SHORT_LABEL "GNP-2000" 
 
-static constexpr uint N = 4000;											// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
-#define NWTK_LABEL "GNP_4000"
-#define SHORT_LABEL "GNP_4000" 
+//static constexpr uint N = 4000;											// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/gnp_n4000.txt")), 4000
+//#define NWTK_LABEL "GNP_4000"
+//#define SHORT_LABEL "GNP_4000" 
 
 //static constexpr uint N = 12008;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA.txt")), 12008
 //#define NWTK_LABEL "BA-12k-10"
 //#define SHORT_LABEL "BA-12k-10" 
 
-//static constexpr uint N = 100000;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
-//#define NWTK_LABEL "BA-100k-10"
-//#define SHORT_LABEL "BA-100k-10" 
+//static constexpr uint N = 1000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1k-4.txt")), 1000
+//#define NWTK_LABEL "BA-1k-4"
+//#define SHORT_LABEL "BA-1k-4" 
+
+static constexpr uint N = 10000;										// ----> Network size
+#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-10k-4.txt")), 10000
+#define NWTK_LABEL "BA-10k-2"
+#define SHORT_LABEL "BA-10k-2" 
 
 //static constexpr uint N = 100000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-4.txt")), 100000
 //#define NWTK_LABEL "BA-100k-4"
 //#define SHORT_LABEL "BA-100k-4" 
+
+//static constexpr uint N = 1000000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1M-4.txt")), 1000000
+//#define NWTK_LABEL "BA-1M-4"
+//#define SHORT_LABEL "BA-1M-4" 
+
+//static constexpr uint N = 10000000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1M-4.txt")), 10000000
+//#define NWTK_LABEL "BA-10M-4"
+//#define SHORT_LABEL "BA-10M-4" 
+
+
+
+//static constexpr uint N = 100000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-10.txt")), 100000
+//#define NWTK_LABEL "BA-100k-10"
+//#define SHORT_LABEL "BA-100k-10" 
 
 //static constexpr uint N = 100000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/GNP-100k-10.txt")), 100000

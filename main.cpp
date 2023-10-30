@@ -56,8 +56,7 @@ uint K;
 uint LIST_INI_SZ;														// ----> Initial size of both 'sAgents' and 'iAgents' lists. Every time a node's list become full, its size gets doubled. Although arbitrary, the initial value provided here aims at reducing both the number of times a doubling operation is required and the vector's final size.
 
 // Output control:
-//const rtl OVERLOOK_RATE = (rtl)1.0 / NUM_AGENTS;										// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). For such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
-uint OVERLOOK;
+uint OVERLOOK;															// ----> Depending on the initial settings, the simulation may generate a firehose of data, which in turn becomes highly inconvenient (or even prohibitive) for being written to a file (in terms of either space and time). In such cases, it is strongly adviseable to purposely overlook a portion of the events generated per time unit.
 
 //Main structures
 enum class action{walk, recoverAg, recoverSite, agInfectAg, agInfectSite, siteInfectAg };
@@ -255,22 +254,22 @@ void sim::setEnvironment() {
 	//TAU_la				= 0.000001;										// ----> Location-to-agent transmissibility rate.
 	//GAMMA_l				= 20000.0;										// ----> Recovery rate. 
 	
-	T = 2000.0; NUM_AGENTS = 400; TAU_aa = 1.0; GAMMA_a = 0.07; LAMBDA = 1.0;
+	//1K:
+	//10K:
+	//FIXAR R_0!
+	T = 2000.0; NUM_AGENTS = 50; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
 
 #ifdef PROTECTION_FX
-	//Wi = 1.0;
-	//Ws = 1.0;
-	Wi = 0.65;
-	Ws = 0.65;
+	Wi = 1.0;
+	Ws = 1.0;
+	//Wi = 0.65;
+	//Ws = 0.65;
 #else
 	Wi = Ws = 1.0;	// ----> Do not change this line.
 #endif
 	//Other parameters:
 	EARLY_MOBILITY = std::max((rtl)1.0, 50.0 * (1.0/LAMBDA));
-	//EARLY_MOBILITY = 0;
 	OVERLOOK			= 1;
-	//OVERLOOK			= (uint)(round(0.75 * NUM_AGENTS));
-	//OVERLOOK			= (uint)((long double)NUM_AGENTS * OVERLOOK_RATE);
 	LIST_INI_SZ			= (uint)(round(std::max((rtl)2.0, (rtl)NUM_AGENTS / (3.0 * N))));
 	
 	I_0					= (ABS_INFECTED > 0) ? ABS_INFECTED : (uint)((rtl)NUM_AGENTS * FRAC_AG_INFECTED);

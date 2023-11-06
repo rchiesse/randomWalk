@@ -57,7 +57,7 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	const rtl& qb = graph::Graph::q_b[b];
 	const rtl Sa = (rtl)numAgents - Ia;
 	const rtl out = (rtl)(b - 1);
-	
+
 	//const rtl safe_s = (graph::Graph::n - Ia) / graph::Graph::n;
 	//const rtl hostile_s = Ia / graph::Graph::n;
 	//const rtl safe_i = (graph::Graph::n - Sa) / graph::Graph::n;
@@ -70,11 +70,17 @@ rtl Solver::diabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl escapeRate = (out / (out + w)) * nL;
 	
 	const rtl escapeRate = (out / b) * nL;
+	const rtl etau = (nT / (escapeRate + nT)) * nT;
+	//const rtl ii = Iab / nb;
+	//const rtl esigma = etau / (escapeRate + ii * etau);
 	const rtl esigma = nT / (2 * escapeRate + nT);
 	
 #ifdef SELF_LOOPS
 	return nL * (Ia * qb - Iab)
 		+ 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w - nG * Iab;
+		//+ ((Sab * Iab) / nb) * escapeRate * ii * esigma * w
+		//+ ((Sab * Iab) / nb) * escapeRate * esigma * w 
+		//- nG * Iab;
 #else
 	return nL * (Ia * qb - Iab)
 		+ 2.0 * ((Sab * Iab) / nb) * nL * sigma * w - (nG * Iab);
@@ -118,11 +124,17 @@ rtl Solver::dsabdt(const rtl& Ia, const rtl& Iab, const rtl& Sab, const uint& b)
 	//const rtl escapeRate = (out / (out + w)) * nL;
 	
 	const rtl escapeRate = (out / b) * nL;
+	const rtl etau = (nT / (escapeRate + nT)) * nT;
+	//const rtl ii = Iab / nb;
+	//const rtl esigma = etau / (escapeRate + ii * etau);
 	const rtl esigma = nT / (2 * escapeRate + nT);
 
 #ifdef SELF_LOOPS
 	return nL * (Sa * qb - Sab)
 		- 2.0 * ((Sab * Iab) / nb) * escapeRate * esigma * w + nG * Iab;
+		//- ((Sab * Iab) / nb) * escapeRate * ii * esigma * w
+		//- ((Sab * Iab) / nb) * escapeRate * esigma * w 
+		//+ nG * Iab;
 #else
 	return nL * (Sa * qb - Sab)
 		- 2.0 * ((Sab * Iab) / nb) * nL * sigma * w + (nG * Iab);
@@ -281,7 +293,7 @@ void Solver::update_Ia(rtl& Ia, const std::vector<rtl>& v_Iv, const std::vector<
 void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, std::vector<rtl>& v_ilb, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
-	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+	//saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
 	rtl Ia = 0;
 	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
@@ -289,7 +301,7 @@ void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vec
 	rtl il = 0.0;
 
 	saveToFile_diadt[0] = Ia / numAgents;
-	saveToFile_dildt[0] = il;
+	//saveToFile_dildt[0] = il;
 	bool end = false;
 	++outputSize;
 
@@ -315,11 +327,11 @@ void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vec
 		}
 		saveToFile_diadt[outputSize] = Ia / numAgents;
 
-#ifdef NORM_SITE_PER_AG
-		saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-		saveToFile_dildt[s] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//		saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//		saveToFile_dildt[s] = il;
+//#endif
 		++outputSize;
 	}
 	if (end) return;
@@ -330,11 +342,11 @@ void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vec
 		step(h, Ia, v_Iab, v_Sab);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//			saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//			saveToFile_dildt[outputSize] = il;
+//#endif
 			++outputSize;
 			break;
 		}
@@ -350,11 +362,11 @@ void Solver::rungeKutta4thOrder(const rtl& t0, std::vector<rtl>& v_Iab, std::vec
 		}
 		if (s % outputGranularity == 0) {
 			saveToFile_diadt[outputSize] = Ia / numAgents;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//			saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//			saveToFile_dildt[outputSize] = il;
+//#endif
 			++outputSize;
 		}
 	}
@@ -375,7 +387,7 @@ rtl Solver::dIdt(const rtl& Ia) {
 void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& v_Sab, const rtl& t, const rtl& h, const rtl& epsilon, std::vector<rtl>& saveToFile_diadt, std::vector<rtl>& saveToFile_dildt, uint& outputSize, const uint& outputGranularity, const rtl& largerDetailUntil) {
 	uint totalSteps = (uint)((t - t0) / h) + 1;
 	saveToFile_diadt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
-	saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
+	//saveToFile_dildt.resize((uint64_t)largerDetailUntil + (totalSteps - ((uint)largerDetailUntil) / outputGranularity) + 1);
 
 	rtl Ia = 0;
 	for (uint b = (uint)v_Iab.size() - 1; b > 0; --b)
@@ -383,7 +395,7 @@ void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& 
 	rtl il = 0.0;
 
 	saveToFile_diadt[0] = Ia / numAgents;
-	saveToFile_dildt[0] = il;
+	//saveToFile_dildt[0] = il;
 	bool end = false;
 	++outputSize;
 
@@ -409,11 +421,11 @@ void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& 
 		}
 		saveToFile_diadt[outputSize] = Ia / numAgents;
 
-#ifdef NORM_SITE_PER_AG
-		saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-		saveToFile_dildt[s] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//		saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//		saveToFile_dildt[s] = il;
+//#endif
 		++outputSize;
 	}
 	if (end) return;
@@ -424,11 +436,11 @@ void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& 
 		stepMaster(h, Ia);
 		if (Ia < epsilon) {
 			saveToFile_diadt[outputSize] = 0;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//			saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//			saveToFile_dildt[outputSize] = il;
+//#endif
 			++outputSize;
 			break;
 		}
@@ -444,11 +456,11 @@ void Solver::rkMaster(const rtl& t0, std::vector<rtl>& v_Iab, std::vector<rtl>& 
 		}
 		if (s % outputGranularity == 0) {
 			saveToFile_diadt[outputSize] = Ia / numAgents;
-#ifdef NORM_SITE_PER_AG
-			saveToFile_dildt[outputSize] = il * (N / numAgents);
-#else
-			saveToFile_dildt[outputSize] = il;
-#endif
+//#ifdef NORM_SITE_PER_AG
+//			saveToFile_dildt[outputSize] = il * (N / numAgents);
+//#else
+//			saveToFile_dildt[outputSize] = il;
+//#endif
 			++outputSize;
 		}
 	}

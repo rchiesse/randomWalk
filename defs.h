@@ -116,24 +116,24 @@ static constexpr uint N = 2;
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1k-4.txt")), 1000
 //#define NWTK_LABEL "BA-1k-4"
 //#define SHORT_LABEL "BA-1k-4" 
-
-static constexpr uint N = 10000;										// ----> Network size
-#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-10k-4.txt")), 10000
-#define NWTK_LABEL "BA-10k-2"
-#define SHORT_LABEL "BA-10k-2" 
-
+//
+//static constexpr uint N = 10000;										// ----> Network size
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-10k-4.txt")), 10000
+//#define NWTK_LABEL "BA-10k-4"
+//#define SHORT_LABEL "BA-10k-4" 
+//
 //static constexpr uint N = 100000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-100k-4.txt")), 100000
 //#define NWTK_LABEL "BA-100k-4"
 //#define SHORT_LABEL "BA-100k-4" 
-
+//
 //static constexpr uint N = 1000000;										// ----> Network size
 //#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1M-4.txt")), 1000000
 //#define NWTK_LABEL "BA-1M-4"
 //#define SHORT_LABEL "BA-1M-4" 
-
+//
 //static constexpr uint N = 10000000;										// ----> Network size
-//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-1M-4.txt")), 10000000
+//#define SOURCE_FILE std::string(std::string(EXE_DIR) + std::string("/synthetic/BA-10M-4.txt")), 10000000
 //#define NWTK_LABEL "BA-10M-4"
 //#define SHORT_LABEL "BA-10M-4" 
 
@@ -243,7 +243,7 @@ namespace sim{		// ----> Simulator's namespace.
 #define SOLVE_NUMERICALLY
 //#define BYPASS_SIMULATION
 #define NORM_SITE_PER_AG
-#define PER_NODE
+//#define PER_NODE
 #define PER_BLOCK													// ----> If defined, then the numerical solution is based on 2 equations per degree-block. If otherwise, then a fine-grained system of 2 equations per NODE is solved (computationally expensive).
 #define MASTER	// ----> "PER_BLOCK" must be set likewise for this to be set. Do not set this option if "PER_BLOCK" is not set.
 

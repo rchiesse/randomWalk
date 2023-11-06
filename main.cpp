@@ -257,7 +257,15 @@ void sim::setEnvironment() {
 	//1K:
 	//10K:
 	//FIXAR R_0!
-	T = 2000.0; NUM_AGENTS = 50; TAU_aa = 1.0; GAMMA_a = 0.005; LAMBDA = 1.0;
+	// 
+	//10k
+	//T = 2000.0; NUM_AGENTS = 125; TAU_aa = 1.0; GAMMA_a = 0.007; LAMBDA = 1.0;
+	
+	//100k
+	//T = 2000.0; NUM_AGENTS = 200; TAU_aa = 1.0; GAMMA_a = 0.0014; LAMBDA = 1.0;
+
+	//1M
+	T = 5000.0; NUM_AGENTS = 100; TAU_aa = 1.0; GAMMA_a = 0.001; LAMBDA = 1.0;
 
 #ifdef PROTECTION_FX
 	Wi = 1.0;
@@ -416,8 +424,10 @@ void sim::leaveNodeAsSus (const agent& ag, const node& v, const rtl& now) {
 }
 void sim::quietWalk(const agent& ag, const rtl& now) {
 	node v = nextNodeForSus(currentNode[ag]);
+#ifdef SELF_LOOPS
 	if (v == currentNode[ag])
 		return;
+#endif
 	leaveNodeAsSus(ag, currentNode[ag], now);
 	enterNodeAsSus(ag, v, now);
 }
@@ -789,6 +799,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 #ifdef MASTER	
 	Reporter::startChronometer("\nSolving at network level...");
 	Solver::rkMaster(0, v_Iab, v_Sab, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	//Reporter::stopChronometer(" done", "execTime_master.txt");
 	Reporter::stopChronometer(" done");
 	method = "MASTER";
 	
@@ -820,6 +831,7 @@ void sim::runSimulation(const uint& startingNumAg, const uint& granularity) {
 	outputSize = 0;
 	Reporter::startChronometer("\nSolving at block level...");
 	Solver::rungeKutta4thOrder(0, v_Iab, v_Sab, v_ilb, T, stepSize, epsilon, saveToFile_diadt, saveToFile_dildt, outputSize, outputGranularity, largerDetailUntil);
+	//Reporter::stopChronometer(" done", "execTime_block.txt");
 	Reporter::stopChronometer(" done");
 	method = "BLOCK";
 

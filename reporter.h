@@ -17,7 +17,7 @@ public:
 	static void tell			 (const std::string& message);
 	static void logTimestamp	 (const std::string& message);
 	static void startChronometer (const std::string& message = "");
-	static void stopChronometer	 (const std::string& message);
+	static void stopChronometer	 (const std::string& message, const std::string& filename = "");
 	static void durationInfo	 (const rtl& duration);
 	static void progress		 (const uint& round, const uint& granularity = 10);
 	static void avSimTimeInfo	 (const rtl& avDuration);

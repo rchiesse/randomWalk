@@ -25,7 +25,7 @@ void Reporter::startChronometer(const std::string& message) {
 	std::cout << message;
 	timeScope.emplace_back(clock());
 }
-void Reporter::stopChronometer(const std::string& message) {
+void Reporter::stopChronometer(const std::string& message, const std::string& filename) {
 	if (timeScope.size() == 0) {
 		std::cout << "Invalid 'stopChronometer()' call. No chronometer exists to be stopped (i.e. no 'startChronometer()' call remains left for being stopped) in this scope.";
 		return;
@@ -48,6 +48,13 @@ void Reporter::stopChronometer(const std::string& message) {
 	else if (m)	friendly << m << "m " << s << "s";
 	else		friendly << s << "s";
 	std::cout << message << " (" << timeElapsed / CLOCKS_PER_SEC << "s == " << friendly.str() << ").";
+
+	if (filename != "") {
+		std::ofstream of;
+		of.open(filename, std::ios::app);
+		of << timeElapsed << '\n';
+		of.close();
+	}
 }
 
 void Reporter::progress(const uint& round, const uint& granularity) {
